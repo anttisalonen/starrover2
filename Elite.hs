@@ -53,28 +53,37 @@ handleGameMenu g = do
     2 -> exitWith ExitSuccess
     _ -> handleGameMenu g
 
-dockedMenuMenu g = "Docked menu"
+dockedMenuMenu g = "Docked menu\nOptions:\n"
 
-dockedMenuOptions = "Press m to go to menu"
+dockedMenuOptions = [('a', "market", gotoMarket),
+                     ('e', "undock", undock),
+                     ('m', "game menu", gotoMenu)]
 
-getDockedMenuInput :: IO (Game -> Game)
-getDockedMenuInput = do
+getMenuInput :: [(Char, String, a)] -> IO a
+getMenuInput ns = do
+  forM_ (map (\(a, b, c) -> (a, b)) ns) (\(c, s) -> printf "%c - %s\n" c s)
+  putStrLn ""
   c <- getOneChar
-  case c of
-    'm' -> return gotoMenu
-    _   -> return id
+  let m = getFromTable3 c ns
+  case m of
+    Just n  -> return n
+    Nothing -> getMenuInput ns
+
+  where getFromTable3 :: (Eq a) => a -> [(a, b, c)] -> Maybe c
+        getFromTable3 _ [] = Nothing
+        getFromTable3 c ((d, _, h):ds) = if c == d then Just h else getFromTable3 c ds
 
 gotoMenu g = g{inMenu = True}
 
 handleDockedMenu :: Game -> IO Game
 handleDockedMenu g = do
   putStrLn $ dockedMenuMenu g
-  putStrLn $ dockedMenuOptions
-  m <- getDockedMenuInput
+  m <- getMenuInput dockedMenuOptions
   return (m g)
 
 handleFlying g = error "flying undefined"
 handleHyperspace g = error "hyperspace undefined"
 handleCombat g = error "combat undefined"
 
-
+undock g = error "undocking undefined"
+gotoMarket g = error "goto market undefined"
