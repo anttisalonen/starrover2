@@ -1,56 +1,17 @@
-module Main
+module Elite
 where
 
 import Data.List
 import Text.Printf
-import System.IO
 import System.Exit
 
 import qualified Data.Map as M
 import Control.Monad
 
-import MainMenu
-
-main :: IO ()
-main = do
-  mainMenu menu mainMenuActions emptySetup
-
-mainMenuActions :: ActionMap Setup
-mainMenuActions = M.fromList [("1", startGame), ("2", options), ("3", quit)]
+import Utils
+import Types
 
 gameTitle = "The Game"
-
-startGame, options, quit :: Action Setup
-
-data Game = Game {
-    gameSetup     :: Setup
-  , player        :: Player
-  , gameMode      :: GameMode
-  , inMenu        :: Bool
-  , gameHandlers  :: [Handler]
-  }
-
-data Player = Player {
-    playerName :: String
-  }
-
-type Point = (Float, Float)
-
-data GameMode = Docked DockedMode
-              | Flying
-              | Hyperspace
-              | Combat
-  deriving (Eq, Read, Show)
-
-data DockedMode = DockedMenu
-                | Market
-                | BulletinBoard
-                | Governor
-  deriving (Eq, Read, Show)
-
-startGame setup = do
-  game <- intro setup
-  mainLoop game >> return setup
 
 intro :: Setup -> IO Game
 intro s = do
@@ -80,12 +41,6 @@ mainLoop g = do
     Nothing -> putStrLn "No case - game over!" >> return ()
     Just f  -> f g >>= mainLoop
     
-pick :: [(a -> Bool, b)] -> a -> Maybe b
-pick []          _ = Nothing
-pick ((f, s):ns) x = if f x
-                       then Just s 
-                       else pick ns x
-
 handleGameMenu :: Game -> IO Game
 handleGameMenu g = do
   n <- putStrGetDigit $ 
@@ -101,15 +56,6 @@ handleGameMenu g = do
 dockedMenuMenu g = "Docked menu"
 
 dockedMenuOptions = "Press m to go to menu"
-
-getOneChar :: IO Char
-getOneChar = do
-  b <- hGetBuffering stdin
-  hSetBuffering stdin NoBuffering
-  c <- getChar
-  putStrLn ""
-  hSetBuffering stdin b
-  return c
 
 getDockedMenuInput :: IO (Game -> Game)
 getDockedMenuInput = do
@@ -130,77 +76,5 @@ handleDockedMenu g = do
 handleFlying g = error "flying undefined"
 handleHyperspace g = error "hyperspace undefined"
 handleCombat g = error "combat undefined"
-
-type Handler = (Game -> Bool, Game -> IO Game)
-
-readInt :: String -> Maybe Int
-readInt s = case reads s of
-              [(n, _)] -> Just n
-              _        -> Nothing
-
-putStrGetDigit :: String -> IO Int
-putStrGetDigit s = do
-  when (not (null s)) $ putStrLn s
-  n <- getOneChar
-  case readInt [n] of
-    Just p  -> return p
-    Nothing -> putStrGetDigit s
-
-getDigit :: IO Int
-getDigit = putStrGetDigit ""
-
-putStrGetNumber :: String -> IO Int
-putStrGetNumber s = do
-  when (not (null s)) $ putStrLn s
-  n <- getLine
-  if null n
-    then putStrGetNumber s
-    else case readInt n of
-           Just p  -> return p
-           Nothing -> putStrGetNumber s
-
-getNumber :: IO Int
-getNumber = putStrGetNumber ""
-
-options (Setup oldDiff) = do
-  putStrLn $ "Current difficulty: " ++ show oldDiff
-  let diffs = zip (map show [1..]) ([minBound :: Difficulty .. maxBound])
-  forM diffs (\(n, d) -> printf "%s. %s\n" n (show d))
-  n <- getOneChar
-  case getFromTable [n] diffs of
-    Nothing -> options (Setup oldDiff)
-    Just d  -> return (Setup d)
-
-getFromTable :: String -> [(String, a)] -> Maybe a
-getFromTable _ []               = Nothing
-getFromTable c ((d, h):ds) = if c `isPrefixOf` d then Just h else getFromTable c ds
-
-quit _ = exitWith ExitSuccess
-
-emptySetup :: Setup
-emptySetup = Setup Medium
-
-menu :: IO String
-menu = uncurry menuFrame menuDef
-
-menuDef :: (String, M.Map String String)
-menuDef = ("Welcome to " ++ gameTitle ++ "!\n" ++ 
-           "1. start new game\n" ++
-           "2. set options\n"     ++
-           "3. quit\n",
-           M.fromList [("1", "1"), ("2", "2"), ("3", "3")])
-
-menuFrame :: String -> M.Map String a -> IO a
-menuFrame msg actions = do
-  putStr msg
-  n <- getOneChar
-  case getFromTable [n] (M.toList actions) of
-    Nothing -> menuFrame msg actions
-    Just a  -> return a
-
-data Setup = Setup { getDifficulty :: Difficulty }
-
-data Difficulty = Easy | Medium | Hard
-  deriving (Eq, Read, Show, Enum, Bounded)
 
 
