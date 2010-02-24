@@ -53,4 +53,3 @@ getFromTable :: String -> [(String, a)] -> Maybe a
 getFromTable _ []               = Nothing
 getFromTable c ((d, h):ds) = if c `isPrefixOf` d then Just h else getFromTable c ds
 
-
