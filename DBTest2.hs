@@ -10,6 +10,7 @@ import Data.Ord
 import System.IO
 
 import Sector
+import Utils
 
 type Key = (Sector, Point)
 
@@ -41,15 +42,6 @@ capitalize (h:hs) = toUpper h : hs
 
 randomPoint :: RndS Point
 randomPoint = randomPair pointRange
-
-{-
-randomThing :: (Random t, RandomGen s, MonadState s m) => m t
-randomThing = do
-  r <- get
-  let (a, g) = random r
-  put g
-  return a
--}
 
 main = do
   putStrLn "Universe created"

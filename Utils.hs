@@ -4,6 +4,8 @@ where
 import System.IO
 import Data.List
 import Control.Monad
+import System.Random
+import Control.Monad.State
 
 getOneChar :: IO Char
 getOneChar = do
@@ -52,4 +54,31 @@ pick ((f, s):ns) x = if f x
 getFromTable :: String -> [(String, a)] -> Maybe a
 getFromTable _ []               = Nothing
 getFromTable c ((d, h):ds) = if c `isPrefixOf` d then Just h else getFromTable c ds
+
+type RndS = State Rnd
+
+type Rnd = StdGen
+
+randomThingR :: (Random t, RandomGen s, MonadState s m) => (t, t) -> m t
+randomThingR range = do
+  r <- get
+  let (a, g) = randomR range r
+  put g
+  return a
+
+randomPair :: (Random t, RandomGen s, MonadState s m) => (t, t) -> m (t, t)
+randomPair range = do
+  a <- randomThingR range
+  a' <- randomThingR range
+  return (a, a')
+
+{-
+randomThing :: (Random t, RandomGen s, MonadState s m) => m t
+randomThing = do
+  r <- get
+  let (a, g) = random r
+  put g
+  return a
+-}
+
 
