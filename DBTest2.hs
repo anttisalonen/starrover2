@@ -9,27 +9,26 @@ import Data.Bits
 import Data.Ord
 import System.IO
 
-type Key = (Sector, Point)
+import Sector
 
-type Sector = (Int, Int)
+type Key = (Sector, Point)
 
 type Point = (Int, Int)
 
 type Value = String
 
-type Rnd = StdGen
-
 pointRange :: Point
 pointRange = (0, 100)
 
-type RndS = State Rnd
+getKeyValues :: Sector -> [(Key, Value)]
+getKeyValues s = getPartsR (2, 5) (do
+    point <- randomPoint
+    value <- randomValue
+    return ((s, point), value)
+  ) s
 
-getSector :: Sector -> [(Key, Value)]
-getSector s@(sx, sy) = flip evalState (mkStdGen $ sx `shiftL` (bitSize sx `div` 2) + sy) $ do
-  num <- randomThingR (2, 5)
-  points <- replicateM num randomPoint
-  values <- replicateM num randomValue
-  return $ zip (zip (repeat s) points) values
+getSector :: Sector -> [Value]
+getSector s = map snd (getKeyValues s)
 
 randomValue :: RndS String
 randomValue = do
@@ -43,25 +42,14 @@ capitalize (h:hs) = toUpper h : hs
 randomPoint :: RndS Point
 randomPoint = randomPair pointRange
 
+{-
 randomThing :: (Random t, RandomGen s, MonadState s m) => m t
 randomThing = do
   r <- get
   let (a, g) = random r
   put g
   return a
-
-randomThingR :: (Random t, RandomGen s, MonadState s m) => (t, t) -> m t
-randomThingR range = do
-  r <- get
-  let (a, g) = randomR range r
-  put g
-  return a
-
-randomPair :: (Random t, RandomGen s, MonadState s m) => (t, t) -> m (t, t)
-randomPair range = do
-  a <- randomThingR range
-  a' <- randomThingR range
-  return (a, a')
+-}
 
 main = do
   putStrLn "Universe created"
