@@ -1,4 +1,4 @@
-module Sector(Sector, getPartsR)
+module Sector(Sector, getPart, getPartsR)
 where
 
 import Data.List
@@ -12,6 +12,10 @@ import Utils
 
 type Sector = (Int, Int)
 
+getPart :: RndS a -> Sector -> a
+getPart r s = 
+  evalState r (sectorToRnd s)
+
 getPartsR :: (Int, Int) -> RndS a -> Sector -> [a]
 getPartsR n r s =
   evalState (do
@@ -24,11 +28,5 @@ sectorToSeed (sx, sy) = sx `shiftL` (bitSize sx `div` 2) + sy
 
 sectorToRnd :: Sector -> Rnd
 sectorToRnd s = mkStdGen . sectorToSeed $ s
-
-{-
-getPart :: RndS a -> Sector -> a
-getPart r s = 
-  evalState r (sectorToRnd s)
--}
 
 
