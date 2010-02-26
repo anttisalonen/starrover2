@@ -1,4 +1,11 @@
-module Market
+module Market(pricesAfterTrade, 
+   Good(..),
+   getPrice,
+   getPricesAfterImports,
+   Production(..),
+   TradeGraph,
+   ProductionSource(..),
+   Environment(..))
 where
 
 import Data.List
@@ -17,8 +24,8 @@ data Good a = Good {
   , getNeededTL    :: Float
   }
 
-getPrice :: Float -> Float -> Float -> Float
-getPrice produced prodcoeff baseprice = 
+getGoodPrice :: Float -> Float -> Float -> Float
+getGoodPrice produced prodcoeff baseprice = 
   let marketprice = baseprice - produced * prodcoeff
   in max (baseprice / 2) marketprice
 
@@ -56,12 +63,12 @@ getProducedQuantity' p e g =
           allocpop = M.lookupWithDefault 0 (getEnvironment g) (getAllocations p)
           tl       = getTechlevel p
 
-getPrice' :: (Ord a) => Good a -> ProductionSource a -> Environment a -> Float
-getPrice' g ps e =
-  getPrice (getProducedQuantity' ps e g) (getProdCoeff g) (getBasePrice g)
+getPrice :: (Ord a) => Good a -> ProductionSource a -> Environment a -> Float
+getPrice g ps e =
+  getGoodPrice (getProducedQuantity' ps e g) (getProdCoeff g) (getBasePrice g)
 
 getPrice'' :: (Ord a) => Good a -> Production a -> Float
-getPrice'' g p = getPrice' g (getProductionSource p) (getProductionEnvironment p)
+getPrice'' g p = getPrice g (getProductionSource p) (getProductionEnvironment p)
 
 getPricesAfterImports :: Float -> (Float, Float) -> (Float, Float)
 getPricesAfterImports importCoeff (price1, price2) =

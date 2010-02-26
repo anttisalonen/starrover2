@@ -34,15 +34,15 @@ moonProduction  = Production moonProductionSource  moonEnvironment
 earthProduction = Production earthProductionSource earthEnvironment
 marsProduction  = Production marsProductionSource marsEnvironment
 
-moongrainprice = getPrice' grain moonProductionSource moonEnvironment 
-earthgrainprice = getPrice' grain earthProductionSource earthEnvironment 
-marsgrainprice = getPrice' grain marsProductionSource marsEnvironment 
-moonsyntheticmeatprice = getPrice' syntheticMeat moonProductionSource moonEnvironment 
-earthsyntheticmeatprice = getPrice' syntheticMeat earthProductionSource earthEnvironment 
-marssyntheticmeatprice = getPrice' syntheticMeat marsProductionSource marsEnvironment 
-mooncoalprice = getPrice' coal moonProductionSource moonEnvironment 
-earthcoalprice = getPrice' coal earthProductionSource earthEnvironment 
-marscoalprice = getPrice' coal marsProductionSource marsEnvironment 
+moongrainprice = getPrice grain moonProductionSource moonEnvironment 
+earthgrainprice = getPrice grain earthProductionSource earthEnvironment 
+marsgrainprice = getPrice grain marsProductionSource marsEnvironment 
+moonsyntheticmeatprice = getPrice syntheticMeat moonProductionSource moonEnvironment 
+earthsyntheticmeatprice = getPrice syntheticMeat earthProductionSource earthEnvironment 
+marssyntheticmeatprice = getPrice syntheticMeat marsProductionSource marsEnvironment 
+mooncoalprice = getPrice coal moonProductionSource moonEnvironment 
+earthcoalprice = getPrice coal earthProductionSource earthEnvironment 
+marscoalprice = getPrice coal marsProductionSource marsEnvironment 
 
 tradeEarthMars = 0.60 :: Float
 tradeEarthMoon = 0.95 :: Float
