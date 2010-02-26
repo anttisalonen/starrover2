@@ -6,7 +6,8 @@ module Market(pricesAfterTrade,
    TradeGraph,
    ProductionSource(..),
    Environment(..),
-   tradeGraphToTradeList)
+   tradeGraphToTradeList,
+   getPriceList)
 where
 
 import Data.List
@@ -109,4 +110,13 @@ tradeGraphToTradeList gd gr = ufold go [] gr
               inlist = catMaybes $ map idCoeffToNamePriceCoeff they
               completelist = map (\(n2, p2, c) -> (c, (myname, myprice), (n2, p2))) inlist
           in completelist ++ acc
+
+getPriceList :: (Ord a) =>
+     String -> [Good a] -> TradeGraph a -> [(String, Float)]
+getPriceList whose gds tgraph = zip 
+      (map getGoodName gds) 
+      (map snd $ 
+          concatMap M.toSeq $ 
+          map (M.filterWithKey (\k _ -> k == whose)) 
+             (map (\g -> pricesAfterTrade $ tradeGraphToTradeList g tgraph) gds))
 
