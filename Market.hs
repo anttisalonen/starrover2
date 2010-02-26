@@ -127,6 +127,7 @@ getPriceList whose gds tgraph = zip
       (map getGoodName gds)
       (getPrices whose gds tgraph) 
 
+getPrices :: (Ord a) => String -> [Good a] -> TradeGraph a -> [Float]
 getPrices whose gds tgraph = 
       (map snd $ 
           concatMap M.toSeq $ 
@@ -144,6 +145,9 @@ nfilter :: (Data.Graph.Inductive.Graph gr) => (a -> Bool) -> gr a b -> [a]
 nfilter f = ufold go []
   where go ctxt acc = if f (lab' ctxt) then (lab' ctxt):acc else acc
 
+getQuantities
+  :: (Data.Graph.Inductive.Graph gr, Eq t, Ord a) =>
+     t -> [Good a] -> gr (t, Production a) b -> [Float]
 getQuantities whose gds tgraph = 
       map (flip getQuantity prod) gds
     where prod = case nfilter (\(n, _) -> n == whose) tgraph of

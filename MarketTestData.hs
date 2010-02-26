@@ -6,6 +6,9 @@ import Data.Graph.Inductive
 
 import Market
 
+-- Usage: e.g.
+-- getMarketList "Mars" goods earthMoonMarsTriangle
+
 data GoodProduction = Agriculture
                     | Mining
                     | Factory
