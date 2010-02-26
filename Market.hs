@@ -5,7 +5,8 @@ module Market(pricesAfterTrade,
    Production(..),
    TradeGraph,
    ProductionSource(..),
-   Environment(..))
+   Environment(..),
+   tradeGraphToTradeList)
 where
 
 import Data.List
