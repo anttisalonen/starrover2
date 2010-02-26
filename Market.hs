@@ -1,17 +1,20 @@
 module Market(pricesAfterTrade, 
    Good(..),
    getPrice,
+   getQuantity,
    getPricesAfterImports,
    Production(..),
    TradeGraph,
    ProductionSource(..),
    Environment(..),
    tradeGraphToTradeList,
-   getPriceList)
+   getPriceList,
+   getMarketList)
 where
 
 import Data.List
-import Data.Maybe
+import Data.Maybe (catMaybes)
+import Data.Function (on)
 
 import qualified Data.Edison.Assoc.StandardMap as M
 
@@ -33,8 +36,8 @@ getGoodPrice produced prodcoeff baseprice =
 
 producedQuantityCoefficient = 0.01
 
-getProducedQuantity :: Float -> Float -> Float -> Float -> Float
-getProducedQuantity environmentpotential population techlevel neededtl =
+getProducedQuantity'' :: Float -> Float -> Float -> Float -> Float
+getProducedQuantity'' environmentpotential population techlevel neededtl =
   if neededtl > techlevel
     then 0
     else environmentpotential * population * techlevel * producedQuantityCoefficient
@@ -54,16 +57,23 @@ data Production a = Production {
   , getProductionEnvironment :: Environment a
   }
 
+emptyProductionSource = ProductionSource 0 0 M.empty
+
+emptyProductionEnvironment = Environment M.empty
+
 getGoodEnvironmentPotential :: (Ord a) => Environment a -> Good a -> Float
 getGoodEnvironmentPotential e g = 
   M.lookupWithDefault 0 (getEnvironment g) (productionPotentials e)
 
 getProducedQuantity' :: (Ord a) => ProductionSource a -> Environment a -> Good a -> Float
 getProducedQuantity' p e g =
-  getProducedQuantity epo allocpop tl (getNeededTL g)
+  getProducedQuantity'' epo allocpop tl (getNeededTL g)
     where epo      = getGoodEnvironmentPotential e g
           allocpop = M.lookupWithDefault 0 (getEnvironment g) (getAllocations p)
           tl       = getTechlevel p
+
+getQuantity :: (Ord a) => Good a -> Production a -> Float
+getQuantity g p = getProducedQuantity' (getProductionSource p) (getProductionEnvironment p) g
 
 getPrice :: (Ord a) => Good a -> ProductionSource a -> Environment a -> Float
 getPrice g ps e =
@@ -114,9 +124,29 @@ tradeGraphToTradeList gd gr = ufold go [] gr
 getPriceList :: (Ord a) =>
      String -> [Good a] -> TradeGraph a -> [(String, Float)]
 getPriceList whose gds tgraph = zip 
-      (map getGoodName gds) 
+      (map getGoodName gds)
+      (getPrices whose gds tgraph) 
+
+getPrices whose gds tgraph = 
       (map snd $ 
           concatMap M.toSeq $ 
           map (M.filterWithKey (\k _ -> k == whose)) 
              (map (\g -> pricesAfterTrade $ tradeGraphToTradeList g tgraph) gds))
+
+getMarketList :: (Ord a) =>
+     String -> [Good a] -> TradeGraph a -> [(String, Float, Float)]
+getMarketList whose gds tgraph = zip3
+      (map getGoodName gds)
+      (getPrices whose gds tgraph) 
+      (getQuantities whose gds tgraph)
+
+nfilter :: (Data.Graph.Inductive.Graph gr) => (a -> Bool) -> gr a b -> [a]
+nfilter f = ufold go []
+  where go ctxt acc = if f (lab' ctxt) then (lab' ctxt):acc else acc
+
+getQuantities whose gds tgraph = 
+      map (flip getQuantity prod) gds
+    where prod = case nfilter (\(n, _) -> n == whose) tgraph of
+            [n] -> snd n
+            _   -> Production emptyProductionSource emptyProductionEnvironment
 
