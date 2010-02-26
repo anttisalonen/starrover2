@@ -9,28 +9,17 @@ import qualified Data.Edison.Assoc.StandardMap as M
 import Data.Graph
 import Data.Graph.Inductive
 
-{-
-data Market = Market {
-    techlevel  :: Int
-  , government :: Government
-  , population :: Int
-  , resources  :: [(Good, Int)]
-  , imports    :: [(Good, Int)]
-  }
--}
-
 data Good = Good {
     getGoodName    :: String
   , getBasePrice   :: Float
-  , getPriceCoeff  :: Float
   , getProdCoeff   :: Float
   , getEnvironment :: GoodProduction
   , getNeededTL    :: Float
   }
 
-grain         = Good "Grain"          5.0  0.02 0.2 Agriculture 0
-syntheticMeat = Good "Synthetic meat" 50.0 0.02 0.2 Factory     90
-coal          = Good "Coa"            10.0 0.02 0.2 Mining      10
+grain         = Good "Grain"          5.0  0.2 Agriculture 0
+syntheticMeat = Good "Synthetic meat" 50.0 0.1 Factory     90
+coal          = Good "Coal"           10.0 0.2 Mining      10
 
 goods =
  [
@@ -147,8 +136,8 @@ mkTradeGraph nds =
   let split (a, b, c) = (a, (b, c))
   in mkGraph (map split nds)
 
-pricesByTrade :: [(Float, (String, Float), (String, Float))] -> M.FM String Float
-pricesByTrade xs = foldl' go M.empty (sort xs)
+pricesAfterTrade :: [(Float, (String, Float), (String, Float))] -> M.FM String Float
+pricesAfterTrade xs = foldl' go M.empty (sort xs)
   where go acc (impcoeff, (s1, p1), (s2, p2)) =
            M.unionWith min res acc
               where res = M.fromSeq [(s1, p1'), (s2, p2')]
@@ -170,54 +159,3 @@ tradeGraphToTradeList gd gr = ufold go [] gr
               completelist = map (\(n2, p2, c) -> (c, (myname, myprice), (n2, p2))) inlist
           in completelist ++ acc
 
-{-
--- trade :: TradeGraph -> Good -> M.FM String Float
-trade gr gd = ufold go M.empty gr
-  where go (to, me, (myname, pr), from) acc = 
---          doFold  (to ++ from)
-          let myprice = getPrice'' gd pr
-              idCoeffToNamePriceCoeff (c, i) = 
-                 case lab gr i of
-                   Nothing       -> Nothing
-                   Just (n, pro) -> Just (n, getPrice'' gd pro, c)
-              inlist :: [(String, Float, Float)]
-              inlist = catMaybes $ map idCoeffToNamePriceCoeff they
-              -- inlist = zip4 (repeat st) theirnames (repeat myprice) theirPrices
-              -- inlist = map (\(hisimpcoeff, hisid) -> lab gr hisid
-              comb :: (String, Float, Float) -> [(String, Float)]
-              comb (hisname, hisprice, icoeff) = 
-                 let (p1, p2) = getPricesAfterImports icoeff (myprice, hisprice)
-                 in [(myname, p1), (hisname, p2)]
-              comb' :: M.FM String Float -> (String, Float, Float) -> M.FM String Float
-              comb' acc (hisname, hisprice, icoeff) =
-                 let (p1, p2) = getPricesAfterImports icoeff (myprice, hisprice)
-                 in M.unionWith min (M.fromSeq [(myname, p1), (hisname, p2)]) acc
-              -- results1 :: [(String, Float)]
-              -- results1 = concatMap comb inlist
-              results1 :: M.FM String Float
-              results1 = foldl' comb' M.empty inlist
-              -- results2 :: M.FM String Float
-              -- results2 = M.fromSeqWith minimum results1
-              they = to ++ from
-              -- theirids = map snd they
-              -- impcoeffs = map fst they
-              -- theirnamesandps = catMaybes (map (lab gr) theirids)
-              -- theirnames = map fst they
-              -- theirProductions = map snd they
-              -- theirPrices = map (getPrice'' gd) theirProductions
-              -- myendprice = myprice -- minimum $ myprice : (map getPricesAfterImports 
-            in M.unionWith min results1 acc
---          in M.insertSeqWith min results1 acc
---          in M.insert st (zip (map fst (to ++ from)) (map (getPrice'' gd) (map snd (to ++ from)))) acc
---          in M.insert st [(to, me, st, from, myprice, theirPrices)] acc
---          in acc ++ [myprice:theirPrices]
---          case lab gr  M.insertWith min st (getPricesAfterImports 
---  let prods         = map snd (nodes gr)
---      initialPrices = map (getPrice'' gd) prods
--}
-
-{-
-price = getPrice' ProductionSource Environment 
-price = getPrice' ProductionSource Environment 
-price = getPrice' ProductionSource Environment 
--}
