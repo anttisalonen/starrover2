@@ -1,4 +1,7 @@
-module Stars(randomStars, StellarBody)
+module Stars(randomStars, StellarBody(..),
+    BodyType(..),
+    Orbit,
+    PointF)
 where
 
 import Data.List
@@ -93,20 +96,6 @@ createPlanets toporb minrad maxrad
          pl <- createPlanet toporb thisrad
          pls <- createPlanets toporb (thisrad * 2) maxrad
          return (pl:pls)
-
-temperatureByOrbit :: [StellarBody] -> Float -> Orbit -> Int
-temperatureByOrbit stars a orb = temperatureByPoint stars a (orb a)
-
-temperatureByPoint :: [StellarBody] -> Float -> PointF -> Int
-temperatureByPoint stars a p = floor . sum $ map (temperatureByPoint' p a) stars
-
-temperatureByPoint' :: PointF -> Float -> StellarBody -> Float
-temperatureByPoint' (x, y) a s 
-  | getBodyType s /= Star = 0
-  | otherwise             =
-      let (x0, y0) = getOrbit s a
-          diff     = sqrt $ (x - x0) ^ 2 + (y - y0) ^ 2
-      in (0.5 / (1 + 2 * diff)) * (fromIntegral $ getTemperature s)
 
 randomStars :: RndS [StellarBody]
 randomStars = do

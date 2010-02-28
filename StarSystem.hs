@@ -17,6 +17,10 @@ import Utils
 import Console
 import Statistics
 
+
+-- Usage: e.g.
+-- putStrLn $ concatMap display $ getGalaxySector (0, 0)
+
 type Point = (Int, Int)
 
 data StarSystem = StarSystem {
