@@ -27,3 +27,5 @@ createLife ss = foldl' go [] ss
 newCountry :: String -> Country
 newCountry l = Country 100 1 l
 
+stepDevelopment :: Country -> Country
+stepDevelopment = id

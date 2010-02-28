@@ -24,13 +24,13 @@ import Statistics
 type Point = (Int, Int)
 
 data StarSystem = StarSystem {
-    getName        :: String
+    getSSName      :: String
   , getCoordinates :: Point
   , getStars       :: [StellarBody]
   }
 
 instance Displayable StarSystem where
-  display s = printf "\t%s (%d, %d)\n%s\n" (getName s) (fst c) (snd c) (concatMap display ss)
+  display s = printf "\t%s (%d, %d)\n%s\n" (getSSName s) (fst c) (snd c) (concatMap display ss)
     where c  = getCoordinates s
           ss = getStars s
 
@@ -44,7 +44,7 @@ randomStarSystem :: RndS StarSystem
 randomStarSystem = do
     point <- randomPoint
     name <- randomName
-    stars <- randomStars
+    stars <- randomStars name
     return $ StarSystem name point stars
 
 randomName :: RndS String

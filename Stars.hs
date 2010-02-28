@@ -23,7 +23,8 @@ type PointF = (Float, Float)
 type Orbit = Float -> PointF
 
 data StellarBody = StellarBody {
-    getTemperature :: Int
+    getName        :: String
+  , getTemperature :: Int
   , getOrbit       :: Orbit
   , getOrbitRadius :: Float
   , getBodyType    :: BodyType
@@ -32,8 +33,9 @@ data StellarBody = StellarBody {
   }
 
 instance Displayable StellarBody where
-  display (StellarBody temp _ rad typ mass pls) =
-      printf "%s (Mass: %2.3f %s, %sorbit radius: %2.3f AU)\n%s" 
+  display (StellarBody n temp _ rad typ mass pls) =
+      printf "%s: %s (Mass: %2.3f %s, %sorbit radius: %2.3f AU)\n%s" 
+                n
                 descr 
                 mass 
                 massdescr 
@@ -66,18 +68,18 @@ tempToMaxOrbit t = (fromIntegral t) * 0.008
 tempToMinOrbit :: Int -> Float
 tempToMinOrbit t = (fromIntegral t) * 0.00003
 
-createPlanet :: Orbit -> Float -> RndS StellarBody
-createPlanet toporb thisrad = do
+createPlanet :: String -> Orbit -> Float -> RndS StellarBody
+createPlanet n toporb thisrad = do
   orbvel <- (+ 5 * (10 / thisrad)) `fmap` randomRM (1.0, 2.0)
   let thisorb = combineOrbits toporb (circleVel orbvel thisrad)
   isGasGiant <- chance 1 2
   if isGasGiant
     then do
       mass <- randomRM (15, 400)
-      return $ StellarBody 0 thisorb thisrad GasGiant mass [] -- TODO: add moons
+      return $ StellarBody n 0 thisorb thisrad GasGiant mass [] -- TODO: add moons
     else do
       mass <- randomRM (0.001, 10)
-      return $ StellarBody 0 thisorb thisrad RockyPlanet mass [] -- TODO: temperature
+      return $ StellarBody n 0 thisorb thisrad RockyPlanet mass [] -- TODO: temperature
 
 combineOrbits :: Orbit -> Orbit -> Orbit
 combineOrbits f1 f2 = \a ->
@@ -85,31 +87,38 @@ combineOrbits f1 f2 = \a ->
       (x1, y1) = f2 a
   in (x0 + x1, y0 + y1)
 
-createPlanets :: Orbit -> Float -> Float -> RndS [StellarBody]
-createPlanets toporb minrad maxrad 
+createPlanets :: [String] -> Orbit -> Float -> Float -> RndS [StellarBody]
+createPlanets ns toporb minrad maxrad 
   | minrad >= maxrad = return []
   | otherwise        = do
      thisrad <- randomRM (minrad, minrad * 2)
      if thisrad >= maxrad
        then return []
        else do
-         pl <- createPlanet toporb thisrad
-         pls <- createPlanets toporb (thisrad * 2) maxrad
+         pl <- createPlanet (head ns) toporb thisrad
+         pls <- createPlanets (tail ns) toporb (thisrad * 2) maxrad
          return (pl:pls)
 
-randomStars :: RndS [StellarBody]
-randomStars = do
+extendName :: String -> [String]
+extendName n = 
+  if isAlpha (last n)
+    then zipWith (++) (repeat (n ++ " ")) (map show [1..])
+    else zipWith (++) (repeat (n ++ " ")) (map (:[]) ['A'..'Z'])
+
+randomStars :: String -> RndS [StellarBody]
+randomStars n = do
   -- http://www.cfa.harvard.edu/news/2006/pr200611.html
   -- "Most milky way stars are single"
   split <- chance 1 2
+  let childNames = extendName n
   if not split
     then do
       temp <- randStarTemp
       let orb = (\_ -> (0, 0))
       let minorb = tempToMinOrbit temp
       let maxorb = tempToMaxOrbit temp
-      ps <- createPlanets orb minorb maxorb
-      return $ [StellarBody temp orb 0 Star 0 ps] -- TODO: mass
+      ps <- createPlanets childNames orb minorb maxorb
+      return $ [StellarBody n temp orb 0 Star 0 ps] -- TODO: mass
     else do
       vel <- randomRM (0.1, 100)
       r1 <- randomRM (1, 1000)
@@ -125,10 +134,12 @@ randomStars = do
       let minorb2 = tempToMinOrbit t2
       let maxorb1 = (min (tempToMaxOrbit t1) ((max r1 r2) * 0.5))
       let maxorb2 = (min (tempToMaxOrbit t2) ((max r1 r2) * 0.5))
-      p1s <- createPlanets orb1 minorb1 maxorb1
-      p2s <- createPlanets orb2 minorb2 maxorb2
-      let s1 = StellarBody t1 orb1 r1 Star 0 p1s -- TODO: mass
-      let s2 = StellarBody t2 orb2 r2 Star 0 p2s -- TODO: mass 
+      let n1 = childNames !! 0
+      let n2 = childNames !! 1
+      p1s <- createPlanets (extendName n1) orb1 minorb1 maxorb1
+      p2s <- createPlanets (extendName n2) orb2 minorb2 maxorb2
+      let s1 = StellarBody n1 t1 orb1 r1 Star 0 p1s -- TODO: mass
+      let s2 = StellarBody n2 t2 orb2 r2 Star 0 p2s -- TODO: mass 
       -- TODO: attach planets
       return [s1, s2]
 

@@ -28,4 +28,8 @@ temperatureByPoint' (x, y) a s
           diff     = sqrt $ (x - x0) ^ 2 + (y - y0) ^ 2
       in (0.5 / (1 + 2 * diff)) * (fromIntegral $ getTemperature s)
 
+maxPop :: StellarBody -> Int
+maxPop s = case getBodyType s of
+             RockyPlanet -> floor $ 1000 * getMass s
+             _           -> 0
 
