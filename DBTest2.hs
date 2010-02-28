@@ -37,9 +37,6 @@ randomValue = do
   s <- replicateM n (randomThingR ('a', 'z'))
   return (capitalize s)
 
-capitalize []     = []
-capitalize (h:hs) = toUpper h : hs
-
 randomPoint :: RndS Point
 randomPoint = randomPair pointRange
 
