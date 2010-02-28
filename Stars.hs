@@ -1,8 +1,9 @@
-module Stars(getGalaxySector)
+module Stars(randomStars, StellarBody)
 where
 
 import Data.List
 import Data.Char
+import Data.Tree
 import System.Random
 import Control.Monad.State
 import Data.Bits
@@ -10,53 +11,44 @@ import Data.Ord
 import System.IO
 import Text.Printf
 
-import Sector
 import Utils
 import Console
 import Statistics
-
-type Point = (Int, Int)
-
-data StarSystem = StarSystem {
-    getName        :: String
-  , getCoordinates :: Point
-  }
-
-instance Displayable StarSystem where
-  display s = printf "%s (%d, %d)" (getName s) (fst c) (snd c)
-    where c = getCoordinates s
-
-pointRange :: Point
-pointRange = (0, 100)
-
-getGalaxySector :: Sector -> [StarSystem]
-getGalaxySector = getPartsR (2, 5) randomStarSystem
-
-randomName :: RndS String
-randomName = do
-  n <- randomThingR (2, 8)
-  s <- replicateM n (randomThingR ('a', 'z'))
-  return (capitalize s)
-
-randomPoint :: RndS Point
-randomPoint = randomPair pointRange
-
-randomStarSystem :: RndS StarSystem
-randomStarSystem = do
-    point <- randomPoint
-    name <- randomName
-    stars <- randomStars
-    return $ StarSystem name point
 
 type PointF = (Float, Float)
 
 type Orbit = Float -> PointF
 
-data Star = Star {
-    getStarTemperature         :: Int
-  , getStarOrbit               :: Orbit
-  , getPlanets                 :: [Planet]
+data StellarBody = StellarBody {
+    getTemperature :: Int
+  , getOrbit       :: Orbit
+  , getOrbitRadius :: Float
+  , getBodyType    :: BodyType
+  , getMass        :: Float
+  , getSatellites  :: [StellarBody]
   }
+
+instance Displayable StellarBody where
+  display (StellarBody temp _ rad typ mass pls) =
+      printf "%s (Mass: %2.3f %s, %sorbit radius: %2.3f AU)\n%s" 
+                descr 
+                mass 
+                massdescr 
+                (if temp /= 0 then printf "%d degrees K, " temp else "") 
+                rad 
+                (concatMap display pls)
+         where descr     = display typ
+               massdescr = if typ == Star then "solar masses" else "Earth masses"
+
+data BodyType = Star
+              | GasGiant
+              | RockyPlanet
+  deriving (Eq)
+
+instance Displayable BodyType where
+  display Star        = "Star"
+  display GasGiant    = "Gas giant"
+  display RockyPlanet = "Rocky planet"
 
 randStarTemp :: RndS Int
 randStarTemp = do
@@ -71,25 +63,7 @@ tempToMaxOrbit t = (fromIntegral t) * 0.008
 tempToMinOrbit :: Int -> Float
 tempToMinOrbit t = (fromIntegral t) * 0.00003
 
-data PlanetType = GasGiant { getPlanetMass :: Float }
-                | Rocky    { getPlanetMass :: Float }
-
-type Temperature = Float -> Float
-
-data Planet = Planet {
-    getPlanetOrbit       :: Orbit
-  , getPlanetType        :: PlanetType
-  , getPlanetOrbitRadius :: Float
-  }
-
-instance Displayable Planet where
-  display (Planet _ (GasGiant m) r) = printf "Gas giant (Mass: %2.3f Earth masses, radius: %2.3f AU)\n" m r
-  display (Planet _ (Rocky m) r)    = printf "Rocky planet (Mass: %2.3f Earth masses, radius: %2.3f AU)\n" m r
-
-instance Displayable Star where
-  display (Star temp _ pls) = printf "Star with temperature of %d K\n%s" temp (concatMap display pls)
-
-createPlanet :: Orbit -> Float -> RndS Planet
+createPlanet :: Orbit -> Float -> RndS StellarBody
 createPlanet toporb thisrad = do
   orbvel <- (+ 5 * (10 / thisrad)) `fmap` randomRM (1.0, 2.0)
   let thisorb = combineOrbits toporb (circleVel orbvel thisrad)
@@ -97,10 +71,10 @@ createPlanet toporb thisrad = do
   if isGasGiant
     then do
       mass <- randomRM (15, 400)
-      return $ Planet thisorb (GasGiant mass) thisrad
+      return $ StellarBody 0 thisorb thisrad GasGiant mass [] -- TODO: add moons
     else do
       mass <- randomRM (0.001, 10)
-      return $ Planet thisorb (Rocky mass) thisrad
+      return $ StellarBody 0 thisorb thisrad RockyPlanet mass [] -- TODO: temperature
 
 combineOrbits :: Orbit -> Orbit -> Orbit
 combineOrbits f1 f2 = \a ->
@@ -108,7 +82,7 @@ combineOrbits f1 f2 = \a ->
       (x1, y1) = f2 a
   in (x0 + x1, y0 + y1)
 
-createPlanets :: Orbit -> Float -> Float -> RndS [Planet]
+createPlanets :: Orbit -> Float -> Float -> RndS [StellarBody]
 createPlanets toporb minrad maxrad 
   | minrad >= maxrad = return []
   | otherwise        = do
@@ -120,7 +94,21 @@ createPlanets toporb minrad maxrad
          pls <- createPlanets toporb (thisrad * 2) maxrad
          return (pl:pls)
 
-randomStars :: RndS [Star]
+temperatureByOrbit :: [StellarBody] -> Float -> Orbit -> Int
+temperatureByOrbit stars a orb = temperatureByPoint stars a (orb a)
+
+temperatureByPoint :: [StellarBody] -> Float -> PointF -> Int
+temperatureByPoint stars a p = floor . sum $ map (temperatureByPoint' p a) stars
+
+temperatureByPoint' :: PointF -> Float -> StellarBody -> Float
+temperatureByPoint' (x, y) a s 
+  | getBodyType s /= Star = 0
+  | otherwise             =
+      let (x0, y0) = getOrbit s a
+          diff     = sqrt $ (x - x0) ^ 2 + (y - y0) ^ 2
+      in (0.5 / (1 + 2 * diff)) * (fromIntegral $ getTemperature s)
+
+randomStars :: RndS [StellarBody]
 randomStars = do
   -- http://www.cfa.harvard.edu/news/2006/pr200611.html
   -- "Most milky way stars are single"
@@ -132,7 +120,7 @@ randomStars = do
       let minorb = tempToMinOrbit temp
       let maxorb = tempToMaxOrbit temp
       ps <- createPlanets orb minorb maxorb
-      return $ [Star temp orb ps]
+      return $ [StellarBody temp orb 0 Star 0 ps] -- TODO: mass
     else do
       vel <- randomRM (0.1, 100)
       r1 <- randomRM (1, 1000)
@@ -150,8 +138,9 @@ randomStars = do
       let maxorb2 = (min (tempToMaxOrbit t2) ((max r1 r2) * 0.5))
       p1s <- createPlanets orb1 minorb1 maxorb1
       p2s <- createPlanets orb2 minorb2 maxorb2
-      let s1 = Star t1 orb1 p1s
-      let s2 = Star t2 orb2 p2s
+      let s1 = StellarBody t1 orb1 r1 Star 0 p1s -- TODO: mass
+      let s2 = StellarBody t2 orb2 r2 Star 0 p2s -- TODO: mass 
+      -- TODO: attach planets
       return [s1, s2]
 
 unitCircle :: Float -> PointF
