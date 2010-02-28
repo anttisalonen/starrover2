@@ -3,6 +3,7 @@ where
 
 import System.IO
 import Data.List
+import Data.Char
 import Control.Monad
 import System.Random
 import Control.Monad.State
@@ -71,6 +72,9 @@ randomPair range = do
   a <- randomThingR range
   a' <- randomThingR range
   return (a, a')
+
+capitalize []     = []
+capitalize (h:hs) = toUpper h : hs
 
 {-
 randomThing :: (Random t, RandomGen s, MonadState s m) => m t
