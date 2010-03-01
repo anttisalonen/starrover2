@@ -46,6 +46,7 @@ stepDevelopment c =
   let mp = maxPop (snd . getLoc $ c)
   in c{getPop = floor (fromIntegral (mp - (getPop c)) * 0.1) + (getPop c)}
 
+-- TODO: also take distance to the planet into account
 ratePlanet :: [StellarBody] -> StellarBody -> Float
 ratePlanet stars s | getBodyType s /= RockyPlanet = 0
                    | otherwise                    =
