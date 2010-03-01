@@ -1,4 +1,6 @@
-module Stars(randomStars, StellarBody(..),
+{-# LANGUAGE TypeSynonymInstances #-}
+module Stars(randomStars, Body(..), StellarBody,
+    getBody, mkBody, getSatellites,
     BodyType(..),
     Orbit,
     PointF)
@@ -22,28 +24,52 @@ type PointF = (Float, Float)
 
 type Orbit = Float -> PointF
 
-data StellarBody = StellarBody {
+data Body = Body {
     getName        :: String
   , getTemperature :: Int
   , getOrbit       :: Orbit
   , getOrbitRadius :: Float
   , getBodyType    :: BodyType
   , getMass        :: Float
-  , getSatellites  :: [StellarBody]
   }
 
+type StellarBody = Tree Body
+
+mkBody :: String
+       -> Int
+       -> Orbit
+       -> Float
+       -> BodyType
+       -> Float
+       -> [StellarBody]
+       -> StellarBody
+mkBody n t o r b m pls = Node (Body n t o r b m) pls
+
+getBody :: StellarBody -> Body
+getBody = rootLabel
+
+getSatellites :: StellarBody -> [StellarBody]
+getSatellites = subForest
+
 instance Displayable StellarBody where
-  display (StellarBody n temp _ rad typ mass pls) =
-      printf "%s: %s (Mass: %2.3f %s, %sorbit radius: %2.3f AU)\n%s" 
-                n
+  display body =
+    let b = getBody body
+        pls = getSatellites body
+    in printf "%s%s" 
+         (display b)
+         (concatMap display pls)
+
+instance Displayable Body where
+  display b =
+    let descr     = display (getBodyType b)
+        massdescr = if (getBodyType b) == Star then "solar masses" else "Earth masses"
+    in printf "%s: %s (Mass: %2.3f %s, %sorbit radius: %2.3f AU)\n" 
+                (getName b)
                 descr 
-                mass 
+                (getMass b)
                 massdescr 
-                (if temp /= 0 then printf "%d degrees K, " temp else "") 
-                rad 
-                (concatMap display pls)
-         where descr     = display typ
-               massdescr = if typ == Star then "solar masses" else "Earth masses"
+                (if (getTemperature b) /= 0 then printf "%d degrees K, " (getTemperature b) else "") 
+                (getOrbitRadius b) 
 
 data BodyType = Star
               | GasGiant
@@ -76,10 +102,10 @@ createPlanet n toporb thisrad = do
   if isGasGiant
     then do
       mass <- randomRM (15, 400)
-      return $ StellarBody n 0 thisorb thisrad GasGiant mass [] -- TODO: add moons
+      return $ mkBody n 0 thisorb thisrad GasGiant mass [] -- TODO: add moons
     else do
       mass <- randomRM (0.001, 10)
-      return $ StellarBody n 0 thisorb thisrad RockyPlanet mass [] -- TODO: temperature
+      return $ mkBody n 0 thisorb thisrad RockyPlanet mass [] -- TODO: temperature
 
 combineOrbits :: Orbit -> Orbit -> Orbit
 combineOrbits f1 f2 = \a ->
@@ -118,7 +144,7 @@ randomStars n = do
       let minorb = tempToMinOrbit temp
       let maxorb = tempToMaxOrbit temp
       ps <- createPlanets childNames orb minorb maxorb
-      return $ [StellarBody n temp orb 0 Star 0 ps] -- TODO: mass
+      return $ [mkBody n temp orb 0 Star 0 ps] -- TODO: mass
     else do
       vel <- randomRM (0.1, 100)
       r1 <- randomRM (1, 1000)
@@ -138,8 +164,8 @@ randomStars n = do
       let n2 = childNames !! 1
       p1s <- createPlanets (extendName n1) orb1 minorb1 maxorb1
       p2s <- createPlanets (extendName n2) orb2 minorb2 maxorb2
-      let s1 = StellarBody n1 t1 orb1 r1 Star 0 p1s -- TODO: mass
-      let s2 = StellarBody n2 t2 orb2 r2 Star 0 p2s -- TODO: mass 
+      let s1 = mkBody n1 t1 orb1 r1 Star 0 p1s -- TODO: mass
+      let s2 = mkBody n2 t2 orb2 r2 Star 0 p2s -- TODO: mass 
       -- TODO: attach planets
       return [s1, s2]
 
