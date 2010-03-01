@@ -1,9 +1,10 @@
-module StarSystem(getGalaxySector)
+module StarSystem(getGalaxySector, StarSystem(..), findBody, findSystem)
 where
 
 import Data.List
 import Data.Char
 import Data.Tree
+import Data.Maybe
 import System.Random
 import Control.Monad.State
 import Data.Bits
@@ -56,4 +57,15 @@ randomName = do
 randomPoint :: RndS Point
 randomPoint = randomPair pointRange
 
+findBody :: String -> Sector -> Maybe StellarBody
+findBody n sec = 
+  let allbodies = concatMap allBodies $ concatMap getStars $ getGalaxySector sec
+  in listToMaybe $ filter (\b -> getName b == n) allbodies
+
+allBodies :: StellarBody -> [StellarBody]
+allBodies s = s : concatMap allBodies (getSatellites s)
+
+findSystem :: String -> Sector -> Maybe StarSystem
+findSystem n sec =
+  listToMaybe $ filter (\b -> getSSName b == n) (getGalaxySector sec)
 
