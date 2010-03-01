@@ -1,4 +1,4 @@
-module StarSystem(getGalaxySector, StarSystem(..), findBody, findSystem)
+module StarSystem(getGalaxySector, StarSystem(..), findBody, findSystem, Sector, Point)
 where
 
 import Data.List
