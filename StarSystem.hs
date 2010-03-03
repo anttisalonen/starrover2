@@ -57,13 +57,13 @@ randomName = do
 randomPoint :: RndS Point
 randomPoint = randomPair pointRange
 
-findBody :: String -> Sector -> Maybe Body
+findBody :: String -> Sector -> Maybe StellarBody
 findBody n sec = 
   let allbodies = concatMap allBodies $ concatMap getStars $ getGalaxySector sec
   in listToMaybe $ filter (\b -> getName b == n) allbodies
 
-allBodies :: StellarBody -> [Body]
-allBodies s = (getBody s) : concatMap allBodies (getSatellites s)
+allBodies :: StellarBody -> [StellarBody]
+allBodies s = s : concatMap allBodies (getSatellites s)
 
 findSystem :: String -> Sector -> Maybe StarSystem
 findSystem n sec =
