@@ -1,6 +1,7 @@
 module Planets
 where
 
+import Orbit
 import Stars
 
 temperatureByOrbit :: [StellarBody] -> Float -> Orbit -> Int

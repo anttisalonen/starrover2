@@ -1,7 +1,5 @@
 module Stars(randomStars, StellarBody(..),
-    BodyType(..),
-    Orbit,
-    PointF)
+    BodyType(..))
 where
 
 import Data.List
