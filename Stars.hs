@@ -17,12 +17,9 @@ import System.IO
 import Text.Printf
 
 import Utils
+import Orbit
 import Console
 import Statistics
-
-type PointF = (Float, Float)
-
-type Orbit = Float -> PointF
 
 data Body = Body {
     getName        :: String
@@ -107,12 +104,6 @@ createPlanet n toporb thisrad = do
       mass <- randomRM (0.001, 10)
       return $ mkBody n 0 thisorb thisrad RockyPlanet mass [] -- TODO: temperature
 
-combineOrbits :: Orbit -> Orbit -> Orbit
-combineOrbits f1 f2 = \a ->
-  let (x0, y0) = f1 a
-      (x1, y1) = f2 a
-  in (x0 + x1, y0 + y1)
-
 createPlanets :: [String] -> Orbit -> Float -> Float -> RndS [StellarBody]
 createPlanets ns toporb minrad maxrad 
   | minrad >= maxrad = return []
@@ -169,25 +160,4 @@ randomStars n = do
       -- TODO: attach planets
       return [s1, s2]
 
-unitCircle :: Float -> PointF
-unitCircle a = (cos a, sin a)
-
-circleR :: Float -> Float -> PointF
-circleR r a = 
-  let (x, y) = unitCircle a
-  in (r * x, r * y)
-
-circleVel :: Float -> Float -> Float -> PointF
-circleVel v r a = circleR r (a * v * pi * 2)
-
-ellipse :: Float -> Float -> Float -> PointF
-ellipse a b t = (a * cos t, b * sin t)
-
-ellipseVel :: Float -> Float -> Float -> Float -> PointF
-ellipseVel v a b t = (a * cos (v * t), b * sin (v * t))
-
-shiftedEllipseVel :: Float -> Float -> Float -> Float -> Float -> Float -> PointF
-shiftedEllipseVel x0 y0 v a b t = 
-  let (x, y) = ellipseVel v a b t
-  in (x + x0, y + y0)
 
