@@ -38,7 +38,7 @@ displayGen (StellarBody n temp _ rad typ mass _) =
              massdescr = if typ == Star then "solar masses" else "Earth masses"
 
 displayStellar :: [StellarBody] -> StellarBody -> String
-displayStellar stars s = displayGen s ++ tempstring
+displayStellar stars s = displayGen s ++ tempstring ++ "\n"
   where tempstring = if getBodyType s == Star
                        then ""
                        else printf "temperatures: %d - %d degrees C" mint maxt

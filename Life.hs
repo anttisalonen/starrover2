@@ -1,8 +1,9 @@
 module Life
 where
 
-import Data.List(foldl')
+import Data.List(foldl', intercalate, inits)
 import Text.Printf
+import Data.Maybe
 
 import Sector
 import StarSystem
@@ -14,42 +15,54 @@ data Country = Country {
     getCountryName :: String
   , getPop         :: Int
   , getTL          :: Int
-  , getLoc         :: (Sector, StellarBody)
-  , getParentStar  :: StellarBody
+  , getSector      :: Sector
+  , getLoc         :: [String]
   }
 
 instance Displayable Country where
-  display c = printf "%s - Population: %d - TL: %d - Location %s:\nStar: %s\n%s"
+  display c = printf "%s - Population: %d - TL: %d - Location %s - %s\n"
                 (getCountryName c)
                 (getPop c)
                 (getTL c)
-                (show . fst $ getLoc c)
-                (displayShort $ getParentStar c)
-                (display . snd $ getLoc c)
+                (show $ getSector c)
+                (intercalate " - " (getLoc c))
 
-createLife :: Sector -> [Country]
-createLife sec = foldl' (go (head ss)) [] ss
-  where ss = concatMap getStars $ getGalaxySector sec
-        go pstar acc x = 
-          case getBodyType x of
-            RockyPlanet ->
-              if getMass x > 0.1 && 
-                 minTemperature ss (getOrbit x) > 230 &&
-                 maxTemperature ss (getOrbit x) < 360
-                 then newCountry sec pstar x : foldl' (go pstar) acc (getSatellites x)
-                 else foldl' (go pstar) acc (getSatellites x)
-            Star -> foldl' (go x)     acc (getSatellites x)
-            _    -> foldl' (go pstar) acc (getSatellites x)
+displayCountry :: (Sector -> [StarSystem]) -> Country -> String
+displayCountry f c = display c ++ rest
+  where rest = concat (sysinfo:plinfos)
+        sysinfo = case findSystem f (getSector c) (head (getLoc c)) of
+                    Just s  -> displayShort s
+                    Nothing -> ""
+        plinfos = map displayShort $ catMaybes $ map (findBody f (getSector c)) (tail $ inits (getLoc c))
 
-newCountry :: Sector -> StellarBody -> StellarBody -> Country
-newCountry sec pstar s = Country (getName s) 100 1 (sec, s) pstar
+createLife :: (Sector -> [StarSystem]) -> Sector -> [Country]
+createLife f sec = concatMap (createLife' sec) (f sec)
 
-stepDevelopment :: Country -> Country
-stepDevelopment c = 
-  let mp = maxPop (snd . getLoc $ c)
-  in c{getPop = floor (fromIntegral (mp - (getPop c)) * 0.1) + (getPop c)}
+createLife' :: Sector -> StarSystem -> [Country]
+createLife' sec sys = foldl' (go [getSSName sys]) [] stars
+  where stars = getStars sys
+        go parents acc x = 
+          let tname = getName x
+          in if ratePlanet stars x > 0
+               then newCountry sec (tname:parents) : foldl' (go (tname:parents)) acc (getSatellites x)
+               else foldl' (go (tname:parents)) acc (getSatellites x)
 
--- TODO: also take distance to the planet into account
+newCountry :: Sector -> [String] -> Country
+newCountry sec parents = Country (head parents) 100 1 sec (reverse parents)
+
+stepDevelopment :: (Sector -> [StarSystem]) -> Country -> Country
+stepDevelopment f c = stepDevelopment' (f (getSector c)) c
+
+stepDevelopment' :: [StarSystem] -> Country -> Country
+stepDevelopment' sys c = 
+  let mplanet = findBody' sys (getLoc c)
+  in case mplanet of
+       Nothing -> c
+       Just pl ->
+         let mp = maxPop pl
+         in c{getPop = floor (fromIntegral (mp - (getPop c)) * 0.1) + (getPop c)}
+
+-- TODO: write another function which also takes the distance to the planet into account
 ratePlanet :: [StellarBody] -> StellarBody -> Float
 ratePlanet stars s | getBodyType s /= RockyPlanet = 0
                    | otherwise                    =

@@ -1,4 +1,4 @@
-module StarSystem(getGalaxySector, StarSystem(..), findBody, findSystem, Sector, Point)
+module StarSystem(getGalaxySector, StarSystem(..), findBody, findBody', findSystem, findSystem', Sector, Point)
 where
 
 import Data.List
@@ -34,6 +34,8 @@ instance Displayable StarSystem where
   display s = printf "\t%s (%d, %d)\n%s\n" (getSSName s) (fst c) (snd c) (concatMap (displayStellar ss) ss)
     where c  = getCoordinates s
           ss = getStars s
+  displayShort s = printf "\t%s (%d, %d) - %d stars\n" (getSSName s) (fst c) (snd c) (length (getStars s))
+    where c  = getCoordinates s
 
 pointRange :: Point
 pointRange = (0, 100)
@@ -57,15 +59,32 @@ randomName = do
 randomPoint :: RndS Point
 randomPoint = randomPair pointRange
 
-findBody :: String -> Sector -> Maybe StellarBody
-findBody n sec = 
-  let allbodies = concatMap allBodies $ concatMap getStars $ getGalaxySector sec
-  in listToMaybe $ filter (\b -> getName b == n) allbodies
+findBody :: (Sector -> [StarSystem]) -> Sector -> [String] -> Maybe StellarBody
+findBody f sec ns = findBody' (f sec) ns
+
+findBody' :: [StarSystem] -> [String] -> Maybe StellarBody
+findBody' _ [] = Nothing
+findBody' systems (n:ns) = 
+  case findSystem' systems n of
+    Nothing  -> Nothing
+    Just sys -> findBody'' (getStars sys) ns
+
+findBody'' :: [StellarBody] -> [String] -> Maybe StellarBody
+findBody'' _      []     = Nothing
+findBody'' bodies (n:ns) =
+  case listToMaybe (filter (\s -> getName s == n) bodies) of
+    Nothing -> Nothing
+    Just pl -> if null ns
+                 then Just pl
+                 else findBody'' (getSatellites pl) ns
 
 allBodies :: StellarBody -> [StellarBody]
 allBodies s = s : concatMap allBodies (getSatellites s)
 
-findSystem :: String -> Sector -> Maybe StarSystem
-findSystem n sec =
-  listToMaybe $ filter (\b -> getSSName b == n) (getGalaxySector sec)
+findSystem' :: [StarSystem] -> String -> Maybe StarSystem
+findSystem' syss n =
+  listToMaybe $ filter (\b -> getSSName b == n) syss
+
+findSystem :: (Sector -> [StarSystem]) -> Sector -> String -> Maybe StarSystem
+findSystem f sec n = findSystem' (f sec) n
 
