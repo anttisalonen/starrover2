@@ -1,5 +1,5 @@
 module Stars(randomStars, StellarBody(..),
-    BodyType(..))
+    BodyType(..), displayStellar)
 where
 
 import Data.List
@@ -14,36 +14,36 @@ import Text.Printf
 
 import Utils
 import Orbit
+import Planets
 import Console
 import Statistics
 
-data StellarBody = StellarBody {
-    getName        :: String
-  , getTemperature :: Int
-  , getOrbit       :: Orbit
-  , getOrbitRadius :: Float
-  , getBodyType    :: BodyType
-  , getMass        :: Float
-  , getSatellites  :: [StellarBody]
-  }
-
 instance Displayable StellarBody where
-  display (StellarBody n temp _ rad typ mass pls) =
-      printf "%s: %s (Mass: %2.3f %s, %sorbit radius: %2.3f AU)\n%s" 
-                n
-                descr 
-                mass 
-                massdescr 
-                (if temp /= 0 then printf "%d degrees K, " temp else "") 
-                rad 
-                (concatMap display pls)
-         where descr     = display typ
-               massdescr = if typ == Star then "solar masses" else "Earth masses"
+  display s =
+      printf "%s%s" 
+                (displayShort s)
+                (concatMap display (getSatellites s))
+  displayShort s = displayGen s ++ "\n"
 
-data BodyType = Star
-              | GasGiant
-              | RockyPlanet
-  deriving (Eq)
+displayGen :: StellarBody -> String
+displayGen (StellarBody n temp _ rad typ mass _) =
+    printf "%s: %s (Mass: %2.3f %s, %sorbit radius: %2.3f AU)" 
+              n
+              descr 
+              mass 
+              massdescr 
+              (if temp /= 0 then printf "%d degrees K, " temp else "") 
+              rad 
+       where descr     = display typ
+             massdescr = if typ == Star then "solar masses" else "Earth masses"
+
+displayStellar :: [StellarBody] -> StellarBody -> String
+displayStellar stars s = displayGen s ++ tempstring
+  where tempstring = if getBodyType s == Star
+                       then ""
+                       else printf "temperatures: %d - %d degrees C" mint maxt
+        mint = minTemperature stars (getOrbit s)
+        maxt = maxTemperature stars (getOrbit s)
 
 instance Displayable BodyType where
   display Star        = "Star"

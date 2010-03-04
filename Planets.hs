@@ -2,7 +2,21 @@ module Planets
 where
 
 import Orbit
-import Stars
+
+data StellarBody = StellarBody {
+    getName        :: String
+  , getTemperature :: Int
+  , getOrbit       :: Orbit
+  , getOrbitRadius :: Float
+  , getBodyType    :: BodyType
+  , getMass        :: Float
+  , getSatellites  :: [StellarBody]
+  }
+
+data BodyType = Star
+              | GasGiant
+              | RockyPlanet
+  deriving (Eq)
 
 temperatureByOrbit :: [StellarBody] -> Float -> Orbit -> Int
 temperatureByOrbit stars a orb = temperatureByPoint (stars ++ concatMap getSatellites stars) a (orb a)

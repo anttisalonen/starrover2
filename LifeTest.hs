@@ -16,3 +16,5 @@ cs = createLife sec
 
 c = head cs
 
+developed = head $ drop 30 $ iterate (map stepDevelopment) $ createLife (3,4)
+

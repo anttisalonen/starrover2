@@ -12,34 +12,37 @@ import Console
 
 data Country = Country {
     getCountryName :: String
-  , getPop :: Int
-  , getTL  :: Int
-  , getLoc :: (Sector, StellarBody)
+  , getPop         :: Int
+  , getTL          :: Int
+  , getLoc         :: (Sector, StellarBody)
+  , getParentStar  :: StellarBody
   }
 
 instance Displayable Country where
-  display c = printf "%s - Population: %d - TL: %d - Location %s:\n%s"
+  display c = printf "%s - Population: %d - TL: %d - Location %s:\nStar: %s\n%s"
                 (getCountryName c)
                 (getPop c)
                 (getTL c)
                 (show . fst $ getLoc c)
+                (displayShort $ getParentStar c)
                 (display . snd $ getLoc c)
 
 createLife :: Sector -> [Country]
-createLife sec = foldl' go [] ss
+createLife sec = foldl' (go (head ss)) [] ss
   where ss = concatMap getStars $ getGalaxySector sec
-        go acc x = 
+        go pstar acc x = 
           case getBodyType x of
             RockyPlanet ->
               if getMass x > 0.1 && 
                  minTemperature ss (getOrbit x) > 230 &&
                  maxTemperature ss (getOrbit x) < 360
-                 then newCountry sec x : foldl' go acc (getSatellites x)
-                 else foldl' go acc (getSatellites x)
-            _ ->      foldl' go acc (getSatellites x)
+                 then newCountry sec pstar x : foldl' (go pstar) acc (getSatellites x)
+                 else foldl' (go pstar) acc (getSatellites x)
+            Star -> foldl' (go x)     acc (getSatellites x)
+            _    -> foldl' (go pstar) acc (getSatellites x)
 
-newCountry :: Sector -> StellarBody -> Country
-newCountry sec s = Country (getName s) 100 1 (sec, s)
+newCountry :: Sector -> StellarBody -> StellarBody -> Country
+newCountry sec pstar s = Country (getName s) 100 1 (sec, s) pstar
 
 stepDevelopment :: Country -> Country
 stepDevelopment c = 
