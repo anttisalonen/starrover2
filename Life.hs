@@ -66,9 +66,9 @@ stepDevelopment' sys c =
 ratePlanet :: [StellarBody] -> StellarBody -> Float
 ratePlanet stars s | getBodyType s /= RockyPlanet = 0
                    | otherwise                    =
-  let tempdiff = fromIntegral $ max (abs (maxTemperature stars (getOrbit s) - 300))
-                                    (abs (minTemperature stars (getOrbit s) - 300))
-      temppoints = max 0 (100 - tempdiff)
+  let tempdiff = fromIntegral $ max (abs (maxTemperature stars (getOrbit s) - 295))
+                                    (abs (minTemperature stars (getOrbit s) - 295))
+      temppoints = max 0 (70 - tempdiff)
       sizepoints = getMass s * 10
   in min temppoints sizepoints
 
