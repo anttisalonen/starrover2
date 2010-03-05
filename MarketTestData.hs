@@ -4,26 +4,11 @@ where
 import qualified Data.Edison.Assoc.StandardMap as M
 import Data.Graph.Inductive
 
+import MarketData
 import Market
 
 -- Usage: e.g.
 -- getMarketList "Mars" goods earthMoonMarsTriangle
-
-data GoodProduction = Agriculture
-                    | Mining
-                    | Factory
-  deriving (Ord, Eq)
-
-grain         = Good "Grain"          5.0  0.2 Agriculture 0
-syntheticMeat = Good "Synthetic meat" 50.0 0.1 Factory     90
-coal          = Good "Coal"           10.0 0.2 Mining      10
-
-goods =
- [
-   grain
- , syntheticMeat
- , coal
- ]
 
 moonEnvironment  = Environment (M.fromSeq [(Agriculture, 0),   (Mining, 0),   (Factory, 10)])
 earthEnvironment = Environment (M.fromSeq [(Agriculture, 100), (Mining, 100), (Factory, 100)])

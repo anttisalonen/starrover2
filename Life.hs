@@ -4,20 +4,34 @@ where
 import Data.List(foldl', intercalate, inits)
 import Text.Printf
 import Data.Maybe
+import qualified Data.Map as Map
 
 import Sector
 import StarSystem
 import Stars
 import Planets
+import qualified Market as Market
+import MarketData
 import Console
 
 data Country = Country {
     getCountryName :: String
-  , getPop         :: Int
-  , getTL          :: Int
+  , getProductionSource :: Market.ProductionSource GoodProduction
   , getSector      :: Sector
   , getLoc         :: [String]
   }
+
+getPop :: Country -> Int
+getPop = Market.getPopulation . getProductionSource
+
+setPop :: Country -> Int -> Country
+setPop c n = 
+  let p  = getProductionSource c
+      p' = p{Market.getPopulation = n}
+  in c{getProductionSource = p'}
+
+getTL :: Country -> Int
+getTL = Market.getTechlevel . getProductionSource
 
 instance Displayable Country where
   display c = printf "%s - Population: %d - TL: %d - Location %s - %s\n"
@@ -48,7 +62,10 @@ createLife' sec sys = foldl' (go [getSSName sys]) [] stars
                else foldl' (go (tname:parents)) acc (getSatellites x)
 
 newCountry :: Sector -> [String] -> Country
-newCountry sec parents = Country (head parents) 100 1 sec (reverse parents)
+newCountry sec parents = Country (head parents) newPS sec (reverse parents)
+
+newPS :: Market.ProductionSource GoodProduction
+newPS = Market.ProductionSource 100 1 Map.empty
 
 stepDevelopment :: (Sector -> [StarSystem]) -> Country -> Country
 stepDevelopment f c = stepDevelopment' (f (getSector c)) c
@@ -60,7 +77,7 @@ stepDevelopment' sys c =
        Nothing -> c
        Just pl ->
          let mp = maxPop pl
-         in c{getPop = floor (fromIntegral (mp - (getPop c)) * 0.1) + (getPop c)}
+         in setPop c (floor (fromIntegral (mp - (getPop c)) * 0.1) + (getPop c))
 
 -- TODO: write another function which also takes the distance to the planet into account
 ratePlanet :: [StellarBody] -> StellarBody -> Float

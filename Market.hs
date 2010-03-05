@@ -47,8 +47,8 @@ data Environment a = Environment {
   }
 
 data ProductionSource a = ProductionSource {
-    getPopulation  :: Float
-  , getTechlevel   :: Float
+    getPopulation  :: Int
+  , getTechlevel   :: Int
   , getAllocations :: M.FM a Float
   }
 
@@ -70,7 +70,7 @@ getProducedQuantity' p e g =
   getProducedQuantity'' epo allocpop tl (getNeededTL g)
     where epo      = getGoodEnvironmentPotential e g
           allocpop = M.lookupWithDefault 0 (getEnvironment g) (getAllocations p)
-          tl       = getTechlevel p
+          tl       = fromIntegral $ getTechlevel p
 
 getQuantity :: (Ord a) => Good a -> Production a -> Float
 getQuantity g p = getProducedQuantity' (getProductionSource p) (getProductionEnvironment p) g
