@@ -41,7 +41,7 @@ displayStellar :: [StellarBody] -> StellarBody -> String
 displayStellar stars s = displayGen s ++ tempstring ++ "\n" ++ (concatMap (displayStellar stars) (getSatellites s))
   where tempstring = if getBodyType s == Star
                        then ""
-                       else printf "\t - temperatures: %4d - %4d degrees C" mint maxt
+                       else printf "\t - temperatures: %4d .. %4d degrees C" (kToC mint) (kToC maxt)
         mint = minTemperature stars (getOrbit s)
         maxt = maxTemperature stars (getOrbit s)
 
