@@ -4,7 +4,7 @@ where
 import Data.List(foldl', intercalate, inits)
 import Text.Printf
 import Data.Maybe
-import qualified Data.Map as Map
+import qualified Data.Edison.Assoc.StandardMap as Map
 
 import Sector
 import StarSystem
@@ -17,7 +17,7 @@ import Console
 data Country = Country {
     getCountryName :: String
   , getProductionSource :: Market.ProductionSource GoodProduction
-  , getColonies    :: Map.Map String Country
+  , getColonies    :: Map.FM String Country
   , getSector      :: Sector
   , getLoc         :: [String]
   }
@@ -41,7 +41,7 @@ instance Displayable Country where
                 (getTL c)
                 (show $ getSector c)
                 (intercalate " - " (getLoc c))
-                (concatMap display (Map.elems (getColonies c)))
+                (concatMap display (Map.elements (getColonies c)))
 
 displayCountry :: (Sector -> [StarSystem]) -> Country -> String
 displayCountry f c = display c ++ rest
@@ -70,7 +70,7 @@ createLifeExclude' excs sec sys = foldl' (go [getSSName sys]) [] stars
                else foldl' (go (tname:parents)) acc (getSatellites x)
 
 getLocs :: Country -> [[String]]
-getLocs c = getLoc c : concatMap getLocs (Map.elems (getColonies c))
+getLocs c = getLoc c : concatMap getLocs (Map.elements (getColonies c))
 
 spread :: (Sector -> [StarSystem]) -> (Sector -> [Country]) -> Country -> Country
 spread fsys fcountries c = 
