@@ -80,9 +80,11 @@ getLocs :: Country -> [[String]]
 getLocs c = getLoc c : concatMap getLocs (Map.elements (getColonies c))
 
 spread :: (Sector -> [StarSystem]) -> (Sector -> [Country]) -> Country -> Country
-spread fsys fcountries c = 
+spread fsys fcountries c = spread' fsys (concatMap getLocs (fcountries (getSector c))) c
+
+spread' :: (Sector -> [StarSystem]) -> [[String]] -> Country -> Country
+spread' fsys excs c = 
   let sec   = getSector c
-      excs  = concatMap getLocs (fcountries sec)
       mnewC = listToMaybe $ createLifeExclude excs fsys sec
   in case mnewC of
        Nothing -> c
