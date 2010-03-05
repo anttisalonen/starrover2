@@ -1,7 +1,9 @@
-module LifeTest
+module LifeTest()
 where
 
 import Data.Maybe
+
+import qualified Data.Edison.Assoc.StandardMap as Map
 
 import Life
 import Sector
@@ -11,11 +13,19 @@ import Planets
 import Console
 
 sec :: Sector
-sec = (3, 4)
+sec = (5, 3)
 
 cs = createLife getGalaxySector sec
 
-c = head cs
+developed = head $ drop 30 $ iterate (map (stepDevelopment getGalaxySector)) $ cs
 
-developed = head $ drop 30 $ iterate (map (stepDevelopment getGalaxySector)) $ createLife getGalaxySector (3,4)
+firstCountry = head cs
+secondCountry = cs !! 1
+initialCountries = countryMap [firstCountry, secondCountry]
+firstCountryWithColonies = spread getGalaxySector (getCountriesInSector initialCountries) firstCountry
+countriesAfterFirstSpread = countryMap [firstCountryWithColonies, secondCountry]
+secondCountryWithColonies = spread getGalaxySector (getCountriesInSector countriesAfterFirstSpread) secondCountry
+countriesAfterTwoSpreads = countryMap [firstCountryWithColonies, secondCountryWithColonies]
+countryListAfterTwoSpreads = concat $ Map.elements countriesAfterTwoSpreads
+
 
