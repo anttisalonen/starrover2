@@ -17,6 +17,7 @@ import Console
 data Country = Country {
     getCountryName :: String
   , getProductionSource :: Market.ProductionSource GoodProduction
+  , getColonies    :: Map.Map String Country
   , getSector      :: Sector
   , getLoc         :: [String]
   }
@@ -34,12 +35,13 @@ getTL :: Country -> Int
 getTL = Market.getTechlevel . getProductionSource
 
 instance Displayable Country where
-  display c = printf "%s - Population: %d - TL: %d - Location %s - %s\n"
+  display c = printf "%s - Population: %d - TL: %d - Location %s - %s\n%s"
                 (getCountryName c)
                 (getPop c)
                 (getTL c)
                 (show $ getSector c)
                 (intercalate " - " (getLoc c))
+                (concatMap display (Map.elems (getColonies c)))
 
 displayCountry :: (Sector -> [StarSystem]) -> Country -> String
 displayCountry f c = display c ++ rest
@@ -62,7 +64,7 @@ createLife' sec sys = foldl' (go [getSSName sys]) [] stars
                else foldl' (go (tname:parents)) acc (getSatellites x)
 
 newCountry :: Sector -> [String] -> Country
-newCountry sec parents = Country (head parents) newPS sec (reverse parents)
+newCountry sec parents = Country (head parents) newPS Map.empty sec (reverse parents)
 
 newPS :: Market.ProductionSource GoodProduction
 newPS = Market.ProductionSource 100 1 Map.empty
