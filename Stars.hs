@@ -27,13 +27,13 @@ instance Displayable StellarBody where
 
 displayGen :: StellarBody -> String
 displayGen (StellarBody n temp _ rad typ mass _) =
-    printf "%s: %s (Mass: %2.3f %s, %sorbit radius: %2.3f AU)" 
+    printf "%-16s: %s (Mass: %6.2f %s, orbit radius: %7.3f AU)%s" 
               n
               descr 
               mass 
               massdescr 
-              (if temp /= 0 then printf "%d degrees K, " temp else "") 
               rad 
+              (if temp /= 0 then printf ", %d degrees K" temp else "") 
        where descr     = display typ
              massdescr = if typ == Star then "solar masses" else "Earth masses"
 
@@ -41,13 +41,13 @@ displayStellar :: [StellarBody] -> StellarBody -> String
 displayStellar stars s = displayGen s ++ tempstring ++ "\n" ++ (concatMap (displayStellar stars) (getSatellites s))
   where tempstring = if getBodyType s == Star
                        then ""
-                       else printf "temperatures: %d - %d degrees C" mint maxt
+                       else printf "\t - temperatures: %4d - %4d degrees C" mint maxt
         mint = minTemperature stars (getOrbit s)
         maxt = maxTemperature stars (getOrbit s)
 
 instance Displayable BodyType where
-  display Star        = "Star"
-  display GasGiant    = "Gas giant"
+  display Star        = "Star        "
+  display GasGiant    = "Gas giant   "
   display RockyPlanet = "Rocky planet"
 
 randStarTemp :: RndS Int
