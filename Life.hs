@@ -55,13 +55,34 @@ createLife :: (Sector -> [StarSystem]) -> Sector -> [Country]
 createLife f sec = concatMap (createLife' sec) (f sec)
 
 createLife' :: Sector -> StarSystem -> [Country]
-createLife' sec sys = foldl' (go [getSSName sys]) [] stars
+createLife' sec sys = createLifeExclude' [] sec sys
+
+createLifeExclude :: [[String]] -> (Sector -> [StarSystem]) -> Sector -> [Country]
+createLifeExclude excs f sec = concatMap (createLifeExclude' excs sec) (f sec)
+
+createLifeExclude' :: [[String]] -> Sector -> StarSystem -> [Country]
+createLifeExclude' excs sec sys = foldl' (go [getSSName sys]) [] stars
   where stars = getStars sys
         go parents acc x = 
           let tname = getName x
-          in if ratePlanet stars x > 0
+          in if ratePlanet stars x > 0 && (reverse (tname:parents)) `notElem` excs
                then newCountry sec (tname:parents) : foldl' (go (tname:parents)) acc (getSatellites x)
                else foldl' (go (tname:parents)) acc (getSatellites x)
+
+getLocs :: Country -> [[String]]
+getLocs c = getLoc c : concatMap getLocs (Map.elems (getColonies c))
+
+spread :: (Sector -> [StarSystem]) -> (Sector -> [Country]) -> Country -> Country
+spread fsys fcountries c = 
+  let sec   = getSector c
+      excs  = concatMap getLocs (fcountries sec)
+      mnewC = listToMaybe $ createLifeExclude excs fsys sec
+  in case mnewC of
+       Nothing -> c
+       Just nc -> addColony c nc
+
+addColony :: Country -> Country -> Country
+addColony c1 c2 = c1{getColonies = Map.insert (getCountryName c2) c2 (getColonies c1)}
 
 newCountry :: Sector -> [String] -> Country
 newCountry sec parents = Country (head parents) newPS Map.empty sec (reverse parents)
