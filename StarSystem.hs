@@ -31,7 +31,7 @@ data StarSystem = StarSystem {
   }
 
 instance Displayable StarSystem where
-  display s = printf "\t%s (%d, %d)\n%s\n" (getSSName s) (fst c) (snd c) (concatMap (displayStellar ss) ss)
+  display s = printf "\t%s (%d, %d)\n%s\n" (getSSName s) (fst c) (snd c) (concatMap (displayStellar True ss) ss)
     where c  = getCoordinates s
           ss = getStars s
   displayShort s = printf "\t%s (%d, %d) - %d stars\n" (getSSName s) (fst c) (snd c) (length (getStars s))

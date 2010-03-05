@@ -37,8 +37,8 @@ displayGen (StellarBody n temp _ rad typ mass _) =
        where descr     = display typ
              massdescr = if typ == Star then "solar masses" else "Earth masses"
 
-displayStellar :: [StellarBody] -> StellarBody -> String
-displayStellar stars s = displayGen s ++ tempstring ++ "\n" ++ (concatMap (displayStellar stars) (getSatellites s))
+displayStellar :: Bool -> [StellarBody] -> StellarBody -> String
+displayStellar recurse stars s = displayGen s ++ tempstring ++ "\n" ++ (if recurse then (concatMap (displayStellar recurse stars) (getSatellites s)) else "")
   where tempstring = if getBodyType s == Star
                        then ""
                        else printf "\t - temperatures: %4d .. %4d degrees C" (kToC mint) (kToC maxt)

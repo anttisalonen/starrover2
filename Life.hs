@@ -30,10 +30,10 @@ instance Displayable Country where
 displayCountry :: (Sector -> [StarSystem]) -> Country -> String
 displayCountry f c = display c ++ rest
   where rest = concat (sysinfo:plinfos)
-        sysinfo = case findSystem f (getSector c) (head (getLoc c)) of
-                    Just s  -> displayShort s
-                    Nothing -> ""
-        plinfos = map displayShort $ catMaybes $ map (findBody f (getSector c)) (tail $ inits (getLoc c))
+        (sysinfo, pldispfunc) = case findSystem f (getSector c) (head (getLoc c)) of
+                    Just s  -> (displayShort s, displayStellar False (getStars s))
+                    Nothing -> ("", displayShort)
+        plinfos = map pldispfunc $ catMaybes $ map (findBody f (getSector c)) (tail $ inits (getLoc c))
 
 createLife :: (Sector -> [StarSystem]) -> Sector -> [Country]
 createLife f sec = concatMap (createLife' sec) (f sec)
