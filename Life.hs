@@ -69,6 +69,13 @@ createLifeExclude' excs sec sys = foldl' (go [getSSName sys]) [] stars
                then newCountry sec (tname:parents) : foldl' (go (tname:parents)) acc (getSatellites x)
                else foldl' (go (tname:parents)) acc (getSatellites x)
 
+getCountriesInSector :: Map.FM Sector [Country] -> Sector -> [Country]
+getCountriesInSector m s = Map.lookupWithDefault [] s m
+
+countryMap :: [Country] -> Map.FM Sector [Country]
+countryMap = foldl' go Map.empty
+  where go acc x = Map.insertWith (++) (getSector x) [x] acc
+
 getLocs :: Country -> [[String]]
 getLocs c = getLoc c : concatMap getLocs (Map.elements (getColonies c))
 
