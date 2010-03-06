@@ -40,23 +40,14 @@ loop rtri rquad stopped = do
                 else rquad - step
   event <- pollEvent
   quit <- case event of
-            Quit -> return True
+            Quit                        -> return True
             KeyDown (Keysym SDLK_q _ _) -> return True
-            _    -> return False
+            _                           -> return False
   let stopped' = case event of
             KeyDown (Keysym SDLK_SPACE _ _) -> True
             KeyUp (Keysym SDLK_SPACE _ _)   -> False
-            _ -> stopped
+            _                               -> stopped
   when (not quit) (loop rtri' rquad' stopped')
-
-resizeGLScene w h = do
-  setVideoMode w h 0 [OpenGL,Resizable]
-  viewport $= (Position 0 0,Size (fromIntegral w) (fromIntegral h))
-  matrixMode $= Projection
-  loadIdentity
-  let radio = (fromIntegral w)/(fromIntegral h)
-  perspective 45 radio 0.1 100
-  matrixMode $= Modelview 0
 
 type GLvector3 = (GLfloat, GLfloat, GLfloat)
 
