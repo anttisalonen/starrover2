@@ -1,5 +1,4 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-
 module Main where
 
 import System.Exit
@@ -28,7 +27,13 @@ createAWindow name
          matrixMode $= Modelview 0
          let loop rtri rquad stopped = do 
                        delay 10
-                       (rtri', rquad') <- drawGLScreen rtri rquad stopped
+                       drawGLScreen rtri rquad
+                       let rtri' = if stopped
+                                     then rtri
+                                     else rtri + step
+                       let rquad' = if stopped
+                                     then rquad
+                                     else rquad - step
                        event <- pollEvent
                        quit <- case event of
                                  Quit -> return True
@@ -54,16 +59,15 @@ resizeGLScene w h = do
   perspective 45 radio 0.1 100
   matrixMode $= Modelview 0
 
-drawGLScreen :: GLfloat -> GLfloat -> Bool -> IO (GLfloat, GLfloat)
-drawGLScreen rtri rquad stopped = do
+type GLvector3 = (GLfloat, GLfloat, GLfloat)
+
+drawGLScreen :: GLfloat -> GLfloat -> IO ()
+drawGLScreen rtri rquad = do
   clear [ColorBuffer,DepthBuffer]
   loadIdentity
 
   translate $ (\(x,y,z) -> Vector3 x y z) polygonTrans
   rotate rtri $ Vector3 0 0 (1::GLfloat)
-  let rtri' = if stopped
-                then rtri
-                else rtri + step
   forM_ polygonPoints $ \l -> do
     renderPrimitive Polygon $ mapM_ (\((r,g,b),(x,y,z)) -> do
       currentColor $= Color4 r g b 1
@@ -72,16 +76,12 @@ drawGLScreen rtri rquad stopped = do
   loadIdentity
   translate $ (\(x,y,z) -> Vector3 x y z) quadsTrans
   rotate rquad $ Vector3 0 0 (1::GLfloat)
-  let rquad' = if stopped
-                 then rquad
-                 else rquad - step
   currentColor $= Color4 0.5 0.5 1 0.5
   renderPrimitive Quads $ forM_ quadsPoints $ \((r,g,b),l) -> do
     currentColor $= Color4 r g b 0.5
     mapM_ (\(x,y,z) -> vertex$Vertex3 x y z) l
   
   glSwapBuffers
-  return (rtri', rquad')
 
 polygonTrans :: (GLfloat,GLfloat,GLfloat)
 polygonTrans = (-1.5,0,-9)
