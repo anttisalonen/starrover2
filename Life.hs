@@ -17,6 +17,7 @@ import Console
 data Country = Country {
     getCountryName :: String
   , getProductionSource :: Market.ProductionSource GoodProduction
+  , getColonies    :: Map.FM String Country
   , getSector      :: Sector
   , getLoc         :: [String]
   }
@@ -34,12 +35,13 @@ getTL :: Country -> Int
 getTL = Market.getTechlevel . getProductionSource
 
 instance Displayable Country where
-  display c = printf "%s - Population: %d - TL: %d - Location %s - %s\n"
+  display c = printf "%s - Population: %d - TL: %d - Location %s - %s\n%s"
                 (getCountryName c)
                 (getPop c)
                 (getTL c)
                 (show $ getSector c)
                 (intercalate " - " (getLoc c))
+                (concatMap display (Map.elements (getColonies c)))
 
 displayCountry :: (Sector -> [StarSystem]) -> Country -> String
 displayCountry f c = display c ++ rest
@@ -74,15 +76,25 @@ countryMap :: [Country] -> Map.FM Sector [Country]
 countryMap = foldl' go Map.empty
   where go acc x = Map.insertWith (++) (getSector x) [x] acc
 
-spread :: (Sector -> [StarSystem]) -> (Sector -> [Country]) -> Country -> Maybe Country
-spread fsys fcountries c = spread' fsys (map getLoc (fcountries (getSector c))) c
+getLocs :: Country -> [[String]]
+getLocs c = getLoc c : concatMap getLocs (Map.elements (getColonies c))
 
-spread' :: (Sector -> [StarSystem]) -> [[String]] -> Country -> Maybe Country
+spread :: (Sector -> [StarSystem]) -> (Sector -> [Country]) -> Country -> Country
+spread fsys fcountries c = spread' fsys (concatMap getLocs (fcountries (getSector c))) c
+
+spread' :: (Sector -> [StarSystem]) -> [[String]] -> Country -> Country
 spread' fsys excs c = 
-  listToMaybe $ createLifeExclude excs fsys (getSector c)
+  let sec   = getSector c
+      mnewC = listToMaybe $ createLifeExclude excs fsys sec
+  in case mnewC of
+       Nothing -> c
+       Just nc -> addColony c nc
+
+addColony :: Country -> Country -> Country
+addColony c1 c2 = c1{getColonies = Map.insert (getCountryName c2) c2 (getColonies c1)}
 
 newCountry :: Sector -> [String] -> Country
-newCountry sec parents = Country (head parents) newPS sec (reverse parents)
+newCountry sec parents = Country (head parents) newPS Map.empty sec (reverse parents)
 
 newPS :: Market.ProductionSource GoodProduction
 newPS = Market.ProductionSource 100 1 Map.empty
