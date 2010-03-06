@@ -22,10 +22,10 @@ developed = head $ drop 30 $ iterate (map (stepDevelopment getGalaxySector)) $ c
 firstCountry = head cs
 secondCountry = cs !! 1
 initialCountries = countryMap [firstCountry, secondCountry]
-firstCountryWithColonies = spread getGalaxySector (getCountriesInSector initialCountries) firstCountry
-countriesAfterFirstSpread = countryMap [firstCountryWithColonies, secondCountry]
-secondCountryWithColonies = spread getGalaxySector (getCountriesInSector countriesAfterFirstSpread) secondCountry
-countriesAfterTwoSpreads = countryMap [firstCountryWithColonies, secondCountryWithColonies]
+colonyOfFirst = fromJust $ spread getGalaxySector (getCountriesInSector initialCountries) firstCountry
+countriesAfterFirstSpread = countryMap [firstCountry, colonyOfFirst, secondCountry]
+colonyOfSecond = fromJust $ spread getGalaxySector (getCountriesInSector countriesAfterFirstSpread) secondCountry
+countriesAfterTwoSpreads = countryMap [firstCountry, colonyOfFirst, secondCountry, colonyOfSecond]
 countryListAfterTwoSpreads = concat $ Map.elements countriesAfterTwoSpreads
 
 
