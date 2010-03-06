@@ -1,4 +1,10 @@
-module Life
+module Life(
+  createLife, 
+  stepDevelopment, 
+  countryMap, 
+  spread, 
+  getCountriesInSector,
+  displayCountry)
 where
 
 import Data.List(foldl', intercalate, inits)
@@ -71,6 +77,9 @@ createLifeExclude' excs sec sys = foldl' (go [getSSName sys]) [] stars
 
 getCountriesInSector :: Map.FM Sector [Country] -> Sector -> [Country]
 getCountriesInSector m s = Map.lookupWithDefault [] s m
+
+filterBySector :: [Country] -> Sector -> [Country]
+filterBySector cs s = filter (\c -> getSector c == s) cs
 
 countryMap :: [Country] -> Map.FM Sector [Country]
 countryMap = foldl' go Map.empty
