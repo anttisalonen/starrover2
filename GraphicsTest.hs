@@ -58,29 +58,25 @@ drawGLScreen rtri rquad stopped = do
   loadIdentity
 
   translate $ (\(x,y,z) -> Vector3 x y z) polygonTrans
-  rotate rtri $ Vector3 0 (1::GLfloat) 0
-  rotate rtri $ Vector3 (1::GLfloat) 0 0
+  rotate rtri $ Vector3 0 0 (1::GLfloat)
   let rtri' = if stopped
                 then rtri
                 else rtri + step
-  mapM_ (\l -> do
+  forM_ polygonPoints $ \l -> do
     renderPrimitive Polygon $ mapM_ (\((r,g,b),(x,y,z)) -> do
       currentColor $= Color4 r g b 1
       vertex$Vertex3 x y z) l
-    ) polygonPoints
   
   loadIdentity
   translate $ (\(x,y,z) -> Vector3 x y z) quadsTrans
-  rotate rquad $ Vector3 (1::GLfloat) 0 0
-  rotate rquad $ Vector3 0 (1::GLfloat) 0
+  rotate rquad $ Vector3 0 0 (1::GLfloat)
   let rquad' = if stopped
                  then rquad
                  else rquad - step
   currentColor $= Color4 0.5 0.5 1 0.5
-  renderPrimitive Quads $ mapM_ (\((r,g,b),l) -> do
+  renderPrimitive Quads $ forM_ quadsPoints $ \((r,g,b),l) -> do
     currentColor $= Color4 r g b 0.5
     mapM_ (\(x,y,z) -> vertex$Vertex3 x y z) l
-    ) quadsPoints
   
   glSwapBuffers
   return (rtri', rquad')
@@ -90,30 +86,10 @@ polygonTrans = (-1.5,0,-9)
 
 polygonPoints :: [[((GLfloat,GLfloat,GLfloat),(GLfloat,GLfloat,GLfloat))]]
 polygonPoints =
-  [ [((1,0,0),(0,1,0))
-    ,((0,1,0),(-1,-1,1))
-    ,((0,0,1),(1,-1,1))] -- Front
-  , [((1,0,0),(0,1,0))
-    ,((0,0,1),(1,-1,1))
-    ,((0,1,0),(1,-1,-1))] -- Right
-  , [((1,0,0),(0,1,0))
-    ,((0,1,0),(1,-1,-1))
-    ,((0,0,1),(-1,-1,-1))] -- Back
-  , [((1,0,0),(0,1,0))
-    ,((0,0,1),(-1,-1,-1))
-    ,((0,1,0),(-1,-1,1))] -- Left
-  , [((0,0.5,0.5),(0,-1,0))
-    ,((0,0,1),(-1,-1,-1))
-    ,((0,1,0),(1,-1,-1))] -- Bottom Back
-  , [((0,0.5,0.5),(0,-1,0))
-    ,((0,0,1),(1,-1,1))
-    ,((0,1,0),(1,-1,-1))] -- Bottom Right
-  , [((0,0.5,0.5),(0,-1,0))
-    ,((0,0,1),(-1,-1,-1))
-    ,((0,1,0),(-1,-1,1))] -- Bottom Left
-  , [((0,0.5,0.5),(0,-1,0))
-    ,((0,1,0),(-1,-1,1))
-    ,((0,0,1),(1,-1,1))] -- Bottom Front
+  [ 
+   [ ((0,0.5,0.5),(-1,0, 0))
+    ,((0,0.0,1.0),(-1,1, 1))
+    ,((0,1.0,0.0),(-1,1,-1))]
   ]
 
 quadsTrans :: (GLfloat,GLfloat,GLfloat)
@@ -121,10 +97,6 @@ quadsTrans = (1.5,0,-6)
 
 quadsPoints :: [((GLfloat,GLfloat,GLfloat),[(GLfloat,GLfloat,GLfloat)])]
 quadsPoints =
-  [((0,1,0),  [(1,1,-1) ,(-1,1,-1) ,(-1,1,1)  ,(1,1,1)  ]) -- Top
-  ,((1,0.5,0),[(1,-1,1) ,(-1,-1,1) ,(-1,-1,-1),(1,-1,-1)]) -- Bottom
-  ,((1,0,0),  [(1,1,1)  ,(-1,1,1)  ,(-1,-1,1) ,(1,-1,1) ]) -- Front
-  ,((1,1,0),  [(1,-1,-1),(-1,-1,-1),(-1,1,-1) ,(1,1,-1) ]) -- Back
-  ,((0,0,1),  [(-1,1,1) ,(-1,1,-1) ,(-1,-1,-1),(-1,-1,1)]) -- Left
-  ,((0,0,1),  [(1,1,-1) ,(1,1,1)   ,(1,-1,1)  ,(1,-1,-1)]) -- Right
+  [
+  ((1,0,0),  [(1,1,1)  ,(-1,1,1)  ,(-1,-1,1) ,(1,-1,1) ])
   ]
