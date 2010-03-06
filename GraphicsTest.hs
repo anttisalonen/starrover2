@@ -30,7 +30,7 @@ main = withInit [InitVideo] $ do
 createAWindow name = do
   setVideoMode width height 0 [OpenGL]
   depthFunc $= Just Less
-  clearColor $= Color4 1 1 1 1
+  clearColor $= Color4 0 0 0 1
   viewport $= (Position 0 0, Size width height)
   matrixMode $= Projection
   loadIdentity
@@ -66,38 +66,24 @@ drawGLScreen rtri rquad = do
 
   loadIdentity
   translate $ (\(x,y,z) -> Vector3 x y z) rtri
-  -- rotate rtri $ Vector3 0 0 (1::GLfloat)
-  forM_ polygonPoints $ \l -> do
-    renderPrimitive Polygon $ mapM_ (\((r,g,b),(x,y,z)) -> do
-      currentColor $= Color4 r g b 1
-      vertex$Vertex3 x y z) l
+  currentColor $= Color4 0.0 0.5 0.0 1.0
+  renderPrimitive Triangles $ forM_ polygonPoints $ \(x,y,z) -> do
+    vertex $ Vertex3 x y z
   
   loadIdentity
   translate $ (\(x,y,z) -> Vector3 x y z) rquad
-  -- rotate rquad $ Vector3 0 0 (1::GLfloat)
-  currentColor $= Color4 0.5 0.5 1 0.5
-  renderPrimitive Quads $ forM_ quadsPoints $ \((r,g,b),l) -> do
-    currentColor $= Color4 r g b 0.5
-    mapM_ (\(x,y,z) -> vertex$Vertex3 x y z) l
+  currentColor $= Color4 0.5 0.5 1 1.0
+  renderPrimitive Quads $ forM quadsPoints $ \(x,y,z) -> do
+    vertex $ Vertex3 x y z
   
   glSwapBuffers
 
-polygonTrans :: (GLfloat,GLfloat,GLfloat)
-polygonTrans = (-1.5,0,-9)
-
-polygonPoints :: [[((GLfloat,GLfloat,GLfloat),(GLfloat,GLfloat,GLfloat))]]
+polygonPoints :: [GLvector3]
 polygonPoints =
-  [ 
-   [ ((0,0.5,0.5),(0,1, 0))
-    ,((0,1.0,0.0),(-1,-1, 0))
-    ,((0,1.0,0.0),(1,-1, 0))]
-  ]
+   [ (0,1, 0)
+    ,(-1,-1, 0)
+    ,(1,-1, 0)]
 
-quadsTrans :: (GLfloat,GLfloat,GLfloat)
-quadsTrans = (1.5,0,-6)
-
-quadsPoints :: [((GLfloat,GLfloat,GLfloat),[(GLfloat,GLfloat,GLfloat)])]
+quadsPoints :: [GLvector3]
 quadsPoints =
-  [
-  ((1,0,0),  [(1,1,1)  ,(-1,1,1)  ,(-1,-1,1) ,(1,-1,1) ])
-  ]
+   [(1,1,1)  ,(-1,1,1)  ,(-1,-1,1) ,(1,-1,1) ]
