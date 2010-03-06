@@ -1,3 +1,5 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
+
 module Main where
 
 import System.Exit
@@ -19,10 +21,10 @@ createAWindow name
     = do setVideoMode width height 0 [OpenGL]
          depthFunc $= Just Less
          clearColor $= Color4 1 1 1 1
-         viewport $= (Position 0 0,Size (fromIntegral width) (fromIntegral height))
+         viewport $= (Position 0 0, Size width height)
          matrixMode $= Projection
          loadIdentity
-         perspective 45 (w/h) 0.1 100
+         ortho ((-1) * w * 0.01) (1 * w * 0.01) ((-1) * h * 0.01) (1 * h * 0.01) (-10) 10
          matrixMode $= Modelview 0
          let loop rtri rquad stopped = do 
                        delay 10
