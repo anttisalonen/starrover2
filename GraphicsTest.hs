@@ -21,13 +21,14 @@ height = 600
 glVector3Null :: GLvector3
 glVector3Null = (0, 0, 0)
 
+type GLvector3 = (GLfloat, GLfloat, GLfloat)
+
 main = withInit [InitVideo] $ do
-  progName <- getProgName
   blendEquation $= FuncAdd
   blendFunc $= (OpenGL.SrcAlpha, OneMinusSrcAlpha)
-  createAWindow progName
+  createAWindow 
 
-createAWindow name = do
+createAWindow = do
   setVideoMode width height 0 [OpenGL]
   depthFunc $= Just Less
   clearColor $= Color4 0 0 0 1
@@ -57,8 +58,6 @@ loop rtri rquad stopped = do
             KeyUp (Keysym SDLK_SPACE _ _)   -> False
             _                               -> stopped
   when (not quit) (loop rtri' rquad' stopped')
-
-type GLvector3 = (GLfloat, GLfloat, GLfloat)
 
 drawGLScreen :: GLvector3 -> GLvector3 -> IO ()
 drawGLScreen rtri rquad = do
