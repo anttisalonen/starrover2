@@ -87,9 +87,9 @@ polygonTrans = (-1.5,0,-9)
 polygonPoints :: [[((GLfloat,GLfloat,GLfloat),(GLfloat,GLfloat,GLfloat))]]
 polygonPoints =
   [ 
-   [ ((0,0.5,0.5),(0,-1, 0))
-    ,((0,0.0,1.0),(1,-1, 1))
-    ,((0,1.0,0.0),(1,-1,-1))]
+   [ ((0,0.5,0.5),(0,1, 0))
+    ,((0,1.0,0.0),(-1,-1, 0))
+    ,((0,1.0,0.0),(1,-1, 0))]
   ]
 
 quadsTrans :: (GLfloat,GLfloat,GLfloat)
