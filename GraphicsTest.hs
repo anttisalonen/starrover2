@@ -23,7 +23,7 @@ createAWindow name
          viewport $= (Position 0 0, Size width height)
          matrixMode $= Projection
          loadIdentity
-         ortho ((-1) * w * 0.01) (1 * w * 0.01) ((-1) * h * 0.01) (1 * h * 0.01) (-10) 10
+         ortho ((-1) * width * 0.01) (1 * width * 0.01) ((-1) * height * 0.01) (1 * height * 0.01) (-10) 10
          matrixMode $= Modelview 0
          let loop rtri rquad stopped = do 
                        delay 10
@@ -48,7 +48,6 @@ createAWindow name
          loop 0 0 False
       where width = 800
             height = 600
-            (w,h) = (fromIntegral width, fromIntegral height)
 
 resizeGLScene w h = do
   setVideoMode w h 0 [OpenGL,Resizable]
