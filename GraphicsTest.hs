@@ -8,9 +8,18 @@ import Control.Monad
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
 
-step = 0.5
+step = (0.05, 0.0, 0.0)
 width = 800
 height = 600
+
+(*+*) :: GLvector3 -> GLvector3 -> GLvector3
+(*+*) (x0, y0, z0) (x1, y1, z1) = (x0 + x1, y0 + y1, z0 + z1)
+
+(*-*) :: GLvector3 -> GLvector3 -> GLvector3
+(*-*) (x0, y0, z0) (x1, y1, z1) = (x0 - x1, y0 - y1, z0 - z1)
+
+glVector3Null :: GLvector3
+glVector3Null = (0, 0, 0)
 
 main = withInit [InitVideo] $ do
   progName <- getProgName
@@ -27,17 +36,17 @@ createAWindow name = do
   loadIdentity
   ortho ((-1) * width * 0.01) (1 * width * 0.01) ((-1) * height * 0.01) (1 * height * 0.01) (-10) 10
   matrixMode $= Modelview 0
-  loop 0 0 False
+  loop glVector3Null glVector3Null False
 
 loop rtri rquad stopped = do 
   delay 10
   drawGLScreen rtri rquad
   let rtri' = if stopped
                 then rtri
-                else rtri + step
+                else rtri *+* step
   let rquad' = if stopped
                 then rquad
-                else rquad - step
+                else rquad *-* step
   event <- pollEvent
   quit <- case event of
             Quit                        -> return True
@@ -51,21 +60,21 @@ loop rtri rquad stopped = do
 
 type GLvector3 = (GLfloat, GLfloat, GLfloat)
 
-drawGLScreen :: GLfloat -> GLfloat -> IO ()
+drawGLScreen :: GLvector3 -> GLvector3 -> IO ()
 drawGLScreen rtri rquad = do
   clear [ColorBuffer,DepthBuffer]
-  loadIdentity
 
-  translate $ (\(x,y,z) -> Vector3 x y z) polygonTrans
-  rotate rtri $ Vector3 0 0 (1::GLfloat)
+  loadIdentity
+  translate $ (\(x,y,z) -> Vector3 x y z) rtri
+  -- rotate rtri $ Vector3 0 0 (1::GLfloat)
   forM_ polygonPoints $ \l -> do
     renderPrimitive Polygon $ mapM_ (\((r,g,b),(x,y,z)) -> do
       currentColor $= Color4 r g b 1
       vertex$Vertex3 x y z) l
   
   loadIdentity
-  translate $ (\(x,y,z) -> Vector3 x y z) quadsTrans
-  rotate rquad $ Vector3 0 0 (1::GLfloat)
+  translate $ (\(x,y,z) -> Vector3 x y z) rquad
+  -- rotate rquad $ Vector3 0 0 (1::GLfloat)
   currentColor $= Color4 0.5 0.5 1 0.5
   renderPrimitive Quads $ forM_ quadsPoints $ \((r,g,b),l) -> do
     currentColor $= Color4 r g b 0.5
