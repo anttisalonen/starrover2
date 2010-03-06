@@ -15,13 +15,11 @@ import MarketData
 import Console
 
 data Country = Country {
-    getCountryName :: CountryID
+    getCountryName :: String
   , getProductionSource :: Market.ProductionSource GoodProduction
   , getSector      :: Sector
   , getLoc         :: [String]
   }
-
-type CountryID = String
 
 getPop :: Country -> Int
 getPop = Market.getPopulation . getProductionSource
