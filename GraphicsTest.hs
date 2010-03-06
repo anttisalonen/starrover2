@@ -21,6 +21,19 @@ glVector3Null = (0, 0, 0)
 
 type GLvector3 = (GLfloat, GLfloat, GLfloat)
 
+pollAllSDLEvents :: IO [SDL.Event]
+pollAllSDLEvents = go []
+    where go l = do
+                   e <- SDL.pollEvent
+                   if e == SDL.NoEvent
+                     then return l
+                     else do
+                       es <- pollAllSDLEvents
+                       return (e:es)
+
+hasEvent :: (SDL.Event -> Bool) -> [SDL.Event] -> Bool
+hasEvent fun evts = or $ map fun evts
+
 -- test scenario
 step = (0.05, 0.0, 0.0)
 width = 800
@@ -51,6 +64,21 @@ createAWindow = do
   matrixMode $= Modelview 0
   evalStateT loop initState
 
+-- TODO: figure out how to make this a State TestState ()
+processEvent :: SDL.Event -> StateT TestState IO ()
+processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify (\t -> t{stopped = True})
+processEvent (KeyUp   (Keysym SDLK_SPACE _ _)) = modify (\t -> t{stopped = False})
+processEvent _                                 = return ()
+
+processEvents :: [SDL.Event] -> StateT TestState IO ()
+processEvents = mapM_ processEvent
+
+isQuit :: [SDL.Event] -> Bool
+isQuit = hasEvent isq
+  where isq Quit = True
+        isq (KeyDown (Keysym SDLK_q _ _)) = True
+        isq _ = False
+
 loop :: StateT TestState IO ()
 loop = do 
   liftIO $ delay 10
@@ -62,16 +90,10 @@ loop = do
   let rquad' = if (stopped state)
                 then (rquad state)
                 else (rquad state) *-* step
-  event <- liftIO $ pollEvent
-  quit <- case event of
-            Quit                        -> return True
-            KeyDown (Keysym SDLK_q _ _) -> return True
-            _                           -> return False
-  let stopped' = case event of
-            KeyDown (Keysym SDLK_SPACE _ _) -> True
-            KeyUp (Keysym SDLK_SPACE _ _)   -> False
-            _                               -> (stopped state)
-  put (TestState rtri' rquad' stopped')
+  events <- liftIO $ pollAllSDLEvents
+  let quit = isQuit events
+  processEvents events
+  modify (\t -> t{rtri=rtri', rquad=rquad'})
   when (not quit) loop
 
 drawGLScreen :: GLvector3 -> GLvector3 -> IO ()
