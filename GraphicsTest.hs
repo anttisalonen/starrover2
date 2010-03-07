@@ -160,13 +160,13 @@ drawGLScreen ent aobjs = do
     loadIdentity
     rotate (angle aobj) $ Vector3 0 0 (1 :: GLdouble)
     translate $ Vector3 (orbitRadius aobj) 0 0
-    (\s -> OpenGL.scale s s s) (size aobj)
+    uniformScale (size aobj)
     currentColor $= (AObject.color aobj)
     renderPrimitive Polygon $ forM_ aobjPoints $ \(x,y,z) -> do
       vertex $ Vertex3 x y z
 
     loadIdentity
-    (\s -> OpenGL.scale s s s) (orbitRadius aobj)
+    uniformScale (orbitRadius aobj)
     currentColor $= aorbitColor
     renderPrimitive LineLoop $ forM_ aorbitPoints $ \(x,y,z) -> do
       vertex $ Vertex3 x y z
