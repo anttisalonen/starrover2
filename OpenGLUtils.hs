@@ -3,6 +3,8 @@ where
 
 import Graphics.Rendering.OpenGL as OpenGL
 
+type GLvector2 = (GLfloat, GLfloat)
+
 type GLvector3 = (GLfloat, GLfloat, GLfloat)
 
 (*+*) :: GLvector3 -> GLvector3 -> GLvector3

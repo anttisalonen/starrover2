@@ -31,9 +31,13 @@ step = (0.05, 0.0, 0.0)
 width = 800
 height = 600
 
+type Camera = ((GLdouble, GLdouble), (GLdouble, GLdouble))
+
 data TestState = TestState {
     tri       :: Entity
   , quad      :: Entity
+  , camera    :: Camera
+  , camzoom   :: GLdouble
   , stopped   :: Bool
   }
 
@@ -43,6 +47,12 @@ modTri f t = t{tri = f (tri t)}
 
 modQuad :: (Entity -> Entity) -> TestState -> TestState
 modQuad f t = t{quad = f (quad t)}
+
+modCamera :: (Camera -> Camera) -> TestState -> TestState
+modCamera f t = t{camera = f (camera t)}
+
+modCamZoom :: (GLdouble -> GLdouble) -> TestState -> TestState
+modCamZoom f t = t{camzoom = f (camzoom t)}
 
 modStopped :: (Bool -> Bool) -> TestState -> TestState
 modStopped f t = t{stopped = f (stopped t)}
@@ -56,17 +66,28 @@ initState :: TestState
 initState = TestState 
     (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles)
     (modifyPosition (*+* (0.0, 4.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Quads))
+    ((-0.01, 0.01), (-0.01, 0.01))
+    0
     False
+
+setCamera :: Camera -> IO ()
+setCamera ((minx, maxx), (miny, maxy)) = do
+  matrixMode $= Projection
+  loadIdentity
+  ortho (width * minx) (width * maxx) (height * miny) (height * maxy) (-10) 10
+  matrixMode $= Modelview 0
+
+changeZoom :: GLdouble -> Camera -> Camera
+changeZoom z ((minx, maxx), (miny, maxy)) =
+  let z2 = z / 2
+  in ((minx + z2, maxx - z2), (miny + z2, maxy - z2))
 
 createAWindow = do
   setVideoMode width height 0 [OpenGL]
   depthFunc $= Just Less
   clearColor $= Color4 0 0 0 1
   viewport $= (Position 0 0, Size width height)
-  matrixMode $= Projection
-  loadIdentity
-  ortho ((-1) * width * 0.01) (1 * width * 0.01) ((-1) * height * 0.01) (1 * height * 0.01) (-10) 10
-  matrixMode $= Modelview 0
+  setCamera (camera initState)
   evalStateT loop initState
 
 -- TODO: figure out how to make this a State TestState ()
@@ -81,6 +102,10 @@ processEvent (KeyDown (Keysym SDLK_a     _ _)) = modify $ modTri $ modifyAngVelo
 processEvent (KeyUp   (Keysym SDLK_a     _ _)) = modify $ modTri $ modifyAngVelocity (subtract 1.5)
 processEvent (KeyDown (Keysym SDLK_d     _ _)) = modify $ modTri $ modifyAngVelocity (subtract 1.5)
 processEvent (KeyUp   (Keysym SDLK_d     _ _)) = modify $ modTri $ modifyAngVelocity (+1.5)
+processEvent (KeyDown (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoom $ (+ 0.005)
+processEvent (KeyUp   (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoom $ (subtract 0.005)
+processEvent (KeyDown (Keysym SDLK_MINUS _ _)) = modify $ modCamZoom $ (subtract 0.005)
+processEvent (KeyUp   (Keysym SDLK_MINUS _ _)) = modify $ modCamZoom $ (+ 0.005)
 processEvent _                                 = return ()
 
 processEvents :: [SDL.Event] -> StateT TestState IO ()
@@ -96,10 +121,15 @@ loop :: StateT TestState IO ()
 loop = do 
   liftIO $ delay 10
   state <- State.get
+  modify $ modCamera $ changeZoom (camzoom state)
+  liftIO $ setCamera (camera state)
   liftIO $ drawGLScreen [tri state, quad state]
   when (not (stopped state)) $ do
     modify $ modTri (updateEntity 1)
     modify $ modQuad (updateEntity 1)
+  when (stopped state) $ do
+    liftIO $ putStrLn $ "cam zoom: " ++ show (camzoom state)
+    liftIO $ putStrLn $ "cam: " ++ show (camera state)
   events <- liftIO $ pollAllSDLEvents
   let quit = isQuit events
   processEvents events
