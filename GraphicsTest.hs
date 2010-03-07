@@ -33,7 +33,7 @@ height = 600
 
 data TestState = TestState {
     tri          :: Entity
-  , quad         :: Entity
+  , aobjects     :: [Entity]
   , camera       :: Camera
   , camzoom      :: GLdouble
   , camzoomdelta :: GLdouble
@@ -44,8 +44,8 @@ data TestState = TestState {
 modTri :: (Entity -> Entity) -> TestState -> TestState
 modTri f t = t{tri = f (tri t)}
 
-modQuad :: (Entity -> Entity) -> TestState -> TestState
-modQuad f t = t{quad = f (quad t)}
+modAObjects :: ([Entity] -> [Entity]) -> TestState -> TestState
+modAObjects f t = t{aobjects = f (aobjects t)}
 
 modCamera :: (Camera -> Camera) -> TestState -> TestState
 modCamera f t = t{camera = f (camera t)}
@@ -67,7 +67,7 @@ main = withInit [InitVideo] $ do
 initState :: TestState
 initState = TestState 
     (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles trianglePoints)
-    (modifyPosition (*+* (0.0, 4.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Polygon (circlePoints 16)))
+    [(modifyPosition (*+* (0.0, 4.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Polygon (circlePoints 16)))]
     ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
     10
     0
@@ -119,10 +119,10 @@ loop = do
   modify $ modCamera $ setZoom $ (camzoom state) + (100 * (length2 $ velocity (tri state)))
   modify $ modCamera $ setCentre $ Entity.position (tri state)
   liftIO $ setCamera (camera state)
-  liftIO $ drawGLScreen [tri state, quad state]
+  liftIO $ drawGLScreen (tri state : aobjects state)
   when (not (stopped state)) $ do
     modify $ modTri (updateEntity 1)
-    modify $ modQuad (updateEntity 1)
+    modify $ modAObjects (map $ updateEntity 1)
   when (stopped state) $ do
     liftIO $ putStrLn $ "cam zoom: " ++ show (camzoom state)
     liftIO $ putStrLn $ "cam: " ++ show (camera state)
