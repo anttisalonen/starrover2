@@ -77,7 +77,7 @@ aobjsAndOrbits = unzip $ map aobjToEntities aobjs
 
 initState :: TestState
 initState = TestState 
-    (newEntity (50.0, 30.0, 0.0) (Color4 0.0 0.5 0.0 1.0) Triangles trianglePoints glVector3AllUnit)
+    (newEntity (50.0, 30.0, 0.0) (Color4 0.0 0.5 0.0 1.0) TriangleFan trianglePoints glVector3AllUnit)
     aobjs
     ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
     100
@@ -169,8 +169,8 @@ drawGLScreen ent aobjs = do
 
 trianglePoints :: [GLvector3]
 trianglePoints =
-   [ (0,1, 0)
-    ,(-1,-1, 0)
-    ,(1,-1, 0)]
-
-
+   [ (0,    1,   0)
+    ,(0.9, -1,   0)
+    ,(0.0, -0.7, 0)
+    ,(-0.9,-1,   0)
+   ]
