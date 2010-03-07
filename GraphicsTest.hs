@@ -9,18 +9,10 @@ import Control.Monad.State as State
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
 
+import OpenGLUtils
+import Entity
+
 -- generic stuff
-(*+*) :: GLvector3 -> GLvector3 -> GLvector3
-(*+*) (x0, y0, z0) (x1, y1, z1) = (x0 + x1, y0 + y1, z0 + z1)
-
-(*-*) :: GLvector3 -> GLvector3 -> GLvector3
-(*-*) (x0, y0, z0) (x1, y1, z1) = (x0 - x1, y0 - y1, z0 - z1)
-
-glVector3Null :: GLvector3
-glVector3Null = (0, 0, 0)
-
-type GLvector3 = (GLfloat, GLfloat, GLfloat)
-
 pollAllSDLEvents :: IO [SDL.Event]
 pollAllSDLEvents = go []
     where go l = do
@@ -40,10 +32,20 @@ width = 800
 height = 600
 
 data TestState = TestState {
-    rtri    :: GLvector3
-  , rquad   :: GLvector3
-  , stopped :: Bool
+    tri       :: Entity
+  , quad      :: Entity
+  , stopped   :: Bool
   }
+
+-- TODO: generate mod-functions using TH
+modTri :: (Entity -> Entity) -> TestState -> TestState
+modTri f t = t{tri = f (tri t)}
+
+modQuad :: (Entity -> Entity) -> TestState -> TestState
+modQuad f t = t{quad = f (quad t)}
+
+modStopped :: (Bool -> Bool) -> TestState -> TestState
+modStopped f t = t{stopped = f (stopped t)}
 
 main = withInit [InitVideo] $ do
   blendEquation $= FuncAdd
@@ -51,7 +53,10 @@ main = withInit [InitVideo] $ do
   createAWindow 
 
 initState :: TestState
-initState = TestState glVector3Null glVector3Null False
+initState = TestState 
+    (modifyVelocity (*+* (0.05, 0.0, 0.0)) (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles)) 
+    (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Quads) 
+    False
 
 createAWindow = do
   setVideoMode width height 0 [OpenGL]
@@ -63,16 +68,6 @@ createAWindow = do
   ortho ((-1) * width * 0.01) (1 * width * 0.01) ((-1) * height * 0.01) (1 * height * 0.01) (-10) 10
   matrixMode $= Modelview 0
   evalStateT loop initState
-
--- TODO: generate mod-functions using TH
-modRtri :: (GLvector3 -> GLvector3) -> TestState -> TestState
-modRtri f t = t{rtri = f (rtri t)}
-
-modRquad :: (GLvector3 -> GLvector3) -> TestState -> TestState
-modRquad f t = t{rquad = f (rquad t)}
-
-modStopped :: (Bool -> Bool) -> TestState -> TestState
-modStopped f t = t{stopped = f (stopped t)}
 
 -- TODO: figure out how to make this a State TestState ()
 processEvent :: SDL.Event -> StateT TestState IO ()
@@ -93,34 +88,28 @@ loop :: StateT TestState IO ()
 loop = do 
   liftIO $ delay 10
   state <- State.get
-  liftIO $ drawGLScreen (rtri state) (rquad state)
-  let rtri' = if (stopped state)
-                then (rtri state)
-                else (rtri state) *+* step
-  let rquad' = if (stopped state)
-                then (rquad state)
-                else (rquad state) *-* step
+  liftIO $ drawGLScreen [tri state, quad state]
+  when (not (stopped state)) $ do
+    modify (modTri (updateEntity 1))
+    modify (modQuad (updateEntity 1))
   events <- liftIO $ pollAllSDLEvents
   let quit = isQuit events
   processEvents events
-  modify (\t -> t{rtri=rtri', rquad=rquad'})
   when (not quit) loop
 
-drawGLScreen :: GLvector3 -> GLvector3 -> IO ()
-drawGLScreen rtri rquad = do
+drawGLScreen :: [Entity] -> IO ()
+drawGLScreen entities = do
   clear [ColorBuffer,DepthBuffer]
 
-  loadIdentity
-  translate $ (\(x,y,z) -> Vector3 x y z) rtri
-  currentColor $= Color4 0.0 0.5 0.0 1.0
-  renderPrimitive Triangles $ forM_ polygonPoints $ \(x,y,z) -> do
-    vertex $ Vertex3 x y z
-  
-  loadIdentity
-  translate $ (\(x,y,z) -> Vector3 x y z) rquad
-  currentColor $= Color4 0.5 0.5 1 1.0
-  renderPrimitive Quads $ forM quadsPoints $ \(x,y,z) -> do
-    vertex $ Vertex3 x y z
+  forM_ entities $ \ent -> do
+    loadIdentity
+    translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
+    currentColor $= (Entity.color ent)
+    let points = case primitive ent of
+                   Quads -> quadsPoints
+                   _     -> polygonPoints
+    renderPrimitive (primitive ent) $ forM_ points $ \(x,y,z) -> do
+      vertex $ Vertex3 x y z
   
   glSwapBuffers
 
