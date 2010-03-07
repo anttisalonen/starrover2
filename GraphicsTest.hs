@@ -129,7 +129,7 @@ loop = do
   modify $ modCamZoom $ (max 1.0) . (+ (camzoomdelta state))
   modify $ modCamera $ setZoom $ (camzoom state) + (100 * (length2 $ velocity (tri state)))
   modify $ modCamera $ setCentre $ Entity.position (tri state)
-  modify $ modAObjects $ map (modifyAngle (+0.1))
+  modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
   liftIO $ setCamera (camera state)
   liftIO $ drawGLScreen (tri state) (aobjects state)
   when (not (stopped state)) $ do
