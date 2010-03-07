@@ -54,7 +54,7 @@ main = withInit [InitVideo] $ do
 
 initState :: TestState
 initState = TestState 
-    (modifyVelocity (*+* (0.05, 0.0, 0.0)) (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles)) 
+    (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles)
     (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Quads) 
     False
 
@@ -71,8 +71,12 @@ createAWindow = do
 
 -- TODO: figure out how to make this a State TestState ()
 processEvent :: SDL.Event -> StateT TestState IO ()
-processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify (modStopped $ const True)
-processEvent (KeyUp   (Keysym SDLK_SPACE _ _)) = modify (modStopped $ const False)
+processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify $ modStopped $ const True
+processEvent (KeyUp   (Keysym SDLK_SPACE _ _)) = modify $ modStopped $ const False
+processEvent (KeyDown (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0,   0.001,  0.0))
+processEvent (KeyUp   (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.001), 0.0))
+processEvent (KeyDown (Keysym SDLK_s     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.001), 0.0))
+processEvent (KeyUp   (Keysym SDLK_s     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0,   0.001,  0.0))
 processEvent _                                 = return ()
 
 processEvents :: [SDL.Event] -> StateT TestState IO ()
@@ -90,8 +94,8 @@ loop = do
   state <- State.get
   liftIO $ drawGLScreen [tri state, quad state]
   when (not (stopped state)) $ do
-    modify (modTri (updateEntity 1))
-    modify (modQuad (updateEntity 1))
+    modify $ modTri (updateEntity 1)
+    modify $ modQuad (updateEntity 1)
   events <- liftIO $ pollAllSDLEvents
   let quit = isQuit events
   processEvents events

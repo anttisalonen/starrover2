@@ -43,3 +43,6 @@ updateEntity :: Float -> Entity -> Entity
 updateEntity delta ent = flip execState ent $ do
   modify $ modifyVelocity (*+* ((acceleration ent) *** delta))
   modify $ modifyPosition (*+* ((velocity ent) *** delta))
+
+resetAcceleration :: Entity -> Entity
+resetAcceleration = modifyAcceleration (const glVector3Null)
