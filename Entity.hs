@@ -12,9 +12,9 @@ data Entity = Entity {
     position     :: GLvector3
   , velocity     :: GLvector3
   , acceleration :: GLvector3
-  , rotation     :: GLfloat
-  , angVelocity  :: GLfloat
-  , angAccel     :: GLfloat
+  , rotation     :: GLdouble
+  , angVelocity  :: GLdouble
+  , angAccel     :: GLdouble
   , color        :: Color4 GLfloat
   , primitive    :: PrimitiveMode
   }
@@ -32,13 +32,13 @@ modifyVelocity f t = t{velocity = f (velocity t)}
 modifyAcceleration :: (GLvector3 -> GLvector3) -> Entity -> Entity
 modifyAcceleration f t = t{acceleration = f (acceleration t)}
 
-modifyRotation :: (GLfloat -> GLfloat) -> Entity -> Entity
+modifyRotation :: (GLdouble -> GLdouble) -> Entity -> Entity
 modifyRotation f t = t{rotation = f (rotation t)}
 
-modifyAngVelocity :: (GLfloat -> GLfloat) -> Entity -> Entity
+modifyAngVelocity :: (GLdouble -> GLdouble) -> Entity -> Entity
 modifyAngVelocity f t = t{angVelocity = f (angVelocity t)}
 
-modifyAngAccel :: (GLfloat -> GLfloat) -> Entity -> Entity
+modifyAngAccel :: (GLdouble -> GLdouble) -> Entity -> Entity
 modifyAngAccel f t = t{angAccel = f (angAccel t)}
 
 modifyColor :: (Color4 GLfloat -> Color4 GLfloat) -> Entity -> Entity
@@ -50,7 +50,7 @@ modifyPrimitive f t = t{primitive = f (primitive t)}
 degToRad :: (Floating a) => a -> a
 degToRad d = d * pi / 180
 
-updateEntity :: Float -> Entity -> Entity
+updateEntity :: Double -> Entity -> Entity
 updateEntity delta ent = flip execState ent $ do
   let (accx, accy, accz) = acceleration ent
   let rr = degToRad $ rotation ent
