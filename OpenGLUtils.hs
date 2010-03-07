@@ -16,6 +16,12 @@ type GLvector3 = (GLdouble, GLdouble, GLdouble)
 (***) :: GLvector3 -> Double -> GLvector3
 (***) (x0, y0, z0) s = (x0 * s, y0 * s, z0 * s)
 
+length2 :: GLvector3 -> GLdouble
+length2 (x0, y0, z0) = x0 ** 2 + y0 ** 2 + z0 ** 2
+
+length :: GLvector3 -> GLdouble
+length = sqrt . length2
+
 glVector3Null :: GLvector3
 glVector3Null = (0, 0, 0)
 
