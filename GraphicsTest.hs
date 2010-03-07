@@ -73,10 +73,14 @@ createAWindow = do
 processEvent :: SDL.Event -> StateT TestState IO ()
 processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify $ modStopped $ const True
 processEvent (KeyUp   (Keysym SDLK_SPACE _ _)) = modify $ modStopped $ const False
-processEvent (KeyDown (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0,   0.001,  0.0))
-processEvent (KeyUp   (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.001), 0.0))
-processEvent (KeyDown (Keysym SDLK_s     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.001), 0.0))
-processEvent (KeyUp   (Keysym SDLK_s     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0,   0.001,  0.0))
+processEvent (KeyDown (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0,   0.002,  0.0))
+processEvent (KeyUp   (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.002), 0.0))
+processEvent (KeyDown (Keysym SDLK_s     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.002), 0.0))
+processEvent (KeyUp   (Keysym SDLK_s     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0,   0.002,  0.0))
+processEvent (KeyDown (Keysym SDLK_a     _ _)) = modify $ modTri $ modifyAngAccel (+0.05)
+processEvent (KeyUp   (Keysym SDLK_a     _ _)) = modify $ modTri $ modifyAngAccel (subtract 0.05)
+processEvent (KeyDown (Keysym SDLK_d     _ _)) = modify $ modTri $ modifyAngAccel (subtract 0.05)
+processEvent (KeyUp   (Keysym SDLK_d     _ _)) = modify $ modTri $ modifyAngAccel (+0.05)
 processEvent _                                 = return ()
 
 processEvents :: [SDL.Event] -> StateT TestState IO ()
@@ -108,6 +112,7 @@ drawGLScreen entities = do
   forM_ entities $ \ent -> do
     loadIdentity
     translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
+    rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLfloat)
     currentColor $= (Entity.color ent)
     let points = case primitive ent of
                    Quads -> quadsPoints
