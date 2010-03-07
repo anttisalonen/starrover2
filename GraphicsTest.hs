@@ -64,10 +64,20 @@ createAWindow = do
   matrixMode $= Modelview 0
   evalStateT loop initState
 
+-- TODO: generate mod-functions using TH
+modRtri :: (GLvector3 -> GLvector3) -> TestState -> TestState
+modRtri f t = t{rtri = f (rtri t)}
+
+modRquad :: (GLvector3 -> GLvector3) -> TestState -> TestState
+modRquad f t = t{rquad = f (rquad t)}
+
+modStopped :: (Bool -> Bool) -> TestState -> TestState
+modStopped f t = t{stopped = f (stopped t)}
+
 -- TODO: figure out how to make this a State TestState ()
 processEvent :: SDL.Event -> StateT TestState IO ()
-processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify (\t -> t{stopped = True})
-processEvent (KeyUp   (Keysym SDLK_SPACE _ _)) = modify (\t -> t{stopped = False})
+processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify (modStopped $ const True)
+processEvent (KeyUp   (Keysym SDLK_SPACE _ _)) = modify (modStopped $ const False)
 processEvent _                                 = return ()
 
 processEvents :: [SDL.Event] -> StateT TestState IO ()
