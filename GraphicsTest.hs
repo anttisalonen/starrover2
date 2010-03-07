@@ -110,6 +110,9 @@ processEvent (KeyDown (Keysym SDLK_MINUS _ _)) = modify $ modCamZoomDelta $ (+ z
 processEvent (KeyUp   (Keysym SDLK_MINUS _ _)) = modify $ modCamZoomDelta $ (subtract zoomChangeFactor)
 processEvent (KeyDown (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoomDelta $ (subtract zoomChangeFactor)
 processEvent (KeyUp   (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoomDelta $ (+ zoomChangeFactor)
+processEvent (KeyDown (Keysym SDLK_i     _ _)) = do
+  s <- State.get
+  liftIO . putStrLn $ "Zoom: " ++ show (camzoom s)
 processEvent _                                 = return ()
 
 processEvents :: [SDL.Event] -> StateT TestState IO ()
@@ -121,12 +124,14 @@ isQuit = hasEvent isq
         isq (KeyDown (Keysym SDLK_q _ _)) = True
         isq _ = False
 
+clamp mn mx n = if mn > n then mn else if mx < n then mx else n
+
 loop :: StateT TestState IO ()
 loop = do 
   liftIO $ delay 10
   state <- State.get
-  modify $ modCamZoom $ (max 1.0) . (+ (camzoomdelta state))
-  modify $ modCamera $ setZoom $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
+  modify $ modCamZoom $ (+ (camzoomdelta state))
+  modify $ modCamera $ setZoom $ clamp 1.0 250 $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
   modify $ modCamera $ setCentre $ Entity.position (tri state)
   liftIO $ setCamera (camera state)
   liftIO $ drawGLScreen (tri state) (aobjects state)
