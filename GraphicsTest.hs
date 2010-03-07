@@ -97,8 +97,7 @@ zoomChangeFactor = 1.0
 
 -- TODO: figure out how to make this a State TestState ()
 processEvent :: SDL.Event -> StateT TestState IO ()
-processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify $ modStopped $ const True
-processEvent (KeyUp   (Keysym SDLK_SPACE _ _)) = modify $ modStopped $ const False
+processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify $ modStopped not
 processEvent (KeyDown (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0,   0.002,  0.0))
 processEvent (KeyUp   (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.002), 0.0))
 processEvent (KeyDown (Keysym SDLK_s     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.002), 0.0))
@@ -127,17 +126,13 @@ loop = do
   liftIO $ delay 10
   state <- State.get
   modify $ modCamZoom $ (max 1.0) . (+ (camzoomdelta state))
-  modify $ modCamera $ setZoom $ (camzoom state) + (100 * (length2 $ velocity (tri state)))
+  modify $ modCamera $ setZoom $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
   modify $ modCamera $ setCentre $ Entity.position (tri state)
-  modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
   liftIO $ setCamera (camera state)
   liftIO $ drawGLScreen (tri state) (aobjects state)
   when (not (stopped state)) $ do
     modify $ modTri (updateEntity 1)
-  when (stopped state) $ do
-    liftIO $ putStrLn $ "cam zoom: " ++ show (camzoom state)
-    liftIO $ putStrLn $ "cam: " ++ show (camera state)
-    liftIO $ putStrLn $ "pos: " ++ show (Entity.position (tri state))
+    modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
   events <- liftIO $ pollAllSDLEvents
   let quit = isQuit events
   processEvents events
