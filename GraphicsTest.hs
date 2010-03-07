@@ -34,11 +34,11 @@ height = 600
 type Camera = ((GLdouble, GLdouble), (GLdouble, GLdouble))
 
 data TestState = TestState {
-    tri       :: Entity
-  , quad      :: Entity
-  , camera    :: Camera
-  , camzoom   :: GLdouble
-  , stopped   :: Bool
+    tri         :: Entity
+  , quad        :: Entity
+  , camera      :: Camera
+  , camzoom     :: GLdouble
+  , stopped     :: Bool
   }
 
 -- TODO: generate mod-functions using TH
@@ -66,27 +66,27 @@ initState :: TestState
 initState = TestState 
     (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles)
     (modifyPosition (*+* (0.0, 4.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Quads))
-    ((-0.01 * width, 0.01 * width), (-0.01 * height, 0.01 * height))
-    0
+    ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
+    1
     False
 
 setCamera :: Camera -> IO ()
-setCamera ((minx, maxx), (miny, maxy)) = do
+setCamera ((minx, miny), (diffx, diffy)) = do
   matrixMode $= Projection
   loadIdentity
-  ortho minx maxx miny maxy (-10) 10
+  ortho minx (minx + diffx) miny (miny + diffy) (-10) 10
   matrixMode $= Modelview 0
 
 changeZoom :: GLdouble -> Camera -> Camera
-changeZoom z ((minx, maxx), (miny, maxy)) =
-  let z2 = z / 2
-  in ((minx + z2, maxx - z2), (miny + z2, maxy - z2))
+changeZoom z ((minx, miny), (diffx, diffy)) =
+  let ndiffx = diffx * z
+      ndiffy = diffy * z
+      ocent = (minx + diffx / 2, miny + diffy / 2, 0)
+  in setCentre ocent ((0, 0), (ndiffx, ndiffy))
 
 setCentre :: GLvector3 -> Camera -> Camera
-setCentre (nx, ny, _) ((minx, maxx), (miny, maxy)) =
-  let xd = (maxx - minx) / 2
-      yd = (maxy - miny) / 2
-  in ((nx - xd, nx + xd), (ny - yd, ny + yd))
+setCentre (nx, ny, _) ((_, _), (diffx, diffy)) =
+  ((nx - diffx / 2, ny - diffy / 2), (diffx, diffy))
 
 createAWindow = do
   setVideoMode width height 0 [OpenGL]
@@ -108,10 +108,10 @@ processEvent (KeyDown (Keysym SDLK_a     _ _)) = modify $ modTri $ modifyAngVelo
 processEvent (KeyUp   (Keysym SDLK_a     _ _)) = modify $ modTri $ modifyAngVelocity (subtract 1.5)
 processEvent (KeyDown (Keysym SDLK_d     _ _)) = modify $ modTri $ modifyAngVelocity (subtract 1.5)
 processEvent (KeyUp   (Keysym SDLK_d     _ _)) = modify $ modTri $ modifyAngVelocity (+1.5)
-processEvent (KeyDown (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoom $ (+ 0.15)
-processEvent (KeyUp   (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoom $ (subtract 0.15)
-processEvent (KeyDown (Keysym SDLK_MINUS _ _)) = modify $ modCamZoom $ (subtract 0.15)
-processEvent (KeyUp   (Keysym SDLK_MINUS _ _)) = modify $ modCamZoom $ (+ 0.15)
+processEvent (KeyDown (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoom $ (+ 0.015)
+processEvent (KeyUp   (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoom $ (subtract 0.015)
+processEvent (KeyDown (Keysym SDLK_MINUS _ _)) = modify $ modCamZoom $ (subtract 0.015)
+processEvent (KeyUp   (Keysym SDLK_MINUS _ _)) = modify $ modCamZoom $ (+ 0.015)
 processEvent _                                 = return ()
 
 processEvents :: [SDL.Event] -> StateT TestState IO ()
