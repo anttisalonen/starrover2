@@ -67,9 +67,10 @@ main = withInit [InitVideo] $ do
 initState :: TestState
 initState = TestState 
     (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles trianglePoints)
-    [(modifyPosition (*+* (0.0, 4.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Polygon (circlePoints 16)))]
+    [(modifyPosition (*+* (0.0, 4.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Polygon (circlePoints 16))),
+     (modifyPosition (*+* (-12.0, -24.0, 0.0)) (newEntity glVector3Null (Color4 0.9 0.0 0.0 1.0) Polygon (circlePoints 16)))]
     ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
-    10
+    50
     0
     False
 
