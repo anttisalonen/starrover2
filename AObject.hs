@@ -7,17 +7,20 @@ import OpenGLUtils
 import Entity
 
 data AObject = AObject {
-    initialAngle :: GLdouble
+    angle        :: GLdouble
   , color        :: Color4 GLfloat
   , size         :: GLdouble
   , orbitRadius  :: GLdouble
   }
 
+modifyAngle :: (GLdouble -> GLdouble) -> AObject -> AObject
+modifyAngle f t = t{angle = f (angle t)}
+
 aobjToEntities :: AObject -> (Entity, Entity)
 aobjToEntities a = (e, o)
   where e = newEntity 
-               (sin (degToRad $ initialAngle a) * (orbitRadius a),
-                cos (degToRad $ initialAngle a) * (orbitRadius a),
+               (sin (degToRad $ angle a) * (orbitRadius a),
+                cos (degToRad $ angle a) * (orbitRadius a),
                 0)
                (AObject.color a)
                Polygon

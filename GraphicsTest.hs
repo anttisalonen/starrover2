@@ -156,7 +156,7 @@ drawGLScreen ent aobjs = do
   
   forM_ aobjs $ \aobj -> do
     loadIdentity
-    rotate (initialAngle aobj) $ Vector3 0 0 (1 :: GLdouble)
+    rotate (angle aobj) $ Vector3 0 0 (1 :: GLdouble)
     translate $ Vector3 (orbitRadius aobj) 0 0
     (\s -> OpenGL.scale s s s) (size aobj)
     currentColor $= (AObject.color aobj)
