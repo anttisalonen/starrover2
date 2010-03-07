@@ -124,6 +124,7 @@ isQuit = hasEvent isq
         isq (KeyDown (Keysym SDLK_q _ _)) = True
         isq _ = False
 
+clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx n = if mn > n then mn else if mx < n then mx else n
 
 loop :: StateT TestState IO ()
