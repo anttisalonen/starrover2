@@ -12,6 +12,7 @@ import Graphics.UI.SDL as SDL
 import OpenGLUtils
 import Entity
 import Camera
+import AObject
 
 -- generic stuff
 pollAllSDLEvents :: IO [SDL.Event]
@@ -64,15 +65,18 @@ main = withInit [InitVideo] $ do
   blendFunc $= (OpenGL.SrcAlpha, OneMinusSrcAlpha)
   createAWindow 
 
+aobjs =
+  [ AObject 0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
+  , AObject 0   (Color4 0.5 0.5 1.0 1.0) 2.0 28
+  , AObject 250 (Color4 0.0 0.4 0.5 1.0) 4.0 80
+  , AObject 30  (Color4 0.6 0.6 0.6 1.0) 3.0 100
+  , AObject 30  (Color4 0.6 0.6 0.6 1.0) 3.0 100
+  ]
+
 initState :: TestState
 initState = TestState 
     (newEntity (50.0, 30.0, 0.0) (Color4 0.0 0.5 0.0 1.0) Triangles trianglePoints glVector3AllUnit)
-    [ newEntity (0.0, 28.0, 0.0) (Color4 0.5 0.5 1.0 1.0) Polygon (circlePoints 16) (glVector3AllUnit *** 3.0)
-    , newEntity (0.0, 0.0, 0.0) (Color4 0.9 0.0 0.0 1.0) Polygon (circlePoints 16) (glVector3AllUnit *** 6.0)
-    , newEntity (32.0, 90.0, 0.0) (Color4 0.6 0.6 0.6 1.0) Polygon (circlePoints 16) (glVector3AllUnit *** 3.0)
-    , newEntity (4.0, -78.0, 0.0) (Color4 0.0 0.4 0.5 1.0) Polygon (circlePoints 16) (glVector3AllUnit *** 3.0)
-    , newEntity glVector3Null (Color4 0.5 0.5 0.5 0.1) LineLoop (circlePoints 128) (glVector3AllUnit *** 28.0)
-    ]
+    (concatMap aobjToEntities aobjs)
     ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
     100
     0
@@ -158,10 +162,4 @@ trianglePoints =
     ,(-1,-1, 0)
     ,(1,-1, 0)]
 
-circlePoints :: Int -> [GLvector3]
-circlePoints n = 
-  let xs = map (sin . (2 * pi *) . (/(fromIntegral n)) . fromIntegral) [0..(n - 1)]
-      ys = map (cos . (2 * pi *) . (/(fromIntegral n)) . fromIntegral) [0..(n - 1)]
-      zs = repeat 0
-  in zip3 xs ys zs
 

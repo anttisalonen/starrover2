@@ -28,3 +28,10 @@ glVector3Null = (0, 0, 0)
 glVector3AllUnit :: GLvector3
 glVector3AllUnit = (1, 1, 1)
 
+circlePoints :: Int -> [GLvector3]
+circlePoints n = 
+  let xs = map (sin . (2 * pi *) . (/(fromIntegral n)) . fromIntegral) [0..(n - 1)]
+      ys = map (cos . (2 * pi *) . (/(fromIntegral n)) . fromIntegral) [0..(n - 1)]
+      zs = repeat 0
+  in zip3 xs ys zs
+
