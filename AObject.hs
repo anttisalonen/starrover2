@@ -13,11 +13,11 @@ data AObject = AObject {
   , orbitRadius  :: GLdouble
   }
 
-aobjToEntities :: AObject -> [Entity]
-aobjToEntities a = [e, o]
+aobjToEntities :: AObject -> (Entity, Entity)
+aobjToEntities a = (e, o)
   where e = newEntity 
-               (sin (initialAngle a) * (orbitRadius a),
-                cos (initialAngle a) * (orbitRadius a),
+               (sin (degToRad $ initialAngle a) * (orbitRadius a),
+                cos (degToRad $ initialAngle a) * (orbitRadius a),
                 0)
                (AObject.color a)
                Polygon
@@ -30,4 +30,7 @@ aobjToEntities a = [e, o]
                (circlePoints 128)
                (glVector3AllUnit *** (orbitRadius a))
 
+aobjPoints = circlePoints 16
+aorbitPoints = circlePoints 128
+aorbitColor = Color4 0.5 0.5 0.5 (1 :: GLfloat)
 

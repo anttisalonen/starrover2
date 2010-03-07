@@ -34,7 +34,7 @@ height = 600
 
 data TestState = TestState {
     tri          :: Entity
-  , aobjects     :: [Entity]
+  , aobjects     :: [AObject]
   , camera       :: Camera
   , camzoom      :: GLdouble
   , camzoomdelta :: GLdouble
@@ -45,7 +45,7 @@ data TestState = TestState {
 modTri :: (Entity -> Entity) -> TestState -> TestState
 modTri f t = t{tri = f (tri t)}
 
-modAObjects :: ([Entity] -> [Entity]) -> TestState -> TestState
+modAObjects :: ([AObject] -> [AObject]) -> TestState -> TestState
 modAObjects f t = t{aobjects = f (aobjects t)}
 
 modCamera :: (Camera -> Camera) -> TestState -> TestState
@@ -67,16 +67,18 @@ main = withInit [InitVideo] $ do
 
 aobjs =
   [ AObject 0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
-  , AObject 0   (Color4 0.5 0.5 1.0 1.0) 2.0 28
+  , AObject 10  (Color4 0.5 0.5 1.0 1.0) 2.0 28
   , AObject 250 (Color4 0.0 0.4 0.5 1.0) 4.0 80
   , AObject 30  (Color4 0.6 0.6 0.6 1.0) 3.0 100
-  , AObject 30  (Color4 0.6 0.6 0.6 1.0) 3.0 100
+  , AObject 80  (Color4 0.6 0.6 0.6 1.0) 2.0 130
   ]
+
+aobjsAndOrbits = unzip $ map aobjToEntities aobjs
 
 initState :: TestState
 initState = TestState 
     (newEntity (50.0, 30.0, 0.0) (Color4 0.0 0.5 0.0 1.0) Triangles trianglePoints glVector3AllUnit)
-    (concatMap aobjToEntities aobjs)
+    aobjs
     ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
     100
     0
@@ -128,10 +130,9 @@ loop = do
   modify $ modCamera $ setZoom $ (camzoom state) + (100 * (length2 $ velocity (tri state)))
   modify $ modCamera $ setCentre $ Entity.position (tri state)
   liftIO $ setCamera (camera state)
-  liftIO $ drawGLScreen (tri state : aobjects state)
+  liftIO $ drawGLScreen (tri state) (aobjects state)
   when (not (stopped state)) $ do
     modify $ modTri (updateEntity 1)
-    modify $ modAObjects (map $ updateEntity 1)
   when (stopped state) $ do
     liftIO $ putStrLn $ "cam zoom: " ++ show (camzoom state)
     liftIO $ putStrLn $ "cam: " ++ show (camera state)
@@ -141,19 +142,33 @@ loop = do
   processEvents events
   when (not quit) loop
 
-drawGLScreen :: [Entity] -> IO ()
-drawGLScreen entities = do
+drawGLScreen :: Entity -> [AObject] -> IO ()
+drawGLScreen ent aobjs = do
   clear [ColorBuffer,DepthBuffer]
 
-  forM_ entities $ \ent -> do
-    loadIdentity
-    translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
-    rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLdouble)
-    (\(x,y,z) -> OpenGL.scale x y z) (Entity.scale ent)
-    currentColor $= (Entity.color ent)
-    renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
-      vertex $ Vertex3 x y z
+  loadIdentity
+  translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
+  rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLdouble)
+  (\(x,y,z) -> OpenGL.scale x y z) (Entity.scale ent)
+  currentColor $= (Entity.color ent)
+  renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
+    vertex $ Vertex3 x y z
   
+  forM_ aobjs $ \aobj -> do
+    loadIdentity
+    rotate (initialAngle aobj) $ Vector3 0 0 (1 :: GLdouble)
+    translate $ Vector3 (orbitRadius aobj) 0 0
+    (\s -> OpenGL.scale s s s) (size aobj)
+    currentColor $= (AObject.color aobj)
+    renderPrimitive Polygon $ forM_ aobjPoints $ \(x,y,z) -> do
+      vertex $ Vertex3 x y z
+
+    loadIdentity
+    (\s -> OpenGL.scale s s s) (orbitRadius aobj)
+    currentColor $= aorbitColor
+    renderPrimitive LineLoop $ forM_ aorbitPoints $ \(x,y,z) -> do
+      vertex $ Vertex3 x y z
+
   glSwapBuffers
 
 trianglePoints :: [GLvector3]
