@@ -18,10 +18,11 @@ data Entity = Entity {
   , color        :: Color4 GLfloat
   , primitive    :: PrimitiveMode
   , vertices     :: [GLvector3]
+  , scale        :: GLvector3
   }
 
-newEntity :: GLvector3 -> Color4 GLfloat -> PrimitiveMode -> [GLvector3] -> Entity
-newEntity p c pr vrt = Entity p glVector3Null glVector3Null 0 0 0 c pr vrt
+newEntity :: GLvector3 -> Color4 GLfloat -> PrimitiveMode -> [GLvector3] -> GLvector3 -> Entity
+newEntity p c pr vrt scl = Entity p glVector3Null glVector3Null 0 0 0 c pr vrt scl
 
 -- TODO: generate mod-functions using TH
 modifyPosition :: (GLvector3 -> GLvector3) -> Entity -> Entity
@@ -47,6 +48,9 @@ modifyColor f t = t{Entity.color = f (Entity.color t)}
 
 modifyPrimitive :: (PrimitiveMode -> PrimitiveMode) -> Entity -> Entity
 modifyPrimitive f t = t{primitive = f (primitive t)}
+
+modifyScale :: (GLvector3 -> GLvector3) -> Entity -> Entity
+modifyScale f t = t{Entity.scale = f (Entity.scale t)}
 
 degToRad :: (Floating a) => a -> a
 degToRad d = d * pi / 180

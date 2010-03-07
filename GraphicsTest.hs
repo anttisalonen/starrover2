@@ -66,11 +66,14 @@ main = withInit [InitVideo] $ do
 
 initState :: TestState
 initState = TestState 
-    (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles trianglePoints)
-    [(modifyPosition (*+* (0.0, 4.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Polygon (circlePoints 16))),
-     (modifyPosition (*+* (-12.0, -24.0, 0.0)) (newEntity glVector3Null (Color4 0.9 0.0 0.0 1.0) Polygon (circlePoints 16)))]
+    (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles trianglePoints glVector3AllUnit)
+    [(modifyPosition (*+* (0.0, 14.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Polygon (circlePoints 16) (glVector3AllUnit *** 3.0)))
+    , (modifyPosition (*+* (-12.0, -34.0, 0.0)) (newEntity glVector3Null (Color4 0.9 0.0 0.0 1.0) Polygon (circlePoints 16) (glVector3AllUnit *** 3.0)))
+    , (modifyPosition (*+* (32.0,  90.0, 0.0)) (newEntity glVector3Null (Color4 0.6 0.6 0.6 1.0) Polygon (circlePoints 16) (glVector3AllUnit *** 3.0)))
+    , (modifyPosition (*+* ( 4.0, -78.0, 0.0)) (newEntity glVector3Null (Color4 0.0 0.4 0.5 1.0) Polygon (circlePoints 16) (glVector3AllUnit *** 3.0)))
+    ]
     ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
-    50
+    100
     0
     False
 
@@ -141,6 +144,7 @@ drawGLScreen entities = do
     loadIdentity
     translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
     rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLdouble)
+    (\(x,y,z) -> OpenGL.scale x y z) (Entity.scale ent)
     currentColor $= (Entity.color ent)
     renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
       vertex $ Vertex3 x y z

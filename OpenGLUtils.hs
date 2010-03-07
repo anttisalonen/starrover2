@@ -25,3 +25,6 @@ length = sqrt . length2
 glVector3Null :: GLvector3
 glVector3Null = (0, 0, 0)
 
+glVector3AllUnit :: GLvector3
+glVector3AllUnit = (1, 1, 1)
+
