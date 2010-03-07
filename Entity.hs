@@ -17,10 +17,11 @@ data Entity = Entity {
   , angAccel     :: GLdouble
   , color        :: Color4 GLfloat
   , primitive    :: PrimitiveMode
+  , vertices     :: [GLvector3]
   }
 
-newEntity :: GLvector3 -> Color4 GLfloat -> PrimitiveMode -> Entity
-newEntity p c pr = Entity p glVector3Null glVector3Null 0 0 0 c pr
+newEntity :: GLvector3 -> Color4 GLfloat -> PrimitiveMode -> [GLvector3] -> Entity
+newEntity p c pr vrt = Entity p glVector3Null glVector3Null 0 0 0 c pr vrt
 
 -- TODO: generate mod-functions using TH
 modifyPosition :: (GLvector3 -> GLvector3) -> Entity -> Entity

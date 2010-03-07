@@ -28,7 +28,6 @@ hasEvent :: (SDL.Event -> Bool) -> [SDL.Event] -> Bool
 hasEvent fun evts = or $ map fun evts
 
 -- test scenario
-step = (0.05, 0.0, 0.0)
 width = 800
 height = 600
 
@@ -67,8 +66,8 @@ main = withInit [InitVideo] $ do
 
 initState :: TestState
 initState = TestState 
-    (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles)
-    (modifyPosition (*+* (0.0, 4.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Quads))
+    (newEntity glVector3Null (Color4 0.0 0.5 0.0 1.0) Triangles trianglePoints)
+    (modifyPosition (*+* (0.0, 4.0, 0.0)) (newEntity glVector3Null (Color4 0.5 0.5 1.0 1.0) Polygon (circlePoints 16)))
     ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
     10
     0
@@ -142,20 +141,21 @@ drawGLScreen entities = do
     translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
     rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLdouble)
     currentColor $= (Entity.color ent)
-    let points = case primitive ent of
-                   Quads -> quadsPoints
-                   _     -> polygonPoints
-    renderPrimitive (primitive ent) $ forM_ points $ \(x,y,z) -> do
+    renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
       vertex $ Vertex3 x y z
   
   glSwapBuffers
 
-polygonPoints :: [GLvector3]
-polygonPoints =
+trianglePoints :: [GLvector3]
+trianglePoints =
    [ (0,1, 0)
     ,(-1,-1, 0)
     ,(1,-1, 0)]
 
-quadsPoints :: [GLvector3]
-quadsPoints =
-   [(1,1,1)  ,(-1,1,1)  ,(-1,-1,1) ,(1,-1,1) ]
+circlePoints :: Int -> [GLvector3]
+circlePoints n = 
+  let xs = map (sin . (2 * pi *) . (/(fromIntegral n)) . fromIntegral) [0..(n - 1)]
+      ys = map (cos . (2 * pi *) . (/(fromIntegral n)) . fromIntegral) [0..(n - 1)]
+      zs = repeat 0
+  in zip3 xs ys zs
+
