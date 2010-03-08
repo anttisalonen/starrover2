@@ -130,7 +130,7 @@ loop = do
   liftIO $ delay 10
   state <- State.get
   modify $ modCamZoom $ (+ (camzoomdelta state))
-  modify $ modCamera $ setZoom $ clamp 1.0 250 $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
+  modify $ modCamera $ setZoom $ clamp 30 250 $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
   modify $ modCamera $ setCentre $ Entity.position (tri state)
   liftIO $ setCamera (camera state)
   liftIO $ drawGLScreen (tri state) (aobjects state)
