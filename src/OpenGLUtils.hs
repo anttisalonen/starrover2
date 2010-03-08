@@ -35,5 +35,6 @@ circlePoints n =
       zs = repeat 0
   in zip3 xs ys zs
 
+uniformScale :: (MatrixComponent c) => c -> IO ()
 uniformScale x = OpenGL.scale x x x
 

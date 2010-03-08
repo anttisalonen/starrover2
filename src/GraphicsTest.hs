@@ -1,8 +1,6 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 module Main where
 
-import System.Exit
-import System.Environment
 import Control.Monad
 import Control.Monad.State as State
 
@@ -85,7 +83,7 @@ initState = TestState
     False
 
 createAWindow = do
-  setVideoMode width height 0 [OpenGL]
+  _ <- setVideoMode width height 0 [OpenGL]
   depthFunc $= Just Less
   clearColor $= Color4 0 0 0 1
   viewport $= (Position 0 0, Size width height)
@@ -140,12 +138,12 @@ loop = do
     modify $ modTri (updateEntity 1)
     modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
   events <- liftIO $ pollAllSDLEvents
-  let quit = isQuit events
+  let quits = isQuit events
   processEvents events
-  when (not quit) loop
+  when (not quits) loop
 
 drawGLScreen :: Entity -> [AObject] -> IO ()
-drawGLScreen ent aobjs = do
+drawGLScreen ent objs = do
   clear [ColorBuffer,DepthBuffer]
 
   loadIdentity
@@ -156,7 +154,7 @@ drawGLScreen ent aobjs = do
   renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
     vertex $ Vertex3 x y z
   
-  forM_ aobjs $ \aobj -> do
+  forM_ objs $ \aobj -> do
     loadIdentity
     rotate (angle aobj) $ Vector3 0 0 (1 :: GLdouble)
     translate $ Vector3 (orbitRadius aobj) 0 0

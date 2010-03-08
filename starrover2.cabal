@@ -24,5 +24,5 @@ Executable GraphicsTest
                    SDL>=0.5.5
   Main-is:         GraphicsTest.hs
   Hs-Source-Dirs:  src
-  Ghc-options:     -Wall
+  Ghc-options:     -Wall -fno-warn-missing-signatures
 
