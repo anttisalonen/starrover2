@@ -35,3 +35,5 @@ circlePoints n =
       zs = repeat 0
   in zip3 xs ys zs
 
+uniformScale x = OpenGL.scale x x x
+
