@@ -55,7 +55,7 @@ modifyScale f t = t{Entity.scale = f (Entity.scale t)}
 degToRad :: (Floating a) => a -> a
 degToRad d = d * pi / 180
 
-updateEntity :: Double -> Entity -> Entity
+updateEntity :: GLdouble -> Entity -> Entity
 updateEntity delta ent = flip execState ent $ do
   let (accx, accy, accz) = acceleration ent
   let rr = degToRad $ rotation ent
