@@ -61,8 +61,8 @@ modStopped :: (Bool -> Bool) -> TestState -> TestState
 modStopped f t = t{stopped = f (stopped t)}
 
 main = withInit [InitVideo] $ do
-  blendEquation $= FuncAdd
-  blendFunc $= (OpenGL.SrcAlpha, OneMinusSrcAlpha)
+  -- blendEquation $= FuncAdd
+  -- blendFunc $= (OpenGL.SrcAlpha, OneMinusSrcAlpha)
   createAWindow 
 
 aobjs =
