@@ -6,6 +6,7 @@ import Control.Monad.State as State
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
+import qualified Data.Edison.Seq.SimpleQueue as S
 
 import OpenGLUtils
 import Entity
@@ -37,7 +38,19 @@ data TestState = TestState {
   , camzoom      :: GLdouble
   , camzoomdelta :: GLdouble
   , stopped      :: Bool
+  , combatState  :: Maybe Combat
   }
+
+data Combat = Combat {
+    ship1  :: Entity
+  , ship2  :: Entity
+  , lasers :: S.Seq Entity
+  }
+
+newCombat :: Combat
+newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
+                   (newStdShip (30, 20, 0) enemyShipColor)
+                   S.empty
 
 -- TODO: generate mod-functions using TH
 modTri :: (Entity -> Entity) -> TestState -> TestState
@@ -58,6 +71,9 @@ modCamZoomDelta f t = t{camzoomdelta = f (camzoomdelta t)}
 modStopped :: (Bool -> Bool) -> TestState -> TestState
 modStopped f t = t{stopped = f (stopped t)}
 
+modCombatState :: (Maybe Combat -> Maybe Combat) -> TestState -> TestState
+modCombatState f t = t{combatState = f (combatState t)}
+
 main = withInit [InitVideo] $ do
   -- blendEquation $= FuncAdd
   -- blendFunc $= (OpenGL.SrcAlpha, OneMinusSrcAlpha)
@@ -73,14 +89,22 @@ aobjs =
 
 aobjsAndOrbits = unzip $ map aobjToEntities aobjs
 
+newStdShip :: GLvector3 -> Color4 GLfloat -> Entity
+newStdShip pos c = newEntity pos c TriangleFan trianglePoints glVector3AllUnit
+
+playerShipColor, enemyShipColor :: Color4 GLfloat
+playerShipColor = Color4 0.0 0.5 0.0 1.0
+enemyShipColor  = Color4 0.5 0.0 0.0 1.0
+
 initState :: TestState
 initState = TestState 
-    (newEntity (50.0, 30.0, 0.0) (Color4 0.0 0.5 0.0 1.0) TriangleFan trianglePoints glVector3AllUnit)
+    (newStdShip (50.0, 30.0, 0.0) playerShipColor)
     aobjs
     ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
     100
     0
     False
+    Nothing
 
 createAWindow = do
   _ <- setVideoMode width height 0 [OpenGL]
@@ -151,14 +175,19 @@ collides1d (a, b) (c, d) =
 collides2d (x1, y1) (x2, y2) =
   collides1d x1 x2 && collides1d y1 y2
 
+boxArea (x, y) r = ((x - r, x + r), (y - r, y + r))
+
+getShipBox e = 
+  let (x, y, _) = Entity.position e
+  in boxArea (x, y) 1
+
 handleCollisions :: StateT TestState IO ()
 handleCollisions = do
   state <- State.get
-  let (plcoordx, plcoordy, _) = Entity.position (tri state)
-  let plbox = ((plcoordx - 1, plcoordx + 1), (plcoordy - 1, plcoordy + 1))
+  let plbox = getShipBox (tri state)
   forM_ (aobjects state) $ \aobj -> do
     let (objcoordx, objcoordy, _) = AObject.getPosition aobj
-        abox = ((objcoordx - size aobj, objcoordx + size aobj), (objcoordy - size aobj, objcoordy + size aobj))
+        abox = boxArea (objcoordx, objcoordy) (size aobj)
     when (collides2d plbox abox) $ do
       liftIO $ putStrLn "inside planet!"
 
@@ -166,19 +195,27 @@ loop :: StateT TestState IO ()
 loop = do 
   liftIO $ delay 10
   state <- State.get
-  modify $ modCamZoom $ (+ (camzoomdelta state))
-  modify $ modCamera $ setZoom $ clamp 30 250 $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
-  modify $ modCamera $ setCentre $ Entity.position (tri state)
-  liftIO $ setCamera (camera state)
-  liftIO $ drawGLScreen (tri state) (aobjects state)
-  when (not (stopped state)) $ do
-    modify $ modTri (updateEntity 1)
-    modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
-    handleCollisions
-  events <- liftIO $ pollAllSDLEvents
-  let quits = isQuit events
-  processEvents events
-  when (not quits) loop
+  case combatState state of
+    Nothing -> do
+      modify $ modCamZoom $ (+ (camzoomdelta state))
+      modify $ modCamera $ setZoom $ clamp 30 250 $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
+      modify $ modCamera $ setCentre $ Entity.position (tri state)
+      liftIO $ setCamera (camera state)
+      liftIO $ drawGLScreen (tri state) (aobjects state)
+      when (not (stopped state)) $ do
+        modify $ modTri (updateEntity 1)
+        modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
+        handleCollisions
+        when (collides2d ((10, 20), (10, 20)) (getShipBox (tri state))) $ do
+          modify $ modCombatState $ const $ Just newCombat
+      events <- liftIO $ pollAllSDLEvents
+      let quits = isQuit events
+      processEvents events
+      when (not quits) loop
+    Just c -> do
+      events <- liftIO $ pollAllSDLEvents
+      let quits = isQuit events
+      when (not quits) loop
 
 drawGLScreen :: Entity -> [AObject] -> IO ()
 drawGLScreen ent objs = do
