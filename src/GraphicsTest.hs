@@ -127,6 +127,9 @@ processEvent (KeyUp   (Keysym SDLK_PLUS  _ _)) = changeZoom zoomChangeFactor
 processEvent (KeyDown (Keysym SDLK_i     _ _)) = do
   s <- State.get
   liftIO . putStrLn $ "Zoom: " ++ show (camzoom s)
+  liftIO . putStrLn $ "Player position: " ++ show (Entity.position $ tri s)
+  forM_ (aobjects s) $ \aobj -> do
+    liftIO . putStrLn $ "Astronomical body position: " ++ show (AObject.getPosition aobj)
 processEvent _                                 = return ()
 
 processEvents :: [SDL.Event] -> StateT TestState IO ()
@@ -141,6 +144,24 @@ isQuit = hasEvent isq
 clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx n = if mn > n then mn else if mx < n then mx else n
 
+collides1d (a, b) (c, d) =
+  (a < c && c < b) || (a < d && d < b) ||
+  (c < a && a < d) || (c < b && b < d)
+
+collides2d (x1, y1) (x2, y2) =
+  collides1d x1 x2 && collides1d y1 y2
+
+handleCollisions :: StateT TestState IO ()
+handleCollisions = do
+  state <- State.get
+  let (plcoordx, plcoordy, _) = Entity.position (tri state)
+  let plbox = ((plcoordx - 1, plcoordx + 1), (plcoordy - 1, plcoordy + 1))
+  forM_ (aobjects state) $ \aobj -> do
+    let (objcoordx, objcoordy, _) = AObject.getPosition aobj
+        abox = ((objcoordx - size aobj, objcoordx + size aobj), (objcoordy - size aobj, objcoordy + size aobj))
+    when (collides2d plbox abox) $ do
+      liftIO $ putStrLn "inside planet!"
+
 loop :: StateT TestState IO ()
 loop = do 
   liftIO $ delay 10
@@ -153,6 +174,7 @@ loop = do
   when (not (stopped state)) $ do
     modify $ modTri (updateEntity 1)
     modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
+    handleCollisions
   events <- liftIO $ pollAllSDLEvents
   let quits = isQuit events
   processEvents events
