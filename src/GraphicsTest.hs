@@ -36,19 +36,22 @@ data TestState = TestState {
   , aobjects     :: [AObject]
   , camstate     :: CameraState
   , stopped      :: Bool
-  , combatState  :: Maybe Combat
   }
 
 data Combat = Combat {
-    ship1  :: Entity
-  , ship2  :: Entity
-  , lasers :: S.Seq Entity
+    ship1          :: Entity
+  , ship2          :: Entity
+  , lasers         :: S.Seq Entity
+  , combatcamstate :: CameraState
+  , combatPaused   :: Bool
   }
 
 newCombat :: Combat
 newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
                    (newStdShip (30, 20, 0) enemyShipColor)
                    S.empty
+                   stdCamera
+                   False
 
 -- TODO: generate mod-functions using TH
 modTri :: (Entity -> Entity) -> TestState -> TestState
@@ -62,9 +65,6 @@ modCameraState f t = t{camstate = f (camstate t)}
 
 modStopped :: (Bool -> Bool) -> TestState -> TestState
 modStopped f t = t{stopped = f (stopped t)}
-
-modCombatState :: (Maybe Combat -> Maybe Combat) -> TestState -> TestState
-modCombatState f t = t{combatState = f (combatState t)}
 
 main = withInit [InitVideo] $ do
   -- blendEquation $= FuncAdd
@@ -88,16 +88,18 @@ playerShipColor, enemyShipColor :: Color4 GLfloat
 playerShipColor = Color4 0.0 0.5 0.0 1.0
 enemyShipColor  = Color4 0.5 0.0 0.0 1.0
 
+stdCamera :: CameraState
+stdCamera = CameraState 
+      ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
+      100
+      0
+
 initState :: TestState
 initState = TestState 
     (newStdShip (50.0, 30.0, 0.0) playerShipColor)
     aobjs
-    (CameraState 
-      ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
-      100
-      0)
+    stdCamera
     False
-    Nothing
 
 createAWindow = do
   _ <- setVideoMode width height 0 [OpenGL]
@@ -188,19 +190,21 @@ loop :: StateT TestState IO ()
 loop = do 
   liftIO $ delay 10
   state <- State.get
-  case combatState state of
-    Nothing -> do
-      drawSpace
-      when (not (stopped state)) $ do
-        updateSpaceState
-      quits <- handleEvents
-      when (not quits) loop
-    Just c -> do
-      liftIO $ drawCombat c
-      when (not (stopped state)) $ do
-        updateCombatState
-      quits <- handleCombatEvents
-      when (not quits) loop
+  drawSpace
+  when (not (stopped state)) $ do
+    updateSpaceState
+  quits <- handleEvents
+  when (not quits) loop
+
+combatLoop :: StateT Combat IO ()
+combatLoop = do
+  liftIO $ delay 10
+  state <- State.get
+  drawCombat
+  when (not (combatPaused state)) $ do
+    updateCombatState
+  quits <- handleCombatEvents
+  when (not quits) combatLoop
 
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
@@ -215,7 +219,7 @@ updateSpaceState = do
   modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
   handleCollisions
   when (collides2d ((10, 20), (10, 20)) (getShipBox (tri state))) $ do
-    modify $ modCombatState $ const $ Just newCombat
+    liftIO $ evalStateT combatLoop newCombat
 
 drawSpace :: StateT TestState IO ()
 drawSpace = do
@@ -226,13 +230,15 @@ drawSpace = do
   liftIO $ setCamera (camera $ camstate state)
   liftIO $ drawGLScreen (tri state) (aobjects state)
 
-drawCombat :: Combat -> IO ()
-drawCombat c = return ()
+drawCombat :: StateT Combat IO ()
+drawCombat = return ()
 
-updateCombatState :: StateT TestState IO ()
+updateCombatState :: StateT Combat IO ()
 updateCombatState = return ()
 
-handleCombatEvents = handleEvents
+handleCombatEvents = do
+  events <- liftIO $ pollAllSDLEvents
+  return $ isQuit events
 
 drawGLScreen :: Entity -> [AObject] -> IO ()
 drawGLScreen ent objs = do
