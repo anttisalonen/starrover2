@@ -27,8 +27,8 @@ hasEvent :: (SDL.Event -> Bool) -> [SDL.Event] -> Bool
 hasEvent fun evts = or $ map fun evts
 
 -- test scenario
-width = 640
-height = 480
+width = 800
+height = 600
 
 data TestState = TestState {
     tri          :: Entity
