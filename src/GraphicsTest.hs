@@ -118,39 +118,42 @@ turn a = modify $ modTri $ modifyAngVelocity (+a)
 
 changeZoom a = modify $ modCameraState $ modCamZoomDelta (+a)
 
--- TODO: figure out how to make this a State TestState ()
-processEvent :: SDL.Event -> StateT TestState IO ()
-processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify $ modStopped not
-processEvent (KeyDown (Keysym SDLK_w     _ _)) = accelerate 0.002
-processEvent (KeyUp   (Keysym SDLK_w     _ _)) = accelerate 0
-processEvent (KeyDown (Keysym SDLK_s     _ _)) = accelerate (-0.002)
-processEvent (KeyUp   (Keysym SDLK_s     _ _)) = accelerate 0
-processEvent (KeyDown (Keysym SDLK_a     _ _)) = turn 1.5
-processEvent (KeyUp   (Keysym SDLK_a     _ _)) = turn (-1.5)
-processEvent (KeyDown (Keysym SDLK_d     _ _)) = turn (-1.5)
-processEvent (KeyUp   (Keysym SDLK_d     _ _)) = turn 1.5
-processEvent (KeyDown (Keysym SDLK_UP    _ _)) = accelerate 0.002
-processEvent (KeyUp   (Keysym SDLK_UP    _ _)) = accelerate 0
-processEvent (KeyDown (Keysym SDLK_DOWN  _ _)) = accelerate (-0.002)
-processEvent (KeyUp   (Keysym SDLK_DOWN  _ _)) = accelerate 0
-processEvent (KeyDown (Keysym SDLK_LEFT  _ _)) = turn 1.5
-processEvent (KeyUp   (Keysym SDLK_LEFT  _ _)) = turn (-1.5)
-processEvent (KeyDown (Keysym SDLK_RIGHT _ _)) = turn (-1.5)
-processEvent (KeyUp   (Keysym SDLK_RIGHT _ _)) = turn 1.5
-processEvent (KeyDown (Keysym SDLK_MINUS _ _)) = changeZoom zoomChangeFactor 
-processEvent (KeyUp   (Keysym SDLK_MINUS _ _)) = changeZoom (-zoomChangeFactor)
-processEvent (KeyDown (Keysym SDLK_PLUS  _ _)) = changeZoom (-zoomChangeFactor)
-processEvent (KeyUp   (Keysym SDLK_PLUS  _ _)) = changeZoom zoomChangeFactor 
-processEvent (KeyDown (Keysym SDLK_i     _ _)) = do
+mapping = 
+  [ (SDLK_w,     (accelerate 0.002,    accelerate 0))
+  , (SDLK_s,     (accelerate (-0.002), accelerate 0))
+  , (SDLK_a,     (turn 1.5, turn (-1.5)))
+  , (SDLK_d,     (turn (-1.5), turn 1.5))
+  , (SDLK_UP,    (accelerate 0.002, accelerate 0))
+  , (SDLK_DOWN,  (accelerate (-0.002), accelerate 0))
+  , (SDLK_LEFT,  (turn 1.5, turn (-1.5)))
+  , (SDLK_RIGHT, (turn (-1.5), turn 1.5))
+  , (SDLK_MINUS, (changeZoom zoomChangeFactor, changeZoom (-zoomChangeFactor)))
+  , (SDLK_PLUS,  (changeZoom (-zoomChangeFactor), changeZoom zoomChangeFactor))
+  , (SDLK_i,     (showInfo, return ()))
+  , (SDLK_SPACE, (modify $ modStopped not, return ()))
+  ]
+
+processEvent :: [(SDLKey, (StateT TestState IO (), StateT TestState IO ()))] -> SDL.Event -> StateT TestState IO ()
+processEvent n evt =
+  let mk = case evt of
+             KeyDown (Keysym k _ _) -> Just (True, k)
+             KeyUp   (Keysym k _ _) -> Just (False, k) 
+             _                      -> Nothing
+  in case mk of
+       Nothing     -> return ()
+       Just (e, k) -> case lookup k n of
+                        Nothing       -> return ()
+                        Just (a1, a2) -> if e then a1 else a2
+
+showInfo = do
   s <- State.get
   liftIO . putStrLn $ "Zoom: " ++ show (camzoom $ camstate s)
   liftIO . putStrLn $ "Player position: " ++ show (Entity.position $ tri s)
   forM_ (aobjects s) $ \aobj -> do
     liftIO . putStrLn $ "Astronomical body position: " ++ show (AObject.getPosition aobj)
-processEvent _                                 = return ()
 
-processEvents :: [SDL.Event] -> StateT TestState IO ()
-processEvents = mapM_ processEvent
+-- processEvents :: [SDL.Event] -> StateT TestState IO ()
+processEvents n = mapM_ (processEvent n)
 
 isQuit :: [SDL.Event] -> Bool
 isQuit = hasEvent isq
@@ -210,7 +213,7 @@ combatLoop = do
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
   events <- liftIO $ pollAllSDLEvents
-  processEvents events
+  processEvents mapping events
   return $ isQuit events
 
 updateSpaceState :: StateT TestState IO Bool
