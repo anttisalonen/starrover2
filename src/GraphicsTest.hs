@@ -197,25 +197,38 @@ loop = do
   state <- State.get
   case combatState state of
     Nothing -> do
-      modify $ modCamZoom $ (+ (camzoomdelta state))
-      modify $ modCamera $ setZoom $ clamp 30 250 $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
-      modify $ modCamera $ setCentre $ Entity.position (tri state)
-      liftIO $ setCamera (camera state)
-      liftIO $ drawGLScreen (tri state) (aobjects state)
+      drawSpace
       when (not (stopped state)) $ do
-        modify $ modTri (updateEntity 1)
-        modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
-        handleCollisions
-        when (collides2d ((10, 20), (10, 20)) (getShipBox (tri state))) $ do
-          modify $ modCombatState $ const $ Just newCombat
-      events <- liftIO $ pollAllSDLEvents
-      let quits = isQuit events
-      processEvents events
+        updateSpaceState
+      quits <- handleEvents
       when (not quits) loop
     Just c -> do
-      events <- liftIO $ pollAllSDLEvents
-      let quits = isQuit events
+      quits <- handleEvents
       when (not quits) loop
+
+handleEvents :: StateT TestState IO Bool
+handleEvents = do
+  events <- liftIO $ pollAllSDLEvents
+  processEvents events
+  return $ isQuit events
+
+updateSpaceState :: StateT TestState IO ()
+updateSpaceState = do
+  state <- State.get
+  modify $ modTri (updateEntity 1)
+  modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
+  handleCollisions
+  when (collides2d ((10, 20), (10, 20)) (getShipBox (tri state))) $ do
+    modify $ modCombatState $ const $ Just newCombat
+
+drawSpace :: StateT TestState IO ()
+drawSpace = do
+  state <- State.get
+  modify $ modCamZoom $ (+ (camzoomdelta state))
+  modify $ modCamera $ setZoom $ clamp 30 250 $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
+  modify $ modCamera $ setCentre $ Entity.position (tri state)
+  liftIO $ setCamera (camera state)
+  liftIO $ drawGLScreen (tri state) (aobjects state)
 
 drawGLScreen :: Entity -> [AObject] -> IO ()
 drawGLScreen ent objs = do
