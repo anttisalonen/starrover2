@@ -93,21 +93,29 @@ createAWindow = do
 zoomChangeFactor :: (Floating a) => a
 zoomChangeFactor = 1.0
 
+-- accelerate :: (MonadState TestState m) => GLdouble -> m ()
+accelerate a = modify $ modTri $ modifyAcceleration (*+* (0.0,  a, 0.0))
+
+-- turn :: (MonadState TestState m) => GLdouble -> m ()
+turn a = modify $ modTri $ modifyAngVelocity (+a)
+
+changeZoom a = modify $ modCamZoomDelta $ (+a)
+
 -- TODO: figure out how to make this a State TestState ()
 processEvent :: SDL.Event -> StateT TestState IO ()
 processEvent (KeyDown (Keysym SDLK_SPACE _ _)) = modify $ modStopped not
-processEvent (KeyDown (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0,   0.002,  0.0))
-processEvent (KeyUp   (Keysym SDLK_w     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.002), 0.0))
-processEvent (KeyDown (Keysym SDLK_s     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0, (-0.002), 0.0))
-processEvent (KeyUp   (Keysym SDLK_s     _ _)) = modify $ modTri $ modifyAcceleration (*+* (0.0,   0.002,  0.0))
-processEvent (KeyDown (Keysym SDLK_a     _ _)) = modify $ modTri $ modifyAngVelocity (+1.5)
-processEvent (KeyUp   (Keysym SDLK_a     _ _)) = modify $ modTri $ modifyAngVelocity (subtract 1.5)
-processEvent (KeyDown (Keysym SDLK_d     _ _)) = modify $ modTri $ modifyAngVelocity (subtract 1.5)
-processEvent (KeyUp   (Keysym SDLK_d     _ _)) = modify $ modTri $ modifyAngVelocity (+1.5)
-processEvent (KeyDown (Keysym SDLK_MINUS _ _)) = modify $ modCamZoomDelta $ (+ zoomChangeFactor)
-processEvent (KeyUp   (Keysym SDLK_MINUS _ _)) = modify $ modCamZoomDelta $ (subtract zoomChangeFactor)
-processEvent (KeyDown (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoomDelta $ (subtract zoomChangeFactor)
-processEvent (KeyUp   (Keysym SDLK_PLUS  _ _)) = modify $ modCamZoomDelta $ (+ zoomChangeFactor)
+processEvent (KeyDown (Keysym SDLK_w     _ _)) = accelerate 0.002
+processEvent (KeyUp   (Keysym SDLK_w     _ _)) = accelerate (-0.002)
+processEvent (KeyDown (Keysym SDLK_s     _ _)) = accelerate (-0.002)
+processEvent (KeyUp   (Keysym SDLK_s     _ _)) = accelerate 0.002
+processEvent (KeyDown (Keysym SDLK_a     _ _)) = turn 1.5
+processEvent (KeyUp   (Keysym SDLK_a     _ _)) = turn (-1.5)
+processEvent (KeyDown (Keysym SDLK_d     _ _)) = turn (-1.5)
+processEvent (KeyUp   (Keysym SDLK_d     _ _)) = turn 1.5
+processEvent (KeyDown (Keysym SDLK_MINUS _ _)) = changeZoom zoomChangeFactor 
+processEvent (KeyUp   (Keysym SDLK_MINUS _ _)) = changeZoom (-zoomChangeFactor)
+processEvent (KeyDown (Keysym SDLK_PLUS  _ _)) = changeZoom (-zoomChangeFactor)
+processEvent (KeyUp   (Keysym SDLK_PLUS  _ _)) = changeZoom zoomChangeFactor 
 processEvent (KeyDown (Keysym SDLK_i     _ _)) = do
   s <- State.get
   liftIO . putStrLn $ "Zoom: " ++ show (camzoom s)
