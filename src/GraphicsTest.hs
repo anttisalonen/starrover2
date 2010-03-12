@@ -38,21 +38,6 @@ data TestState = TestState {
   , stopped      :: Bool
   }
 
-data Combat = Combat {
-    ship1          :: Entity
-  , ship2          :: Entity
-  , lasers         :: S.Seq Entity
-  , combatcamstate :: CameraState
-  , combatPaused   :: Bool
-  }
-
-newCombat :: Combat
-newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
-                   (newStdShip (30, 20, 0) enemyShipColor)
-                   S.empty
-                   stdCamera
-                   False
-
 -- TODO: generate mod-functions using TH
 modTri :: (Entity -> Entity) -> TestState -> TestState
 modTri f t = t{tri = f (tri t)}
@@ -65,6 +50,19 @@ modCameraState f t = t{camstate = f (camstate t)}
 
 modStopped :: (Bool -> Bool) -> TestState -> TestState
 modStopped f t = t{stopped = f (stopped t)}
+
+data Combat = Combat {
+    ship1          :: Entity
+  , ship2          :: Entity
+  , lasers         :: S.Seq Entity
+  , combatPaused   :: Bool
+  }
+
+newCombat :: Combat
+newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
+                   (newStdShip (30, 20, 0) enemyShipColor)
+                   S.empty
+                   False
 
 main = withInit [InitVideo] $ do
   -- blendEquation $= FuncAdd
@@ -228,10 +226,20 @@ drawSpace = do
   modify $ modCameraState $ modCamera $ setZoom $ clamp 30 250 $ (camzoom $ camstate state) + (400 * (length2 $ velocity (tri state)))
   modify $ modCameraState $ modCamera $ setCentre $ Entity.position (tri state)
   liftIO $ setCamera (camera $ camstate state)
-  liftIO $ drawGLScreen (tri state) (aobjects state)
+  liftIO $ drawGLScreen [tri state] (aobjects state)
 
 drawCombat :: StateT Combat IO ()
-drawCombat = return ()
+drawCombat = do
+  state <- State.get
+  let (x1, y1, _) = Entity.position (ship1 state)
+      (x2, y2, _) = Entity.position (ship2 state)
+      ((minx1, maxx1), (miny1, maxy1)) = boxArea (x1, y1) 10
+      ((minx2, maxx2), (miny2, maxy2)) = boxArea (x2, y2) 10
+  liftIO $ matrixMode $= Projection
+  liftIO $ loadIdentity
+  liftIO $ ortho (min minx1 minx2) (max maxx1 maxx2) (min miny1 miny2) (max maxy1 maxy2) (-10) 10
+  liftIO $ matrixMode $= Modelview 0
+  liftIO $ drawGLScreen [ship1 state, ship2 state] []
 
 updateCombatState :: StateT Combat IO ()
 updateCombatState = return ()
@@ -240,17 +248,18 @@ handleCombatEvents = do
   events <- liftIO $ pollAllSDLEvents
   return $ isQuit events
 
-drawGLScreen :: Entity -> [AObject] -> IO ()
-drawGLScreen ent objs = do
+drawGLScreen :: [Entity] -> [AObject] -> IO ()
+drawGLScreen ents objs = do
   clear [ColorBuffer,DepthBuffer]
 
   loadIdentity
-  translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
-  rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLdouble)
-  (\(x,y,z) -> OpenGL.scale x y z) (Entity.scale ent)
-  currentColor $= (Entity.color ent)
-  renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
-    vertex $ Vertex3 x y z
+  forM_ ents $ \ent -> do
+    translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
+    rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLdouble)
+    (\(x,y,z) -> OpenGL.scale x y z) (Entity.scale ent)
+    currentColor $= (Entity.color ent)
+    renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
+      vertex $ Vertex3 x y z
   
   forM_ objs $ \aobj -> do
     loadIdentity
