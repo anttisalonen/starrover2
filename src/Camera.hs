@@ -25,4 +25,19 @@ setCentre :: GLvector3 -> Camera -> Camera
 setCentre (nx, ny, _) ((_, _), (diffx, diffy)) =
   ((nx - diffx / 2, ny - diffy / 2), (diffx, diffy))
 
+data CameraState = CameraState {
+    camera :: Camera
+  , camzoom :: GLdouble
+  , camzoomdelta :: GLdouble
+  }
+
+modCamera :: (Camera -> Camera) -> CameraState -> CameraState
+modCamera f t = t{camera = f (camera t)}
+
+modCamZoom :: (GLdouble -> GLdouble) -> CameraState -> CameraState
+modCamZoom f t = t{camzoom = f (camzoom t)}
+
+modCamZoomDelta :: (GLdouble -> GLdouble) -> CameraState -> CameraState
+modCamZoomDelta f t = t{camzoomdelta = f (camzoomdelta t)}
+
 

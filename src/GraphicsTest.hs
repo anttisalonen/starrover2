@@ -34,9 +34,7 @@ height = 600
 data TestState = TestState {
     tri          :: Entity
   , aobjects     :: [AObject]
-  , camera       :: Camera
-  , camzoom      :: GLdouble
-  , camzoomdelta :: GLdouble
+  , camstate     :: CameraState
   , stopped      :: Bool
   , combatState  :: Maybe Combat
   }
@@ -59,14 +57,8 @@ modTri f t = t{tri = f (tri t)}
 modAObjects :: ([AObject] -> [AObject]) -> TestState -> TestState
 modAObjects f t = t{aobjects = f (aobjects t)}
 
-modCamera :: (Camera -> Camera) -> TestState -> TestState
-modCamera f t = t{camera = f (camera t)}
-
-modCamZoom :: (GLdouble -> GLdouble) -> TestState -> TestState
-modCamZoom f t = t{camzoom = f (camzoom t)}
-
-modCamZoomDelta :: (GLdouble -> GLdouble) -> TestState -> TestState
-modCamZoomDelta f t = t{camzoomdelta = f (camzoomdelta t)}
+modCameraState :: (CameraState -> CameraState) -> TestState -> TestState
+modCameraState f t = t{camstate = f (camstate t)}
 
 modStopped :: (Bool -> Bool) -> TestState -> TestState
 modStopped f t = t{stopped = f (stopped t)}
@@ -100,9 +92,10 @@ initState :: TestState
 initState = TestState 
     (newStdShip (50.0, 30.0, 0.0) playerShipColor)
     aobjs
-    ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
-    100
-    0
+    (CameraState 
+      ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
+      100
+      0)
     False
     Nothing
 
@@ -111,7 +104,7 @@ createAWindow = do
   depthFunc $= Just Less
   clearColor $= Color4 0 0 0 1
   viewport $= (Position 0 0, Size width height)
-  setCamera (camera initState)
+  setCamera (camera $ camstate initState)
   evalStateT loop initState
 
 zoomChangeFactor :: (Floating a) => a
@@ -123,7 +116,7 @@ accelerate a = modify $ modTri $ modifyAcceleration (*+* (0.0,  a, 0.0))
 -- turn :: (MonadState TestState m) => GLdouble -> m ()
 turn a = modify $ modTri $ modifyAngVelocity (+a)
 
-changeZoom a = modify $ modCamZoomDelta $ (+a)
+changeZoom a = modify $ modCameraState $ modCamZoomDelta (+a)
 
 -- TODO: figure out how to make this a State TestState ()
 processEvent :: SDL.Event -> StateT TestState IO ()
@@ -150,7 +143,7 @@ processEvent (KeyDown (Keysym SDLK_PLUS  _ _)) = changeZoom (-zoomChangeFactor)
 processEvent (KeyUp   (Keysym SDLK_PLUS  _ _)) = changeZoom zoomChangeFactor 
 processEvent (KeyDown (Keysym SDLK_i     _ _)) = do
   s <- State.get
-  liftIO . putStrLn $ "Zoom: " ++ show (camzoom s)
+  liftIO . putStrLn $ "Zoom: " ++ show (camzoom $ camstate s)
   liftIO . putStrLn $ "Player position: " ++ show (Entity.position $ tri s)
   forM_ (aobjects s) $ \aobj -> do
     liftIO . putStrLn $ "Astronomical body position: " ++ show (AObject.getPosition aobj)
@@ -203,7 +196,10 @@ loop = do
       quits <- handleEvents
       when (not quits) loop
     Just c -> do
-      quits <- handleEvents
+      liftIO $ drawCombat c
+      when (not (stopped state)) $ do
+        updateCombatState
+      quits <- handleCombatEvents
       when (not quits) loop
 
 handleEvents :: StateT TestState IO Bool
@@ -224,11 +220,19 @@ updateSpaceState = do
 drawSpace :: StateT TestState IO ()
 drawSpace = do
   state <- State.get
-  modify $ modCamZoom $ (+ (camzoomdelta state))
-  modify $ modCamera $ setZoom $ clamp 30 250 $ (camzoom state) + (400 * (length2 $ velocity (tri state)))
-  modify $ modCamera $ setCentre $ Entity.position (tri state)
-  liftIO $ setCamera (camera state)
+  modify $ modCameraState $ modCamZoom $ (+ (camzoomdelta $ camstate state))
+  modify $ modCameraState $ modCamera $ setZoom $ clamp 30 250 $ (camzoom $ camstate state) + (400 * (length2 $ velocity (tri state)))
+  modify $ modCameraState $ modCamera $ setCentre $ Entity.position (tri state)
+  liftIO $ setCamera (camera $ camstate state)
   liftIO $ drawGLScreen (tri state) (aobjects state)
+
+drawCombat :: Combat -> IO ()
+drawCombat c = return ()
+
+updateCombatState :: StateT TestState IO ()
+updateCombatState = return ()
+
+handleCombatEvents = handleEvents
 
 drawGLScreen :: Entity -> [AObject] -> IO ()
 drawGLScreen ent objs = do
