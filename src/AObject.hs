@@ -37,3 +37,10 @@ aobjPoints = circlePoints 16
 aorbitPoints = circlePoints 128
 aorbitColor = Color4 0.5 0.5 0.5 (1 :: GLfloat)
 
+getPosition :: AObject -> GLvector3
+getPosition aobj = 
+  let r = orbitRadius aobj
+      a = degToRad $ angle aobj
+      objcoordx = r * cos a
+      objcoordy = r * sin a
+  in (objcoordx, objcoordy, 0)
