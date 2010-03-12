@@ -189,12 +189,13 @@ loop = do
   liftIO $ delay 10
   state <- State.get
   drawSpace
-  when (not (stopped state)) $ do
-    updateSpaceState
+  quitsState <- if not (stopped state)
+                  then updateSpaceState
+                  else return False
   quits <- handleEvents
-  when (not quits) loop
+  when (not (or [quitsState, quits])) loop
 
-combatLoop :: StateT Combat IO ()
+combatLoop :: StateT Combat IO Bool
 combatLoop = do
   liftIO $ delay 10
   state <- State.get
@@ -202,7 +203,9 @@ combatLoop = do
   when (not (combatPaused state)) $ do
     updateCombatState
   quits <- handleCombatEvents
-  when (not quits) combatLoop
+  if quits
+    then return quits
+    else combatLoop
 
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
@@ -210,14 +213,18 @@ handleEvents = do
   processEvents events
   return $ isQuit events
 
-updateSpaceState :: StateT TestState IO ()
+updateSpaceState :: StateT TestState IO Bool
 updateSpaceState = do
   state <- State.get
   modify $ modTri (updateEntity 1)
   modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
   handleCollisions
-  when (collides2d ((10, 20), (10, 20)) (getShipBox (tri state))) $ do
-    liftIO $ evalStateT combatLoop newCombat
+  if collides2d ((10, 20), (10, 20)) (getShipBox (tri state))
+    then do
+      quits <- liftIO $ evalStateT combatLoop newCombat
+      return quits
+    else do
+      return False
 
 drawSpace :: StateT TestState IO ()
 drawSpace = do
