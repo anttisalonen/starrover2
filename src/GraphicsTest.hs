@@ -54,6 +54,8 @@ modStopped f t = t{stopped = f (stopped t)}
 data Combat = Combat {
     ship1          :: Entity
   , ship2          :: Entity
+  , ship1health    :: Int
+  , ship2health    :: Int
   , lasers         :: S.Seq Entity
   , combatPaused   :: Bool
   }
@@ -61,11 +63,25 @@ data Combat = Combat {
 newCombat :: Combat
 newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
                    (newStdShip (30, 20, 0) enemyShipColor)
+                   3
+                   3
                    S.empty
                    False
 
 modShip1 :: (Entity -> Entity) -> Combat -> Combat
 modShip1 f t = t{ship1 = f (ship1 t)}
+
+modShip2 :: (Entity -> Entity) -> Combat -> Combat
+modShip2 f t = t{ship2 = f (ship2 t)}
+
+modShip1Health :: (Int -> Int) -> Combat -> Combat
+modShip1Health f t = t{ship1health = f (ship1health t)}
+
+modShip2Health :: (Int -> Int) -> Combat -> Combat
+modShip2Health f t = t{ship2health = f (ship2health t)}
+
+modLasers :: (S.Seq Entity -> S.Seq Entity) -> Combat -> Combat
+modLasers f t = t{lasers = f (lasers t)}
 
 modCombatPaused :: (Bool -> Bool) -> Combat -> Combat
 modCombatPaused f t = t{combatPaused = f (combatPaused t)}
