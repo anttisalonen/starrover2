@@ -64,6 +64,12 @@ newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
                    S.empty
                    False
 
+modShip1 :: (Entity -> Entity) -> Combat -> Combat
+modShip1 f t = t{ship1 = f (ship1 t)}
+
+modCombatPaused :: (Bool -> Bool) -> Combat -> Combat
+modCombatPaused f t = t{combatPaused = f (combatPaused t)}
+
 main = withInit [InitVideo] $ do
   -- blendEquation $= FuncAdd
   -- blendFunc $= (OpenGL.SrcAlpha, OneMinusSrcAlpha)
@@ -118,7 +124,7 @@ turn a = modify $ modTri $ modifyAngVelocity (+a)
 
 changeZoom a = modify $ modCameraState $ modCamZoomDelta (+a)
 
-mapping = 
+inputMapping = 
   [ (SDLK_w,     (accelerate 0.002,    accelerate 0))
   , (SDLK_s,     (accelerate (-0.002), accelerate 0))
   , (SDLK_a,     (turn 1.5, turn (-1.5)))
@@ -133,7 +139,22 @@ mapping =
   , (SDLK_SPACE, (modify $ modStopped not, return ()))
   ]
 
-processEvent :: [(SDLKey, (StateT TestState IO (), StateT TestState IO ()))] -> SDL.Event -> StateT TestState IO ()
+accelerateCombat a = modify $ modShip1 $ modifyAcceleration (const (0.0,  a, 0.0))
+turnCombat a = modify $ modShip1 $ modifyAngVelocity (+a)
+
+combatMapping = 
+  [ (SDLK_w,     (accelerateCombat 0.002,    accelerateCombat 0))
+  , (SDLK_s,     (accelerateCombat (-0.002), accelerateCombat 0))
+  , (SDLK_a,     (turnCombat 1.5, turnCombat (-1.5)))
+  , (SDLK_d,     (turnCombat (-1.5), turnCombat 1.5))
+  , (SDLK_UP,    (accelerateCombat 0.002, accelerateCombat 0))
+  , (SDLK_DOWN,  (accelerateCombat (-0.002), accelerateCombat 0))
+  , (SDLK_LEFT,  (turnCombat 1.5, turnCombat (-1.5)))
+  , (SDLK_RIGHT, (turnCombat (-1.5), turnCombat 1.5))
+  , (SDLK_SPACE, (modify $ modCombatPaused not, return ()))
+  ]
+
+processEvent :: (Monad m) => [(SDLKey, (m (), m ()))] -> Event -> m ()
 processEvent n evt =
   let mk = case evt of
              KeyDown (Keysym k _ _) -> Just (True, k)
@@ -152,7 +173,8 @@ showInfo = do
   forM_ (aobjects s) $ \aobj -> do
     liftIO . putStrLn $ "Astronomical body position: " ++ show (AObject.getPosition aobj)
 
--- processEvents :: [SDL.Event] -> StateT TestState IO ()
+processEvents
+  :: (Monad m) => [(SDLKey, (m (), m ()))] -> [Event] -> m ()
 processEvents n = mapM_ (processEvent n)
 
 isQuit :: [SDL.Event] -> Bool
@@ -213,7 +235,7 @@ combatLoop = do
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
   events <- liftIO $ pollAllSDLEvents
-  processEvents mapping events
+  processEvents inputMapping events
   return $ isQuit events
 
 updateSpaceState :: StateT TestState IO Bool
@@ -245,25 +267,43 @@ drawCombat = do
       (x2, y2, _) = Entity.position (ship2 state)
       ((minx1, maxx1), (miny1, maxy1)) = boxArea (x1, y1) 10
       ((minx2, maxx2), (miny2, maxy2)) = boxArea (x2, y2) 10
+      minx = min minx1 minx2
+      maxx = max maxx1 maxx2
+      miny = min miny1 miny2
+      maxy = max maxy1 maxy2
+      ratio = width / height
+      (midx, midy) = ((maxx + minx) / 2, (maxy + miny) / 2)
+      dx = midx - minx
+      dy = midy - miny
+      dx' = max dx (dy * ratio)
+      dy' = max dy (dx * (1/ratio))
+      minx' = midx - dx'
+      miny' = midy - dy'
+      maxx' = midx + dx'
+      maxy' = midy + dy'
   liftIO $ matrixMode $= Projection
   liftIO $ loadIdentity
-  liftIO $ ortho (min minx1 minx2) (max maxx1 maxx2) (min miny1 miny2) (max maxy1 maxy2) (-10) 10
+  liftIO $ ortho minx' maxx' miny' maxy' (-10) 10
   liftIO $ matrixMode $= Modelview 0
   liftIO $ drawGLScreen [ship1 state, ship2 state] []
 
 updateCombatState :: StateT Combat IO ()
-updateCombatState = return ()
+updateCombatState = do
+  state <- State.get
+  modify $ modShip1 (updateEntity 1)
 
+handleCombatEvents :: StateT Combat IO Bool
 handleCombatEvents = do
   events <- liftIO $ pollAllSDLEvents
+  processEvents combatMapping events
   return $ isQuit events
 
 drawGLScreen :: [Entity] -> [AObject] -> IO ()
 drawGLScreen ents objs = do
   clear [ColorBuffer,DepthBuffer]
 
-  loadIdentity
   forM_ ents $ \ent -> do
+    loadIdentity
     translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
     rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLdouble)
     (\(x,y,z) -> OpenGL.scale x y z) (Entity.scale ent)
