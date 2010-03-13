@@ -178,11 +178,18 @@ startCombat = do
   q <- case c of
     SDLK_RETURN -> do
             lost <- liftIO $ evalStateT combatLoop newCombat
-            when (not lost) $ do
-              liftIO $ makeTextScreen (gamefont state) "You survived - 100 credits earned\nPress ENTER to continue"
-              liftIO $ getSpecificSDLChar SDLK_RETURN
-              return ()
-            return lost
+            if not lost
+              then do
+                liftIO $ makeTextScreen (gamefont state) "You survived - 100 credits earned\nPress ENTER to continue"
+                liftIO $ getSpecificSDLChar SDLK_RETURN
+                return ()
+              else do
+                liftIO $ makeTextScreen (gamefont state) "You've been exterminated . . .\nPress ENTER to continue"
+                liftIO $ getSpecificSDLChar SDLK_RETURN
+                let is = initState (gamefont state)
+                modify $ const is
+                return ()
+            return False
     _           -> return False
   setTurn 0
   accelerate 0
