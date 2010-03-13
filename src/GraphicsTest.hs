@@ -1,11 +1,14 @@
 module Main()
 where
 
+import System.Random
+import System.Directory
 import Control.Monad
 import Control.Monad.State as State
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
+import Graphics.Rendering.FTGL as FTGL
 
 import OpenGLUtils
 import Entity
@@ -13,6 +16,7 @@ import Camera
 import AObject
 import Combat
 import Space
+import Paths_starrover2
 
 -- test scenario
 data TestState = TestState {
@@ -20,6 +24,7 @@ data TestState = TestState {
   , aobjects     :: [AObject]
   , camstate     :: CameraState
   , stopped      :: Bool
+  , gamefont     :: Font
   }
 
 -- TODO: generate mod-functions using TH
@@ -54,20 +59,28 @@ stdCamera = CameraState
       100
       0
 
-initState :: TestState
-initState = TestState 
+initState :: Font -> TestState
+initState f = TestState 
     (newStdShip (50.0, 30.0, 0.0) playerShipColor 0)
     aobjs
     stdCamera
     False
+    f
 
 createAWindow = do
   _ <- setVideoMode width height 0 [OpenGL]
   depthFunc $= Just Less
   clearColor $= Color4 0 0 0 1
   viewport $= (Position 0 0, Size width height)
-  setCamera (camera $ camstate initState)
-  evalStateT loop initState
+  fn <- getDataFileName "share/DejaVuSans.ttf"
+  exists <- doesFileExist fn
+  when (not exists) $ do
+    error $ "Could not load font file from: " ++ fn
+  f <- createTextureFont fn
+  _ <- setFontFaceSize f 24 72
+  let is = initState f
+  setCamera (camera $ camstate is)
+  evalStateT loop is
 
 zoomChangeFactor :: (Floating a) => a
 zoomChangeFactor = 1.0
