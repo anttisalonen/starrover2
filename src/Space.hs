@@ -14,7 +14,8 @@ module Space(newStdShip,
   getShipBox,
   getSDLChar,
   getSpecificSDLChar,
-  getSpecificSDLChars)
+  getSpecificSDLChars
+  )
 where
 
 import Control.Monad
@@ -148,3 +149,5 @@ trianglePoints =
     ,(0.0, -0.7, 0)
     ,(-0.9,-1,   0)
    ]
+
+
