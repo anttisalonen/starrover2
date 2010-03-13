@@ -134,11 +134,9 @@ loop = do
   liftIO $ delay 10
   state <- State.get
   drawSpace
-  quitsState <- if not (stopped state)
-                  then updateSpaceState
-                  else return False
+  when (not (stopped state)) updateSpaceState
   quits <- handleEvents
-  when (not (or [quitsState, quits])) loop
+  when (not quits) loop
 
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
@@ -146,18 +144,13 @@ handleEvents = do
   processEvents inputMapping events
   return $ isQuit events
 
-updateSpaceState :: StateT TestState IO Bool
+updateSpaceState :: StateT TestState IO ()
 updateSpaceState = do
   modify $ modTri (updateEntity 1)
   modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
   handleCollisions
   val <- liftIO $ randomRIO (0, 500 :: Int)
-  if (val == 0) 
-    then do
-      quits <- startCombat
-      return quits
-    else do
-      return False
+  when (val == 0) startCombat
 
 makeTextScreen :: Font -> String -> IO ()
 makeTextScreen f s = do
@@ -170,30 +163,26 @@ makeTextScreen f s = do
     translate (Vector3 0 (-50) (0 :: GLdouble))
   glSwapBuffers
 
-startCombat :: StateT TestState IO Bool
+startCombat :: StateT TestState IO ()
 startCombat = do
   state <- State.get
   liftIO $ makeTextScreen (gamefont state) "Combat beginning - press ENTER to start\nor ESCAPE to escape"
   c <- liftIO $ getSpecificSDLChars [SDLK_RETURN, SDLK_ESCAPE]
-  q <- case c of
-    SDLK_RETURN -> do
-            lost <- liftIO $ evalStateT combatLoop newCombat
-            if not lost
-              then do
-                liftIO $ makeTextScreen (gamefont state) "You survived - 100 credits earned\nPress ENTER to continue"
-                liftIO $ getSpecificSDLChar SDLK_RETURN
-                return ()
-              else do
-                liftIO $ makeTextScreen (gamefont state) "You've been exterminated . . .\nPress ENTER to continue"
-                liftIO $ getSpecificSDLChar SDLK_RETURN
-                let is = initState (gamefont state)
-                modify $ const is
-                return ()
-            return False
-    _           -> return False
+  when (c == SDLK_RETURN) $ do
+    lost <- liftIO $ evalStateT combatLoop newCombat
+    if not lost
+      then do
+        liftIO $ makeTextScreen (gamefont state) "You survived - 100 credits earned\nPress ENTER to continue"
+        liftIO $ getSpecificSDLChar SDLK_RETURN
+        return ()
+      else do
+        liftIO $ makeTextScreen (gamefont state) "You've been exterminated . . .\nPress ENTER to continue"
+        liftIO $ getSpecificSDLChar SDLK_RETURN
+        let is = initState (gamefont state)
+        modify $ const is
+        return ()
   setTurn 0
-  accelerate 0
-  return q
+  accelerate 0 -- prevent involuntary actions
 
 drawSpace :: StateT TestState IO ()
 drawSpace = do
