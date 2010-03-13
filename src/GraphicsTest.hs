@@ -3,12 +3,14 @@ where
 
 import System.Random
 import System.Directory
+import Text.Printf
 import Control.Monad
 import Control.Monad.State as State
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
 import Graphics.Rendering.FTGL as FTGL
+import qualified Data.Edison.Assoc.StandardMap as M
 
 import OpenGLUtils
 import Entity
@@ -16,6 +18,8 @@ import Camera
 import AObject
 import Combat
 import Space
+import Cargo
+
 import Paths_starrover2
 
 -- test scenario
@@ -25,6 +29,7 @@ data TestState = TestState {
   , camstate     :: CameraState
   , stopped      :: Bool
   , gamefont     :: Font
+  , cargo        :: Cargo
   }
 
 -- TODO: generate mod-functions using TH
@@ -39,6 +44,9 @@ modCameraState f t = t{camstate = f (camstate t)}
 
 modStopped :: (Bool -> Bool) -> TestState -> TestState
 modStopped f t = t{stopped = f (stopped t)}
+
+modCargo :: (Cargo -> Cargo) -> TestState -> TestState
+modCargo f t = t{cargo = f (cargo t)}
 
 main = withInit [InitVideo] $ do
   -- blendEquation $= FuncAdd
@@ -66,6 +74,7 @@ initState f = TestState
     stdCamera
     False
     f
+    M.empty
 
 createAWindow = do
   _ <- setVideoMode width height 0 [OpenGL]
@@ -163,19 +172,23 @@ makeTextScreen f s = do
     translate (Vector3 0 (-50) (0 :: GLdouble))
   glSwapBuffers
 
+showCargo :: Cargo -> String
+showCargo c = concatMap (\(k, v) -> printf "%20s - %4d\n" k v) (M.toSeq c) 
+
 startCombat :: StateT TestState IO ()
 startCombat = do
   state <- State.get
   liftIO $ makeTextScreen (gamefont state) "Combat beginning - press ENTER to start\nor ESCAPE to escape"
   c <- liftIO $ getSpecificSDLChars [SDLK_RETURN, SDLK_ESCAPE]
   when (c == SDLK_RETURN) $ do
-    lost <- liftIO $ evalStateT combatLoop newCombat
-    if not lost
-      then do
-        liftIO $ makeTextScreen (gamefont state) "You survived - 100 credits earned\nPress ENTER to continue"
+    mnewcargo <- liftIO $ evalStateT combatLoop (newCombat (cargo state))
+    case mnewcargo of
+      Just newcargo -> do
+        liftIO $ makeTextScreen (gamefont state) $ "You survived - Current cargo status:\n" ++ (showCargo newcargo) ++ "\nPress ENTER to continue"
         liftIO $ getSpecificSDLChar SDLK_RETURN
+        modify $ modCargo (const newcargo)
         return ()
-      else do
+      Nothing -> do
         liftIO $ makeTextScreen (gamefont state) "You've been exterminated . . .\nPress ENTER to continue"
         liftIO $ getSpecificSDLChar SDLK_RETURN
         let is = initState (gamefont state)

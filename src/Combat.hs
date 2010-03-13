@@ -9,10 +9,12 @@ import Control.Monad.State as State
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
 import qualified Data.Edison.Seq.SimpleQueue as S
+import qualified Data.Edison.Assoc.StandardMap as M
 
 import OpenGLUtils
 import Entity
 import Space
+import Cargo
 
 data Combat = Combat {
     ship1          :: Entity
@@ -20,6 +22,7 @@ data Combat = Combat {
   , ship1health    :: Int
   , ship2health    :: Int
   , lasers         :: S.Seq Entity
+  , cargo          :: Cargo
   , combatPaused   :: Bool
   }
 
@@ -46,12 +49,13 @@ modShipN 1 f = modShip1 f
 modShipN 2 f = modShip2 f
 modShipN _ _ = id
 
-newCombat :: Combat
-newCombat = Combat (newStdShip (0, 0, 0) playerShipColor 0)
+newCombat :: Cargo -> Combat
+newCombat c = Combat (newStdShip (0, 0, 0) playerShipColor 0)
                    (newStdShip (90, 60, 0) enemyShipColor 180)
                    3
                    3
                    S.empty
+                   c
                    False
 
 accelerateCombat n a = modify $ modShipN n $ modifyAcceleration (const (0.0,  a, 0.0))
@@ -100,7 +104,7 @@ combatMapping =
   , (SDLK_SPACE, (shipNShoot 1, return ()))
   ]
 
-combatLoop :: StateT Combat IO Bool
+combatLoop :: StateT Combat IO (Maybe Cargo)
 combatLoop = do
   liftIO $ delay 10
   state <- State.get
@@ -110,11 +114,23 @@ combatLoop = do
                else updateCombatState
   handleCombatAI
   quits <- handleCombatEvents
-  if quits
-    then return quits
-    else if oneDead /= 0
-      then return $ oneDead == 1
+  if quits || oneDead == 1
+    then return Nothing
+    else if oneDead == 2
+      then (fmap . fmap) Just liftIO $ arrangeCargo (cargo state)
       else combatLoop
+
+createRandomCargo :: Int -> IO Cargo
+createRandomCargo i = do
+  cnames <- replicateM i randomCargo
+  cargoquantities <- replicateM i (randomRIO (1, 20 :: Int)) 
+  return $ M.fromSeqWith (+) (zip cnames cargoquantities)
+
+arrangeCargo :: Cargo -> IO Cargo
+arrangeCargo c = do
+  difftypes <- randomRIO (1, 3 :: Int)
+  c' <- createRandomCargo difftypes
+  return $ M.unionWith (+) c c'
 
 handleCombatAI :: StateT Combat IO ()
 handleCombatAI = do -- accelerateCombat 2 (accelForce * 0.5)
