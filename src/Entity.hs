@@ -55,6 +55,18 @@ modifyScale f t = t{Entity.scale = f (Entity.scale t)}
 degToRad :: (Floating a) => a -> a
 degToRad d = d * pi / 180
 
+wrap :: (Num a, Ord a) => a -> a -> a -> a
+wrap mn mx v =
+  if v < mn 
+    then wrap mn mx (v + diff)
+    else if v > mx
+           then wrap mn mx (v - diff)
+           else v
+    where diff = mx - mn
+
+wrapDegrees :: (Num a, Ord a) => a -> a
+wrapDegrees = wrap (-180) 180
+
 updateEntity :: GLdouble -> Entity -> Entity
 updateEntity delta ent = flip execState ent $ do
   let (accx, accy, accz) = acceleration ent
@@ -63,11 +75,10 @@ updateEntity delta ent = flip execState ent $ do
         (accx * cos rr - accy * sin rr,
          accx * sin rr + accy * cos rr,
          accz)
-  -- TODO: wrap rotation
   modify $ modifyVelocity (*+* (accVector *** delta))
   modify $ modifyPosition (*+* ((velocity ent) *** delta))
   modify $ modifyAngVelocity (+ (angAccel ent) * delta)
-  modify $ modifyRotation (+ (angVelocity ent) * delta)
+  modify $ modifyRotation (wrapDegrees . (+ (angVelocity ent) * delta))
 
 resetAcceleration :: Entity -> Entity
 resetAcceleration = modifyAcceleration (const glVector3Null)
