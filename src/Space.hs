@@ -1,5 +1,16 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-module Space
+module Space(newStdShip,
+  playerShipColor,
+  enemyShipColor,
+  boxArea,
+  width,
+  height,
+  drawGLScreen,
+  pollAllSDLEvents,
+  processEvents,
+  isQuit,
+  collides2d,
+  getShipBox)
 where
 
 import Control.Monad

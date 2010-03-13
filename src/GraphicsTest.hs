@@ -1,4 +1,5 @@
-module Main where
+module Main()
+where
 
 import Control.Monad
 import Control.Monad.State as State
@@ -46,8 +47,6 @@ aobjs =
   , AObject 30  (Color4 0.6 0.6 0.6 1.0) 3.0 100
   , AObject 80  (Color4 0.6 0.6 0.6 1.0) 2.0 130
   ]
-
-aobjsAndOrbits = unzip $ map aobjToEntities aobjs
 
 stdCamera :: CameraState
 stdCamera = CameraState 

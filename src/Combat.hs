@@ -1,4 +1,4 @@
-module Combat
+module Combat(combatLoop, newCombat)
 where
 
 import Data.Either
