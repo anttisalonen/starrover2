@@ -36,8 +36,8 @@ pollAllSDLEvents = go []
 hasEvent :: (SDL.Event -> Bool) -> [SDL.Event] -> Bool
 hasEvent fun evts = or $ map fun evts
 
-newStdShip :: GLvector3 -> Color4 GLfloat -> Entity
-newStdShip pos c = newEntity pos c TriangleFan trianglePoints glVector3AllUnit
+newStdShip :: GLvector3 -> Color4 GLfloat -> GLdouble -> Entity
+newStdShip pos c rot = newEntity pos rot c TriangleFan trianglePoints glVector3AllUnit
 
 playerShipColor, enemyShipColor :: Color4 GLfloat
 playerShipColor = Color4 0.0 0.5 0.0 1.0

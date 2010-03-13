@@ -56,7 +56,7 @@ stdCamera = CameraState
 
 initState :: TestState
 initState = TestState 
-    (newStdShip (50.0, 30.0, 0.0) playerShipColor)
+    (newStdShip (50.0, 30.0, 0.0) playerShipColor 0)
     aobjs
     stdCamera
     False

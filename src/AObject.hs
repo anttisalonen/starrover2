@@ -22,12 +22,14 @@ aobjToEntities a = (e, o)
                (sin (degToRad $ angle a) * (orbitRadius a),
                 cos (degToRad $ angle a) * (orbitRadius a),
                 0)
+               0
                (AObject.color a)
                Polygon
                (circlePoints 16)
                (glVector3AllUnit *** (size a))
         o = newEntity
                glVector3Null
+               0
                (Color4 0.5 0.5 0.5 0.1)
                LineLoop
                (circlePoints 128)

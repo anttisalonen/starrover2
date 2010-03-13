@@ -21,8 +21,8 @@ data Entity = Entity {
   , scale        :: GLvector3
   }
 
-newEntity :: GLvector3 -> Color4 GLfloat -> PrimitiveMode -> [GLvector3] -> GLvector3 -> Entity
-newEntity p c pr vrt scl = Entity p glVector3Null glVector3Null 0 0 0 c pr vrt scl
+newEntity :: GLvector3 -> GLdouble -> Color4 GLfloat -> PrimitiveMode -> [GLvector3] -> GLvector3 -> Entity
+newEntity p rot c pr vrt scl = Entity p glVector3Null glVector3Null rot 0 0 c pr vrt scl
 
 -- TODO: generate mod-functions using TH
 modifyPosition :: (GLvector3 -> GLvector3) -> Entity -> Entity

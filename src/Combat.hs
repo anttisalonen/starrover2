@@ -46,8 +46,8 @@ modShipN 2 f = modShip2 f
 modShipN _ _ = id
 
 newCombat :: Combat
-newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
-                   (newStdShip (30, 20, 0) enemyShipColor)
+newCombat = Combat (newStdShip (0, 0, 0) playerShipColor 0)
+                   (newStdShip (30, 20, 0) enemyShipColor 180)
                    3
                    3
                    S.empty
@@ -55,6 +55,7 @@ newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
 
 accelerateCombat n a = modify $ modShipN n $ modifyAcceleration (const (0.0,  a, 0.0))
 turnCombat n a = modify $ modShipN n $ modifyAngVelocity (+a)
+setTurnCombat n a = modify $ modShipN n $ modifyAngVelocity (const a)
 
 laserLength :: GLdouble
 laserLength = 1
@@ -115,7 +116,18 @@ combatLoop = do
       else combatLoop
 
 handleCombatAI :: StateT Combat IO ()
-handleCombatAI = accelerateCombat 2 (accelForce * 0.5)
+handleCombatAI = do -- accelerateCombat 2 (accelForce * 0.5)
+  state <- State.get
+  let (myposx, myposy, _) = Entity.position (ship2 state)
+  let (enemyposx, enemyposy, _) = Entity.position (ship1 state)
+  let angleToEnemy = atan2 (enemyposy - myposy) (enemyposx - myposx)
+  let myangle = degToRad $ wrapDegrees $ Entity.rotation (ship2 state) + 90
+  let epsilon = 0.001
+  if myangle + epsilon < angleToEnemy
+    then setTurnCombat 2 turnRate
+    else if myangle - epsilon > angleToEnemy
+           then setTurnCombat 2 (-turnRate)
+           else setTurnCombat 2 0
 
 drawCombat :: StateT Combat IO ()
 drawCombat = do
