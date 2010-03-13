@@ -1,6 +1,7 @@
 module Combat(combatLoop, newCombat)
 where
 
+import System.Random
 import Data.Either
 import Control.Monad
 import Control.Monad.State as State
@@ -128,6 +129,9 @@ handleCombatAI = do -- accelerateCombat 2 (accelForce * 0.5)
     else if myangle - epsilon > angleToEnemy
            then setTurnCombat 2 (-turnRate)
            else setTurnCombat 2 0
+  accelerateCombat 2 accelForce
+  val <- liftIO $ randomRIO (0, 20 :: Int)
+  when (val == 0) $ shipNShoot 2
 
 drawCombat :: StateT Combat IO ()
 drawCombat = do
