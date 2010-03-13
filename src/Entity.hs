@@ -72,3 +72,4 @@ updateEntity delta ent = flip execState ent $ do
 resetAcceleration :: Entity -> Entity
 resetAcceleration = modifyAcceleration (const glVector3Null)
 
+
