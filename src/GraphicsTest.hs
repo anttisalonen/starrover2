@@ -152,7 +152,7 @@ inputMapping =
   , (SDLK_MINUS, (changeZoom zoomChangeFactor, changeZoom (-zoomChangeFactor)))
   , (SDLK_PLUS,  (changeZoom (-zoomChangeFactor), changeZoom zoomChangeFactor))
   , (SDLK_i,     (showInfo, return ()))
-  , (SDLK_SPACE, (modify $ modStopped not, return ()))
+  , (SDLK_p,     (modify $ modStopped not, return ()))
   ]
 
 accelerateCombat a = modify $ modShip1 $ modifyAcceleration (const (0.0,  a, 0.0))
@@ -167,7 +167,7 @@ combatMapping =
   , (SDLK_DOWN,  (accelerateCombat (-0.002), accelerateCombat 0))
   , (SDLK_LEFT,  (turnCombat 1.5, turnCombat (-1.5)))
   , (SDLK_RIGHT, (turnCombat (-1.5), turnCombat 1.5))
-  , (SDLK_SPACE, (modify $ modCombatPaused not, return ()))
+  , (SDLK_p,     (modify $ modCombatPaused not, return ()))
   ]
 
 processEvent :: (Monad m) => [(SDLKey, (m (), m ()))] -> Event -> m ()
