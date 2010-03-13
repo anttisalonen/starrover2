@@ -135,11 +135,11 @@ handleEvents = do
 
 updateSpaceState :: StateT TestState IO Bool
 updateSpaceState = do
-  state <- State.get
   modify $ modTri (updateEntity 1)
   modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
   handleCollisions
-  if collides2d ((10, 20), (10, 20)) (getShipBox (tri state))
+  val <- liftIO $ randomRIO (0, 500 :: Int)
+  if (val == 0) 
     then do
       quits <- liftIO $ evalStateT combatLoop newCombat
       return quits
