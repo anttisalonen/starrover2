@@ -79,8 +79,10 @@ shipNShoot n = do
       let nent = Entity laserpos laservel glVector3Null laserrot 0 0 (Color4 1.0 0.0 0.0 1.0) Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
       modify $ modLasers $ S.rcons nent
 
+accelForce :: GLdouble
 accelForce = 0.002
 
+turnRate :: GLdouble
 turnRate = 1.5
 
 combatMapping = 
@@ -113,7 +115,7 @@ combatLoop = do
       else combatLoop
 
 handleCombatAI :: StateT Combat IO ()
-handleCombatAI = accelerateCombat 2 accelForce
+handleCombatAI = accelerateCombat 2 (accelForce * 0.5)
 
 drawCombat :: StateT Combat IO ()
 drawCombat = do
