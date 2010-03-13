@@ -1,6 +1,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 module Main where
 
+import Data.Either
 import Control.Monad
 import Control.Monad.State as State
 
@@ -158,6 +159,8 @@ inputMapping =
 accelerateCombat a = modify $ modShip1 $ modifyAcceleration (const (0.0,  a, 0.0))
 turnCombat a = modify $ modShip1 $ modifyAngVelocity (+a)
 
+laserLength = 1
+
 ship1Shoot :: StateT Combat IO ()
 ship1Shoot = do
   state <- State.get
@@ -166,10 +169,10 @@ ship1Shoot = do
       shipvel = Entity.velocity en
       shiprot = Entity.rotation en + 90
       lookVector = (cos (degToRad shiprot), sin (degToRad shiprot), 0)
-      laserpos = shippos *+* (lookVector *** 1)
+      laserpos = shippos *+* (lookVector *** 3)
       laservel = shipvel *+* (lookVector *** 1)
       laserrot = shiprot
-  let nent = Entity laserpos laservel glVector3Null laserrot 0 0 (Color4 1.0 0.0 0.0 1.0) Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] glVector3AllUnit
+  let nent = Entity laserpos laservel glVector3Null laserrot 0 0 (Color4 1.0 0.0 0.0 1.0) Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
   modify $ modLasers $ S.rcons nent
 
 combatMapping = 
@@ -256,12 +259,15 @@ combatLoop = do
   liftIO $ delay 10
   state <- State.get
   drawCombat
-  when (not (combatPaused state)) $ do
-    updateCombatState
+  oneDead <- if combatPaused state
+               then return 0
+               else updateCombatState
   quits <- handleCombatEvents
   if quits
     then return quits
-    else combatLoop
+    else if oneDead /= 0
+      then return $ oneDead == 1
+      else combatLoop
 
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
@@ -318,17 +324,56 @@ drawCombat = do
   liftIO $ matrixMode $= Modelview 0
   liftIO $ drawGLScreen ([ship1 state, ship2 state] ++ (S.toList (lasers state))) []
 
-updateCombatState :: StateT Combat IO ()
+updateCombatState :: StateT Combat IO Int
 updateCombatState = do
   modify $ modLasers $ S.map (updateEntity 1)
   modify $ modShip1 (updateEntity 1)
   modify $ modShip2 (updateEntity 1)
+  handleCombatCollisions
+  state <- State.get
+  if (ship1health state == 0)
+    then return 1
+    else if (ship2health state == 0)
+           then return 2
+           else return 0
 
 handleCombatEvents :: StateT Combat IO Bool
 handleCombatEvents = do
   events <- liftIO $ pollAllSDLEvents
   processEvents combatMapping events
   return $ isQuit events
+
+checkCollision plbox1 plbox2 las =
+  if collides2d plbox1 ((minx, maxx), (miny, maxy))
+    then Left 1
+    else if collides2d plbox2 ((minx, maxx), (miny, maxy))
+           then Left 2
+           else Right las
+   where (lposx, lposy, _) = Entity.position las
+         lrot = degToRad $ Entity.rotation las
+         lx1 = lposx - laserLength * cos lrot
+         lx2 = lposx + laserLength * cos lrot
+         ly1 = lposy - laserLength * sin lrot
+         ly2 = lposy + laserLength * sin lrot
+         minx = min lx1 lx2
+         maxx = max lx1 lx2
+         miny = min ly1 ly2
+         maxy = max ly1 ly2
+
+handleCombatCollisions :: StateT Combat IO ()
+handleCombatCollisions = do
+  state <- State.get
+  let plbox1 = getShipBox (ship1 state)
+  let plbox2 = getShipBox (ship2 state)
+  let colls = map (checkCollision plbox1 plbox2) (S.toList $ lasers state)
+  let (hits, newlasers) = partitionEithers colls
+  let numhits1 = Prelude.length $ filter (==1) hits
+  let numhits2 = Prelude.length $ filter (==2) hits
+  when (numhits1 > 0) $ liftIO $ putStrLn "Ship 1 hit!"
+  when (numhits2 > 0) $ liftIO $ putStrLn "Ship 2 hit!"
+  modify $ modLasers $ const (S.fromList newlasers)
+  modify $ modShip1Health (subtract numhits1)
+  modify $ modShip2Health (subtract numhits2)
 
 drawGLScreen :: [Entity] -> [AObject] -> IO ()
 drawGLScreen ents objs = do
