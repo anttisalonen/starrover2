@@ -159,20 +159,30 @@ updateSpaceState = do
     else do
       return False
 
+makeTextScreen :: Font -> String -> IO ()
+makeTextScreen f s = do
+  clear [ColorBuffer,DepthBuffer]
+  loadIdentity
+  setCamera ((0, 0), (width, height))
+  translate (Vector3 100 400 (0 :: GLdouble))
+  forM_ (lines s) $ \str -> do
+    renderFont f str FTGL.Front
+    translate (Vector3 0 (-50) (0 :: GLdouble))
+  glSwapBuffers
+
 startCombat :: StateT TestState IO Bool
 startCombat = do
-  liftIO $ clear [ColorBuffer,DepthBuffer]
-  liftIO $ loadIdentity
   state <- State.get
-  liftIO $ setCamera ((0, 0), (width, height))
-  liftIO $ translate (Vector3 100 400 (0 :: GLdouble))
-  liftIO $ renderFont (gamefont state) "Combat beginning - press ENTER to start" FTGL.Front
-  liftIO $ translate (Vector3 0 (-50) (0 :: GLdouble))
-  liftIO $ renderFont (gamefont state) "or ESCAPE to escape" FTGL.Front
-  liftIO $ glSwapBuffers
+  liftIO $ makeTextScreen (gamefont state) "Combat beginning - press ENTER to start\nor ESCAPE to escape"
   c <- liftIO $ getSpecificSDLChars [SDLK_RETURN, SDLK_ESCAPE]
   q <- case c of
-    SDLK_RETURN -> liftIO $ evalStateT combatLoop newCombat
+    SDLK_RETURN -> do
+            lost <- liftIO $ evalStateT combatLoop newCombat
+            when (not lost) $ do
+              liftIO $ makeTextScreen (gamefont state) "You survived - 100 credits earned\nPress ENTER to continue"
+              liftIO $ getSpecificSDLChar SDLK_RETURN
+              return ()
+            return lost
     _           -> return False
   setTurn 0 -- in case of keydown leftover
   accelerate 0
