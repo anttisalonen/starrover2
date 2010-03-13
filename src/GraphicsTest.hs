@@ -154,10 +154,50 @@ updateSpaceState = do
   val <- liftIO $ randomRIO (0, 500 :: Int)
   if (val == 0) 
     then do
-      quits <- liftIO $ evalStateT combatLoop newCombat
+      quits <- startCombat
       return quits
     else do
       return False
+
+getSDLChar :: IO SDLKey
+getSDLChar = do
+  e <- waitEvent
+  case e of
+    KeyDown (Keysym n _ _) -> return n
+    _                      -> getSDLChar
+
+getSpecificSDLChar :: SDLKey -> IO ()
+getSpecificSDLChar c = do
+  d <- getSDLChar
+  if c == d
+    then return ()
+    else getSpecificSDLChar c
+
+getSpecificSDLChars :: [SDLKey] -> IO SDLKey
+getSpecificSDLChars cs = do
+  d <- getSDLChar
+  if d `elem` cs
+    then return d
+    else getSpecificSDLChars cs
+
+startCombat :: StateT TestState IO Bool
+startCombat = do
+  liftIO $ clear [ColorBuffer,DepthBuffer]
+  liftIO $ loadIdentity
+  state <- State.get
+  liftIO $ setCamera ((0, 0), (width, height))
+  liftIO $ translate (Vector3 100 400 (0 :: GLdouble))
+  liftIO $ renderFont (gamefont state) "Combat beginning - press ENTER to start" FTGL.Front
+  liftIO $ translate (Vector3 0 (-50) (0 :: GLdouble))
+  liftIO $ renderFont (gamefont state) "or ESCAPE to escape" FTGL.Front
+  liftIO $ glSwapBuffers
+  c <- liftIO $ getSpecificSDLChars [SDLK_RETURN, SDLK_ESCAPE]
+  q <- case c of
+    SDLK_RETURN -> liftIO $ evalStateT combatLoop newCombat
+    _           -> return False
+  setTurn 0 -- in case of keydown leftover
+  accelerate 0
+  return q
 
 drawSpace :: StateT TestState IO ()
 drawSpace = do
