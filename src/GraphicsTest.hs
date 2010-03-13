@@ -97,12 +97,12 @@ changeZoom a = modify $ modCameraState $ modCamZoomDelta (+a)
 inputMapping = 
   [ (SDLK_w,     (accelerate 0.002,    accelerate 0))
   , (SDLK_s,     (accelerate (-0.002), accelerate 0))
-  , (SDLK_a,     (turn 1.5, turn (-1.5)))
-  , (SDLK_d,     (turn (-1.5), turn 1.5))
+  , (SDLK_a,     (turn 1.5, setTurn 0))
+  , (SDLK_d,     (turn (-1.5), setTurn 0))
   , (SDLK_UP,    (accelerate 0.002, accelerate 0))
   , (SDLK_DOWN,  (accelerate (-0.002), accelerate 0))
-  , (SDLK_LEFT,  (turn 1.5, turn (-1.5)))
-  , (SDLK_RIGHT, (turn (-1.5), turn 1.5))
+  , (SDLK_LEFT,  (turn 1.5, setTurn 0))
+  , (SDLK_RIGHT, (turn (-1.5), setTurn 0))
   , (SDLK_MINUS, (changeZoom zoomChangeFactor, changeZoom (-zoomChangeFactor)))
   , (SDLK_PLUS,  (changeZoom (-zoomChangeFactor), changeZoom zoomChangeFactor))
   , (SDLK_i,     (showInfo, return ()))
@@ -184,7 +184,7 @@ startCombat = do
               return ()
             return lost
     _           -> return False
-  setTurn 0 -- in case of keydown leftover
+  setTurn 0
   accelerate 0
   return q
 
