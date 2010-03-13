@@ -23,7 +23,8 @@ Executable GraphicsTest
                    mtl>=1.1.0.0,
                    SDL>=0.5.5,
                    EdisonCore>=1.2.1.0,
-                   random>=1.0.0.0
+                   random>=1.0.0.0,
+                   FTGL>=1.333
   Main-is:         GraphicsTest.hs
   Hs-Source-Dirs:  src
   Ghc-options:     -Wall -fno-warn-missing-signatures
