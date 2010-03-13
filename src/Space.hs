@@ -6,6 +6,7 @@ module Space(newStdShip,
   width,
   height,
   drawGLScreen,
+  drawEntity,
   pollAllSDLEvents,
   processEvents,
   isQuit,
@@ -72,12 +73,8 @@ boxArea (x, y) r = ((x - r, x + r), (y - r, y + r))
 width = 800
 height = 600
 
-drawGLScreen :: [Entity] -> [AObject] -> IO ()
-drawGLScreen ents objs = do
-  clear [ColorBuffer,DepthBuffer]
-  lineWidth $= 5
-
-  forM_ ents $ \ent -> do
+drawEntity :: Entity -> IO ()
+drawEntity ent = do
     loadIdentity
     translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
     rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLdouble)
@@ -85,6 +82,13 @@ drawGLScreen ents objs = do
     currentColor $= (Entity.color ent)
     renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
       vertex $ Vertex3 x y z
+
+drawGLScreen :: [Entity] -> [AObject] -> IO ()
+drawGLScreen ents objs = do
+  clear [ColorBuffer,DepthBuffer]
+  lineWidth $= 5
+
+  forM_ ents drawEntity
   
   lineWidth $= 1
   forM_ objs $ \aobj -> do
