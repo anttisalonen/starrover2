@@ -343,6 +343,11 @@ handleCombatEvents = do
   processEvents combatMapping events
   return $ isQuit events
 
+checkCollision ::
+     ((GLdouble, GLdouble), (GLdouble, GLdouble))
+     -> ((GLdouble, GLdouble), (GLdouble, GLdouble))
+     -> Entity
+     -> Either Int Entity
 checkCollision plbox1 plbox2 las =
   if collides2d plbox1 ((minx, maxx), (miny, maxy))
     then Left 1
@@ -378,6 +383,7 @@ handleCombatCollisions = do
 drawGLScreen :: [Entity] -> [AObject] -> IO ()
 drawGLScreen ents objs = do
   clear [ColorBuffer,DepthBuffer]
+  lineWidth $= 5
 
   forM_ ents $ \ent -> do
     loadIdentity
@@ -388,6 +394,7 @@ drawGLScreen ents objs = do
     renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
       vertex $ Vertex3 x y z
   
+  lineWidth $= 1
   forM_ objs $ \aobj -> do
     loadIdentity
     rotate (angle aobj) $ Vector3 0 0 (1 :: GLdouble)
