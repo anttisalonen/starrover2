@@ -77,6 +77,7 @@ accelerate a = modify $ modTri $ modifyAcceleration (const (0.0,  a, 0.0))
 
 -- turn :: (MonadState TestState m) => GLdouble -> m ()
 turn a = modify $ modTri $ modifyAngVelocity (+a)
+setTurn a = modify $ modTri $ modifyAngVelocity (const a)
 
 changeZoom a = modify $ modCameraState $ modCamZoomDelta (+a)
 
