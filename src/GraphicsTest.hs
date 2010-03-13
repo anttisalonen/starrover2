@@ -158,6 +158,20 @@ inputMapping =
 accelerateCombat a = modify $ modShip1 $ modifyAcceleration (const (0.0,  a, 0.0))
 turnCombat a = modify $ modShip1 $ modifyAngVelocity (+a)
 
+ship1Shoot :: StateT Combat IO ()
+ship1Shoot = do
+  state <- State.get
+  let en = ship1 state
+      shippos = Entity.position en
+      shipvel = Entity.velocity en
+      shiprot = Entity.rotation en + 90
+      lookVector = (cos (degToRad shiprot), sin (degToRad shiprot), 0)
+      laserpos = shippos *+* (lookVector *** 1)
+      laservel = shipvel *+* (lookVector *** 1)
+      laserrot = shiprot
+  let nent = Entity laserpos laservel glVector3Null laserrot 0 0 (Color4 1.0 0.0 0.0 1.0) Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] glVector3AllUnit
+  modify $ modLasers $ S.rcons nent
+
 combatMapping = 
   [ (SDLK_w,     (accelerateCombat 0.002,    accelerateCombat 0))
   , (SDLK_s,     (accelerateCombat (-0.002), accelerateCombat 0))
@@ -168,6 +182,7 @@ combatMapping =
   , (SDLK_LEFT,  (turnCombat 1.5, turnCombat (-1.5)))
   , (SDLK_RIGHT, (turnCombat (-1.5), turnCombat 1.5))
   , (SDLK_p,     (modify $ modCombatPaused not, return ()))
+  , (SDLK_SPACE, (ship1Shoot, return ()))
   ]
 
 processEvent :: (Monad m) => [(SDLKey, (m (), m ()))] -> Event -> m ()
@@ -301,12 +316,13 @@ drawCombat = do
   liftIO $ loadIdentity
   liftIO $ ortho minx' maxx' miny' maxy' (-10) 10
   liftIO $ matrixMode $= Modelview 0
-  liftIO $ drawGLScreen [ship1 state, ship2 state] []
+  liftIO $ drawGLScreen ([ship1 state, ship2 state] ++ (S.toList (lasers state))) []
 
 updateCombatState :: StateT Combat IO ()
 updateCombatState = do
-  state <- State.get
+  modify $ modLasers $ S.map (updateEntity 1)
   modify $ modShip1 (updateEntity 1)
+  modify $ modShip2 (updateEntity 1)
 
 handleCombatEvents :: StateT Combat IO Bool
 handleCombatEvents = do
