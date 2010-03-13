@@ -40,6 +40,11 @@ modLasers f t = t{lasers = f (lasers t)}
 modCombatPaused :: (Bool -> Bool) -> Combat -> Combat
 modCombatPaused f t = t{combatPaused = f (combatPaused t)}
 
+modShipN :: Int -> (Entity -> Entity) -> Combat -> Combat
+modShipN 1 f = modShip1 f
+modShipN 2 f = modShip2 f
+modShipN _ _ = id
+
 newCombat :: Combat
 newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
                    (newStdShip (30, 20, 0) enemyShipColor)
@@ -48,36 +53,43 @@ newCombat = Combat (newStdShip (0, 0, 0) playerShipColor)
                    S.empty
                    False
 
-accelerateCombat a = modify $ modShip1 $ modifyAcceleration (const (0.0,  a, 0.0))
-turnCombat a = modify $ modShip1 $ modifyAngVelocity (+a)
+accelerateCombat n a = modify $ modShipN n $ modifyAcceleration (const (0.0,  a, 0.0))
+turnCombat n a = modify $ modShipN n $ modifyAngVelocity (+a)
 
+laserLength :: GLdouble
 laserLength = 1
 
-ship1Shoot :: StateT Combat IO ()
-ship1Shoot = do
+shipNShoot :: Int -> StateT Combat IO ()
+shipNShoot n = do
   state <- State.get
-  let en = ship1 state
-      shippos = Entity.position en
-      shipvel = Entity.velocity en
-      shiprot = Entity.rotation en + 90
-      lookVector = (cos (degToRad shiprot), sin (degToRad shiprot), 0)
-      laserpos = shippos *+* (lookVector *** 3)
-      laservel = shipvel *+* (lookVector *** 1)
-      laserrot = shiprot
-  let nent = Entity laserpos laservel glVector3Null laserrot 0 0 (Color4 1.0 0.0 0.0 1.0) Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
-  modify $ modLasers $ S.rcons nent
+  let men = case n of
+              1 -> Just $ ship1 state
+              2 -> Just $ ship2 state
+              _ -> Nothing
+  case men of
+    Nothing -> return ()
+    Just en -> do
+      let shippos = Entity.position en
+          shipvel = Entity.velocity en
+          shiprot = Entity.rotation en + 90
+          lookVector = (cos (degToRad shiprot), sin (degToRad shiprot), 0)
+          laserpos = shippos *+* (lookVector *** 3)
+          laservel = shipvel *+* (lookVector *** 1)
+          laserrot = shiprot
+      let nent = Entity laserpos laservel glVector3Null laserrot 0 0 (Color4 1.0 0.0 0.0 1.0) Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
+      modify $ modLasers $ S.rcons nent
 
 combatMapping = 
-  [ (SDLK_w,     (accelerateCombat 0.002,    accelerateCombat 0))
-  , (SDLK_s,     (accelerateCombat (-0.002), accelerateCombat 0))
-  , (SDLK_a,     (turnCombat 1.5, turnCombat (-1.5)))
-  , (SDLK_d,     (turnCombat (-1.5), turnCombat 1.5))
-  , (SDLK_UP,    (accelerateCombat 0.002, accelerateCombat 0))
-  , (SDLK_DOWN,  (accelerateCombat (-0.002), accelerateCombat 0))
-  , (SDLK_LEFT,  (turnCombat 1.5, turnCombat (-1.5)))
-  , (SDLK_RIGHT, (turnCombat (-1.5), turnCombat 1.5))
+  [ (SDLK_w,     (accelerateCombat 1 0.002,    accelerateCombat 1 0))
+  , (SDLK_s,     (accelerateCombat 1 (-0.002), accelerateCombat 1 0))
+  , (SDLK_a,     (turnCombat 1 1.5, turnCombat 1 (-1.5)))
+  , (SDLK_d,     (turnCombat 1 (-1.5), turnCombat 1 1.5))
+  , (SDLK_UP,    (accelerateCombat 1 0.002, accelerateCombat 1 0))
+  , (SDLK_DOWN,  (accelerateCombat 1 (-0.002), accelerateCombat 1 0))
+  , (SDLK_LEFT,  (turnCombat 1 1.5, turnCombat 1 (-1.5)))
+  , (SDLK_RIGHT, (turnCombat 1 (-1.5), turnCombat 1 1.5))
   , (SDLK_p,     (modify $ modCombatPaused not, return ()))
-  , (SDLK_SPACE, (ship1Shoot, return ()))
+  , (SDLK_SPACE, (shipNShoot 1, return ()))
   ]
 
 combatLoop :: StateT Combat IO Bool
