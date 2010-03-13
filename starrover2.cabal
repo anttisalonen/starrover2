@@ -13,6 +13,8 @@ Synopsis:       Space simulation game
 Description:    Space simulation game.
 Build-type:     Simple
 
+data-files: share/DejaVuSans.ttf
+
 source-repository head
   type:      git
   location:  git://github.com/anttisalonen/starrover2.git
@@ -24,7 +26,8 @@ Executable GraphicsTest
                    SDL>=0.5.5,
                    EdisonCore>=1.2.1.0,
                    random>=1.0.0.0,
-                   FTGL>=1.333
+                   FTGL>=1.333,
+                   directory>=1.0.0.0
   Main-is:         GraphicsTest.hs
   Hs-Source-Dirs:  src
   Ghc-options:     -Wall -fno-warn-missing-signatures
