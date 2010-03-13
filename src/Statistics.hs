@@ -21,6 +21,12 @@ choose l = do
   i <- randomRM (0, n - 1)
   return (l !! i)
 
+chooseIO :: [a] -> IO a
+chooseIO l = do
+  let n = length l
+  i <- randomRIO (0, n - 1)
+  return (l !! i)
+
 stdNormal :: (Random a, Ord a, Floating a) => Rnd a
 stdNormal = do
   u1 <- randomRM (-1, 1)
