@@ -10,7 +10,10 @@ module Space(newStdShip,
   processEvents,
   isQuit,
   collides2d,
-  getShipBox)
+  getShipBox,
+  getSDLChar,
+  getSpecificSDLChar,
+  getSpecificSDLChars)
 where
 
 import Control.Monad
@@ -35,6 +38,27 @@ pollAllSDLEvents = go []
 
 hasEvent :: (SDL.Event -> Bool) -> [SDL.Event] -> Bool
 hasEvent fun evts = or $ map fun evts
+
+getSDLChar :: IO SDLKey
+getSDLChar = do
+  e <- waitEvent
+  case e of
+    KeyDown (Keysym n _ _) -> return n
+    _                      -> getSDLChar
+
+getSpecificSDLChar :: SDLKey -> IO ()
+getSpecificSDLChar c = do
+  d <- getSDLChar
+  if c == d
+    then return ()
+    else getSpecificSDLChar c
+
+getSpecificSDLChars :: [SDLKey] -> IO SDLKey
+getSpecificSDLChars cs = do
+  d <- getSDLChar
+  if d `elem` cs
+    then return d
+    else getSpecificSDLChars cs
 
 newStdShip :: GLvector3 -> Color4 GLfloat -> GLdouble -> Entity
 newStdShip pos c rot = newEntity pos rot c TriangleFan trianglePoints glVector3AllUnit

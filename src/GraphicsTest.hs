@@ -159,27 +159,6 @@ updateSpaceState = do
     else do
       return False
 
-getSDLChar :: IO SDLKey
-getSDLChar = do
-  e <- waitEvent
-  case e of
-    KeyDown (Keysym n _ _) -> return n
-    _                      -> getSDLChar
-
-getSpecificSDLChar :: SDLKey -> IO ()
-getSpecificSDLChar c = do
-  d <- getSDLChar
-  if c == d
-    then return ()
-    else getSpecificSDLChar c
-
-getSpecificSDLChars :: [SDLKey] -> IO SDLKey
-getSpecificSDLChars cs = do
-  d <- getSDLChar
-  if d `elem` cs
-    then return d
-    else getSpecificSDLChars cs
-
 startCombat :: StateT TestState IO Bool
 startCombat = do
   liftIO $ clear [ColorBuffer,DepthBuffer]
