@@ -48,7 +48,7 @@ modShipN _ _ = id
 
 newCombat :: Combat
 newCombat = Combat (newStdShip (0, 0, 0) playerShipColor 0)
-                   (newStdShip (30, 20, 0) enemyShipColor 180)
+                   (newStdShip (90, 60, 0) enemyShipColor 180)
                    3
                    3
                    S.empty
