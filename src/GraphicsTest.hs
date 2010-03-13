@@ -262,12 +262,16 @@ combatLoop = do
   oneDead <- if combatPaused state
                then return 0
                else updateCombatState
+  handleCombatAI
   quits <- handleCombatEvents
   if quits
     then return quits
     else if oneDead /= 0
       then return $ oneDead == 1
       else combatLoop
+
+handleCombatAI :: StateT Combat IO ()
+handleCombatAI = return ()
 
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
