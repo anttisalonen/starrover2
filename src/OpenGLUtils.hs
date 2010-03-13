@@ -22,6 +22,12 @@ length2 (x0, y0, z0) = x0 ** 2 + y0 ** 2 + z0 ** 2
 length :: GLvector3 -> GLdouble
 length = sqrt . length2
 
+normalize :: GLvector3 -> GLvector3
+normalize (0, 0, 0) = (0, 0, 0)
+normalize v@(x, y, z) = 
+  let l = OpenGLUtils.length v
+  in (x / l, y / l, z / l)
+
 glVector3Null :: GLvector3
 glVector3Null = (0, 0, 0)
 
