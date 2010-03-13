@@ -79,15 +79,19 @@ shipNShoot n = do
       let nent = Entity laserpos laservel glVector3Null laserrot 0 0 (Color4 1.0 0.0 0.0 1.0) Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
       modify $ modLasers $ S.rcons nent
 
+accelForce = 0.002
+
+turnRate = 1.5
+
 combatMapping = 
-  [ (SDLK_w,     (accelerateCombat 1 0.002,    accelerateCombat 1 0))
-  , (SDLK_s,     (accelerateCombat 1 (-0.002), accelerateCombat 1 0))
-  , (SDLK_a,     (turnCombat 1 1.5, turnCombat 1 (-1.5)))
-  , (SDLK_d,     (turnCombat 1 (-1.5), turnCombat 1 1.5))
-  , (SDLK_UP,    (accelerateCombat 1 0.002, accelerateCombat 1 0))
-  , (SDLK_DOWN,  (accelerateCombat 1 (-0.002), accelerateCombat 1 0))
-  , (SDLK_LEFT,  (turnCombat 1 1.5, turnCombat 1 (-1.5)))
-  , (SDLK_RIGHT, (turnCombat 1 (-1.5), turnCombat 1 1.5))
+  [ (SDLK_w,     (accelerateCombat 1 accelForce,    accelerateCombat 1 0))
+  , (SDLK_s,     (accelerateCombat 1 (-accelForce), accelerateCombat 1 0))
+  , (SDLK_a,     (turnCombat 1 turnRate, turnCombat 1 (-turnRate)))
+  , (SDLK_d,     (turnCombat 1 (-turnRate), turnCombat 1 turnRate))
+  , (SDLK_UP,    (accelerateCombat 1 accelForce, accelerateCombat 1 0))
+  , (SDLK_DOWN,  (accelerateCombat 1 (-accelForce), accelerateCombat 1 0))
+  , (SDLK_LEFT,  (turnCombat 1 turnRate, turnCombat 1 (-turnRate)))
+  , (SDLK_RIGHT, (turnCombat 1 (-turnRate), turnCombat 1 turnRate))
   , (SDLK_p,     (modify $ modCombatPaused not, return ()))
   , (SDLK_SPACE, (shipNShoot 1, return ()))
   ]
@@ -109,7 +113,7 @@ combatLoop = do
       else combatLoop
 
 handleCombatAI :: StateT Combat IO ()
-handleCombatAI = return ()
+handleCombatAI = accelerateCombat 2 accelForce
 
 drawCombat :: StateT Combat IO ()
 drawCombat = do
