@@ -169,13 +169,18 @@ handleEvents = do
 
 gotoCity :: String -> StateT TestState IO ()
 gotoCity n = do
-  liftIO $ putStrLn $ "Landed on " ++ n ++ "!"
+  state <- State.get
+  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
+                           (gamefont state, Color4 1.0 1.0 1.0 1.0, "Current cargo status:"),
+                           (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo (cargo state)),
+                           (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")]
+  liftIO $ getSpecificSDLChar SDLK_RETURN
+  return ()
 
 catapult :: GLvector3 -> StateT TestState IO ()
 catapult vec = do
   state <- State.get
   let plloc = Entity.position (tri state)
-  let plvel = Entity.velocity (tri state)
   let (dx, dy, _) = (plloc *-* vec)
   let newvel = OpenGLUtils.normalize (dx, dy, 0) *** 0.2
   modify $ modTri $ modifyPosition $ (*+* (newvel *** 5))
@@ -211,7 +216,8 @@ makeTextScreen instructions = do
   glSwapBuffers
 
 showCargo :: Cargo -> String
-showCargo c = concatMap (\(k, v) -> printf "%-20s-%4d\n" k v) (M.toSeq c) 
+showCargo c | M.null c  = "No cargo\n"
+            | otherwise = concatMap (\(k, v) -> printf "%-20s-%4d\n" k v) (M.toSeq c) 
 
 startCombat :: StateT TestState IO ()
 startCombat = do
