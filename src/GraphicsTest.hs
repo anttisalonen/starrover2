@@ -23,6 +23,7 @@ import AObject
 import Combat
 import Space
 import Cargo
+import Utils
 
 import Paths_starrover2
 
@@ -150,18 +151,6 @@ handleCollisions plbox aobs =
               else Nothing
             where (objcoordx, objcoordy, _) = AObject.getPosition aobj
                   abox = boxArea (objcoordx, objcoordy) (size aobj)
-
-untilDoneR :: (Monad m) => m (Maybe a) -> m a
-untilDoneR f = do
-  done <- f
-  case done of
-    Nothing -> untilDoneR f
-    Just x  -> return x
-
-untilDone :: (Monad m) => m Bool -> m ()
-untilDone f = do
-  done <- f
-  when (not done) $ untilDone f
 
 loop :: StateT TestState IO ()
 loop = untilDone $ do 

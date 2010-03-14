@@ -76,6 +76,18 @@ randomPair range = do
 capitalize []     = []
 capitalize (h:hs) = toUpper h : hs
 
+untilDoneR :: (Monad m) => m (Maybe a) -> m a
+untilDoneR f = do
+  done <- f
+  case done of
+    Nothing -> untilDoneR f
+    Just x  -> return x
+
+untilDone :: (Monad m) => m Bool -> m ()
+untilDone f = do
+  done <- f
+  when (not done) $ untilDone f
+
 {-
 randomThing :: (Random t, RandomGen s, MonadState s m) => m t
 randomThing = do
