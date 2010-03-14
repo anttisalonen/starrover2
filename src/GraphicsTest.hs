@@ -223,6 +223,7 @@ startCombat = do
         gameOver "You've been exterminated . . ."
   setTurn 0
   accelerate 0 -- prevent involuntary actions
+  Main.setZoom 0
 
 drawSpace :: StateT TestState IO ()
 drawSpace = do
