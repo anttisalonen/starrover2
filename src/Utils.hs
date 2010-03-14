@@ -83,10 +83,12 @@ untilDoneR f = do
     Nothing -> untilDoneR f
     Just x  -> return x
 
+boolToMaybe :: Bool -> Maybe ()
+boolToMaybe True  = Just ()
+boolToMaybe False = Nothing
+
 untilDone :: (Monad m) => m Bool -> m ()
-untilDone f = do
-  done <- f
-  when (not done) $ untilDone f
+untilDone f = untilDoneR (f >>= return . boolToMaybe)
 
 {-
 randomThing :: (Random t, RandomGen s, MonadState s m) => m t
