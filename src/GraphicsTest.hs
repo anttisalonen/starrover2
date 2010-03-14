@@ -151,14 +151,25 @@ handleCollisions plbox aobs =
             where (objcoordx, objcoordy, _) = AObject.getPosition aobj
                   abox = boxArea (objcoordx, objcoordy) (size aobj)
 
+untilDoneR :: (Monad m) => m (Maybe a) -> m a
+untilDoneR f = do
+  done <- f
+  case done of
+    Nothing -> untilDoneR f
+    Just x  -> return x
+
+untilDone :: (Monad m) => m Bool -> m ()
+untilDone f = do
+  done <- f
+  when (not done) $ untilDone f
+
 loop :: StateT TestState IO ()
-loop = do 
+loop = untilDone $ do 
   liftIO $ delay 10
   state <- State.get
   drawSpace
   when (not (stopped state)) updateSpaceState
-  quits <- handleEvents
-  when (not quits) loop
+  handleEvents
 
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
@@ -175,6 +186,12 @@ drawExitButton f = do
     mapM_ vertex [Vertex3 (0 :: GLdouble) 0 0, Vertex3 0 30 0, Vertex3 100 30 0, Vertex3 100 0 0]
   translate $ Vector3 10 10 (0 :: GLdouble)
   renderFont f "Exit" FTGL.Front
+
+loopTextScreen :: (MonadIO m) => m () -> m Bool -> m ()
+loopTextScreen drawScreenFunc handleEventsFunc = untilDone $ do
+  liftIO $ delay 10
+  drawScreenFunc
+  handleEventsFunc
 
 gotoCity :: String -> StateT TestState IO ()
 gotoCity n = do
@@ -231,8 +248,8 @@ makeTextScreen instructions additional = do
 gameOver :: String -> StateT TestState IO ()
 gameOver s = do
   state <- State.get
-  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")] (return ())
-  liftIO $ getSpecificSDLChar SDLK_RETURN
+  loopTextScreen (liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")] (return ()))
+                 (liftIO $ pollAllSDLEvents >>= return . keyWasPressed SDLK_RETURN)
   let is = initState (gamefont state) (monofont state)
   modify $ const is
 
