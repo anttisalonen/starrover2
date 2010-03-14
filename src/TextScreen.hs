@@ -43,6 +43,3 @@ drawButton ((tlx, tly), (diffx, diffy)) str f = do
   translate $ Vector3 10 10 (0 :: GLdouble)
   renderFont f str FTGL.Front
 
-drawExitButton :: Font -> IO ()
-drawExitButton = drawButton ((100, 100), (100, 30)) "Exit"
-
