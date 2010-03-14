@@ -33,13 +33,13 @@ loopTextScreen drawScreenFunc handleEventsFunc = untilDoneR $ do
   drawScreenFunc
   handleEventsFunc
 
-drawButton :: ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> String -> Font -> IO ()
-drawButton ((tlx, tly), (diffx, diffy)) str f = do
+drawButton :: String -> Font -> ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> IO ()
+drawButton str f ((tlx, tly), (diffx, diffy)) = do
   loadIdentity
-  translate $ Vector3 tlx tly (0 :: GLdouble)
+  translate $ Vector3 tlx (tly + 2) (0 :: GLdouble)
   currentColor $= Color4 1.0 1.0 1.0 1.0
   renderPrimitive LineLoop $
     mapM_ vertex [Vertex3 (0 :: GLdouble) 0 0, Vertex3 0 diffy 0, Vertex3 diffx diffy 0, Vertex3 diffx 0 0]
-  translate $ Vector3 10 10 (0 :: GLdouble)
+  translate $ Vector3 10 8 (0 :: GLdouble)
   renderFont f str FTGL.Front
 

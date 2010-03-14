@@ -128,9 +128,14 @@ gotoCity n = do
   state <- State.get
   market <- liftIO $ randomMarket
   let exitb = ((100, 100), (100, 30)) :: (Num a) => ((a, a), (a, a))
-  loopTextScreen (liftIO $ makeTextScreen (20, 500) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
-                           (monofont state, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo market (cargo state))]
-                          (drawButton exitb "Exit" (gamefont state)))
+      buybuttons  = map (\i -> ((550, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems] :: (Num a) => [((a, a), (a, a))]
+      sellbuttons = map (\i -> ((680, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems] :: (Num a) => [((a, a), (a, a))]
+  loopTextScreen (liftIO $ makeTextScreen (10, 500) 
+                               [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
+                                (monofont state, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo market (cargo state))]
+                               (drawButton "Exit" (gamefont state) exitb >>
+                                mapM_ (drawButton "Buy" (gamefont state)) buybuttons >>
+                                mapM_ (drawButton "Sell" (gamefont state)) sellbuttons))
                  (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . mouseClickIn [ButtonLeft] exitb)
   return ()
 
