@@ -161,11 +161,11 @@ handleEvents = do
 gotoCity :: String -> StateT TestState IO ()
 gotoCity n = do
   state <- State.get
-  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
+  loopTextScreen (liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
                            (gamefont state, Color4 1.0 1.0 1.0 1.0, "Current cargo status:"),
                            (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo (cargo state))]
-                          (drawExitButton (gamefont state))
-  liftIO $ getSpecificSDLChar SDLK_RETURN
+                          (drawExitButton (gamefont state)))
+                 (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   return ()
 
 catapult :: GLvector3 -> StateT TestState IO ()
