@@ -15,11 +15,14 @@ module Space(newStdShip,
   getShipBox,
   getSDLChar,
   getSpecificSDLChar,
-  getSpecificSDLChars
+  getSpecificSDLChars,
+  specificKeyPressed
   )
 where
 
 import Control.Monad
+import Data.List
+import Data.Maybe
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
@@ -62,6 +65,12 @@ getSpecificSDLChars cs = do
   if d `elem` cs
     then return d
     else getSpecificSDLChars cs
+
+keyDowns :: [SDL.Event] -> [SDLKey]
+keyDowns = foldl' (\acc e -> case e of KeyDown (Keysym n _ _) -> (n:acc); _ -> acc) []
+
+specificKeyPressed :: [SDLKey] -> [SDL.Event] -> Maybe SDLKey
+specificKeyPressed ks evts = listToMaybe $ intersect ks (keyDowns evts)
 
 newStdShip :: GLvector3 -> Color4 GLfloat -> GLdouble -> Entity
 newStdShip pos c rot = newEntity pos rot c TriangleFan trianglePoints glVector3AllUnit
