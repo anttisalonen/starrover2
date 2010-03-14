@@ -10,6 +10,7 @@ module Space(newStdShip,
   pollAllSDLEvents,
   processEvents,
   isQuit,
+  keyWasPressed,
   collides2d,
   getShipBox,
   getSDLChar,
@@ -130,6 +131,11 @@ isQuit = hasEvent isq
   where isq Quit = True
         isq (KeyDown (Keysym SDLK_q _ _)) = True
         isq _ = False
+
+keyWasPressed :: SDLKey -> [SDL.Event] -> Bool
+keyWasPressed j = hasEvent isk
+  where isk (KeyDown (Keysym x _ _)) | x == j = True
+        isk _                                 = False
 
 collides1d (a, b) (c, d) =
   (a < c && c < b) || (a < d && d < b) ||
