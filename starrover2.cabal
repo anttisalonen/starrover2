@@ -13,7 +13,7 @@ Synopsis:       Space simulation game
 Description:    Space simulation game.
 Build-type:     Simple
 
-data-files: share/DejaVuSans.ttf
+data-files: share/DejaVuSans.ttf, share/DejaVuSansMono.ttf
 
 source-repository head
   type:      git
