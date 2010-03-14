@@ -126,10 +126,10 @@ handleEvents = do
 gotoCity :: String -> StateT TestState IO ()
 gotoCity n = do
   state <- State.get
+  market <- liftIO $ randomMarket
   let exitb = ((100, 100), (100, 30)) :: (Num a) => ((a, a), (a, a))
-  loopTextScreen (liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
-                           (gamefont state, Color4 1.0 1.0 1.0 1.0, "Current cargo status:"),
-                           (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo (cargo state))]
+  loopTextScreen (liftIO $ makeTextScreen (20, 500) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
+                           (monofont state, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo market (cargo state))]
                           (drawButton exitb "Exit" (gamefont state)))
                  (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . mouseClickIn [ButtonLeft] exitb)
   return ()
@@ -172,7 +172,7 @@ releaseKeys = do
 gameOver :: String -> StateT TestState IO ()
 gameOver s = do
   state <- State.get
-  loopTextScreen (liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")] (return ()))
+  loopTextScreen (liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")] (return ()))
                  (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   let is = initState (gamefont state) (monofont state)
   modify $ const is
@@ -180,13 +180,13 @@ gameOver s = do
 startCombat :: StateT TestState IO ()
 startCombat = do
   state <- State.get
-  c <- loopTextScreen (liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Combat beginning - press ENTER to start\nor ESCAPE to escape")] (return ()))
+  c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Combat beginning - press ENTER to start\nor ESCAPE to escape")] (return ()))
                       (liftIO $ pollAllSDLEvents >>= return . specificKeyPressed [SDLK_RETURN, SDLK_ESCAPE])
   when (c == SDLK_RETURN) $ do
     mnewcargo <- liftIO $ evalStateT combatLoop (newCombat (cargo state))
     case mnewcargo of
       Just newcargo -> do
-        liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
+        liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
                                  (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
                                  (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
         liftIO $ getSpecificSDLChar SDLK_RETURN

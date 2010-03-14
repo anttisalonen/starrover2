@@ -13,12 +13,12 @@ import Camera
 import Space
 import Utils
 
-makeTextScreen :: [(Font, Color4 GLfloat, String)] -> IO () -> IO ()
-makeTextScreen instructions additional = do
+makeTextScreen :: (GLdouble, GLdouble) -> [(Font, Color4 GLfloat, String)] -> IO () -> IO ()
+makeTextScreen (xstart, ystart) instructions additional = do
   clear [ColorBuffer,DepthBuffer]
   loadIdentity
   setCamera ((0, 0), (width, height))
-  translate (Vector3 100 400 (0 :: GLdouble))
+  translate (Vector3 xstart ystart (0 :: GLdouble))
   forM_ instructions $ \(f, c, s) -> do
     currentColor $= c
     forM_ (lines s) $ \str -> do
