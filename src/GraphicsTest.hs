@@ -215,10 +215,6 @@ makeTextScreen instructions = do
       translate (Vector3 0 (-50) (0 :: GLdouble))
   glSwapBuffers
 
-showCargo :: Cargo -> String
-showCargo c | M.null c  = "No cargo\n"
-            | otherwise = concatMap (\(k, v) -> printf "%-20s-%4d\n" k v) (M.toSeq c) 
-
 startCombat :: StateT TestState IO ()
 startCombat = do
   state <- State.get
