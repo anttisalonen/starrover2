@@ -4,7 +4,6 @@ where
 import System.Random
 import System.Directory
 import System.IO (hPutStrLn, stderr)
-import Text.Printf
 import Data.Maybe
 import Control.Monad
 import Control.Monad.State as State
