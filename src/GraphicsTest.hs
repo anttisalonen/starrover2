@@ -161,35 +161,37 @@ updateSpaceState = do
   val <- liftIO $ randomRIO (0, 500 :: Int)
   when (val == 0) startCombat
 
-makeTextScreen :: Font -> String -> IO ()
-makeTextScreen f s = do
+makeTextScreen :: [(Font, Color4 GLfloat, String)] -> IO ()
+makeTextScreen instructions = do
   clear [ColorBuffer,DepthBuffer]
   loadIdentity
   setCamera ((0, 0), (width, height))
   translate (Vector3 100 400 (0 :: GLdouble))
-  forM_ (lines s) $ \str -> do
-    renderFont f str FTGL.Front
-    translate (Vector3 0 (-50) (0 :: GLdouble))
+  forM_ instructions $ \(f, c, s) -> do
+    currentColor $= c
+    forM_ (lines s) $ \str -> do
+      renderFont f str FTGL.Front
+      translate (Vector3 0 (-50) (0 :: GLdouble))
   glSwapBuffers
 
 showCargo :: Cargo -> String
-showCargo c = concatMap (\(k, v) -> printf "%20s - %4d\n" k v) (M.toSeq c) 
+showCargo c = concatMap (\(k, v) -> printf "%-20s - %4d\n" k v) (M.toSeq c) 
 
 startCombat :: StateT TestState IO ()
 startCombat = do
   state <- State.get
-  liftIO $ makeTextScreen (gamefont state) "Combat beginning - press ENTER to start\nor ESCAPE to escape"
+  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Combat beginning - press ENTER to start\nor ESCAPE to escape")]
   c <- liftIO $ getSpecificSDLChars [SDLK_RETURN, SDLK_ESCAPE]
   when (c == SDLK_RETURN) $ do
     mnewcargo <- liftIO $ evalStateT combatLoop (newCombat (cargo state))
     case mnewcargo of
       Just newcargo -> do
-        liftIO $ makeTextScreen (gamefont state) $ "You survived - Current cargo status:\n" ++ (showCargo newcargo) ++ "\nPress ENTER to continue"
+        liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:\n" ++ (showCargo newcargo) ++ "\nPress ENTER to continue")]
         liftIO $ getSpecificSDLChar SDLK_RETURN
         modify $ modCargo (const newcargo)
         return ()
       Nothing -> do
-        liftIO $ makeTextScreen (gamefont state) "You've been exterminated . . .\nPress ENTER to continue"
+        liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, "You've been exterminated . . .\nPress ENTER to continue")]
         liftIO $ getSpecificSDLChar SDLK_RETURN
         let is = initState (gamefont state)
         modify $ const is
