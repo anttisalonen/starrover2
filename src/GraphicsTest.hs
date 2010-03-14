@@ -198,8 +198,11 @@ updateSpaceState = do
       val <- liftIO $ randomRIO (0, 500 :: Int)
       when (val == 0) startCombat
     Just lc -> do
-      gotoCity (aobjName lc)
-      catapult (AObject.getPosition lc)
+      if aobjName lc == "Star"
+        then gameOver "You and your spaceship burn in the star . . ."
+        else do
+          gotoCity (aobjName lc)
+          catapult (AObject.getPosition lc)
 
 makeTextScreen :: [(Font, Color4 GLfloat, String)] -> IO ()
 makeTextScreen instructions = do
@@ -213,6 +216,14 @@ makeTextScreen instructions = do
       renderFont f str FTGL.Front
       translate (Vector3 0 (-50) (0 :: GLdouble))
   glSwapBuffers
+
+gameOver :: String -> StateT TestState IO ()
+gameOver s = do
+  state <- State.get
+  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")]
+  liftIO $ getSpecificSDLChar SDLK_RETURN
+  let is = initState (gamefont state) (monofont state)
+  modify $ const is
 
 startCombat :: StateT TestState IO ()
 startCombat = do
@@ -230,11 +241,7 @@ startCombat = do
         modify $ modCargo (const newcargo)
         return ()
       Nothing -> do
-        liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, "You've been exterminated . . .\nPress ENTER to continue")]
-        liftIO $ getSpecificSDLChar SDLK_RETURN
-        let is = initState (gamefont state) (monofont state)
-        modify $ const is
-        return ()
+        gameOver "You've been exterminated . . ."
   setTurn 0
   accelerate 0 -- prevent involuntary actions
 
