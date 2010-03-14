@@ -117,6 +117,7 @@ turn a = modify $ modTri $ modifyAngVelocity (+a)
 setTurn a = modify $ modTri $ modifyAngVelocity (const a)
 
 changeZoom a = modify $ modCameraState $ modCamZoomDelta (+a)
+setZoom a = modify $ modCameraState $ modCamZoomDelta (const a)
 
 inputMapping = 
   [ (SDLK_w,     (accelerate 0.002,    accelerate 0))
@@ -127,8 +128,8 @@ inputMapping =
   , (SDLK_DOWN,  (accelerate (-0.002), accelerate 0))
   , (SDLK_LEFT,  (turn 1.5, setTurn 0))
   , (SDLK_RIGHT, (turn (-1.5), setTurn 0))
-  , (SDLK_MINUS, (changeZoom zoomChangeFactor, changeZoom (-zoomChangeFactor)))
-  , (SDLK_PLUS,  (changeZoom (-zoomChangeFactor), changeZoom zoomChangeFactor))
+  , (SDLK_MINUS, (changeZoom zoomChangeFactor, Main.setZoom 0))
+  , (SDLK_PLUS,  (changeZoom (-zoomChangeFactor), Main.setZoom 0))
   , (SDLK_i,     (showInfo, return ()))
   , (SDLK_p,     (modify $ modStopped not, return ()))
   ]
@@ -227,7 +228,7 @@ drawSpace :: StateT TestState IO ()
 drawSpace = do
   state <- State.get
   modify $ modCameraState $ modCamZoom $ (+ (camzoomdelta $ camstate state))
-  modify $ modCameraState $ modCamera $ setZoom $ clamp 30 250 $ (camzoom $ camstate state) + (400 * (length2 $ velocity (tri state)))
+  modify $ modCameraState $ modCamera $ Camera.setZoom $ clamp 30 250 $ (camzoom $ camstate state) + (400 * (length2 $ velocity (tri state)))
   modify $ modCameraState $ modCamera $ setCentre $ Entity.position (tri state)
   liftIO $ setCamera (camera $ camstate state)
   liftIO $ drawGLScreen [tri state] (aobjects state)
