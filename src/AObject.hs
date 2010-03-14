@@ -1,10 +1,13 @@
 module AObject
 where
 
+import Data.Maybe
+
 import Graphics.Rendering.OpenGL as OpenGL
 
 import OpenGLUtils
 import Entity
+import Collision
 
 data AObject = AObject {
     aobjName     :: String
@@ -47,3 +50,15 @@ getPosition aobj =
       objcoordx = r * cos a
       objcoordy = r * sin a
   in (objcoordx, objcoordy, 0)
+
+findCollisions :: ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> [AObject] -> Maybe AObject
+findCollisions plbox aobs = 
+  listToMaybe . catMaybes $ map colliding aobs
+    where colliding aobj =
+            if collides2d plbox abox
+              then Just aobj
+              else Nothing
+            where (objcoordx, objcoordy, _) = AObject.getPosition aobj
+                  abox = boxArea (objcoordx, objcoordy) (size aobj)
+
+

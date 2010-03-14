@@ -30,6 +30,7 @@ import Graphics.UI.SDL as SDL
 import OpenGLUtils
 import Entity
 import AObject
+import Collision
 
 -- generic stuff
 pollAllSDLEvents :: IO [SDL.Event]
@@ -78,8 +79,6 @@ newStdShip pos c rot = newEntity pos rot c TriangleFan trianglePoints glVector3A
 playerShipColor, enemyShipColor :: Color4 GLfloat
 playerShipColor = Color4 0.0 0.5 0.0 1.0
 enemyShipColor  = Color4 0.5 0.0 0.0 1.0
-
-boxArea (x, y) r = ((x - r, x + r), (y - r, y + r))
 
 width = 800
 height = 600
@@ -145,13 +144,6 @@ keyWasPressed :: SDLKey -> [SDL.Event] -> Bool
 keyWasPressed j = hasEvent isk
   where isk (KeyDown (Keysym x _ _)) | x == j = True
         isk _                                 = False
-
-collides1d (a, b) (c, d) =
-  (a < c && c < b) || (a < d && d < b) ||
-  (c < a && a < d) || (c < b && b < d)
-
-collides2d (x1, y1) (x2, y2) =
-  collides1d x1 x2 && collides1d y1 y2
 
 getShipBox
   :: Entity -> ((GLdouble, GLdouble), (GLdouble, GLdouble))

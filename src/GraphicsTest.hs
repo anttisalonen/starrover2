@@ -143,16 +143,6 @@ showInfo = do
 clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx n = if mn > n then mn else if mx < n then mx else n
 
-handleCollisions :: ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> [AObject] -> Maybe AObject
-handleCollisions plbox aobs = 
-  listToMaybe . catMaybes $ map colliding aobs
-    where colliding aobj =
-            if collides2d plbox abox
-              then Just aobj
-              else Nothing
-            where (objcoordx, objcoordy, _) = AObject.getPosition aobj
-                  abox = boxArea (objcoordx, objcoordy) (size aobj)
-
 loop :: StateT TestState IO ()
 loop = untilDone $ do 
   liftIO $ delay 10
@@ -193,7 +183,7 @@ updateSpaceState = do
   state <- State.get
   modify $ modTri (updateEntity 1)
   modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
-  let mlanded = handleCollisions (getShipBox $ tri state) (aobjects state)
+  let mlanded = findCollisions (getShipBox $ tri state) (aobjects state)
   case mlanded of
     Nothing -> do
       val <- liftIO $ randomRIO (0, 500 :: Int)
