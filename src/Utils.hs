@@ -90,6 +90,24 @@ boolToMaybe False = Nothing
 untilDone :: (Monad m) => m Bool -> m ()
 untilDone f = untilDoneR (f >>= return . boolToMaybe)
 
+degToRad :: (Floating a) => a -> a
+degToRad d = d * pi / 180
+
+wrap :: (Num a, Ord a) => a -> a -> a -> a
+wrap mn mx v =
+  if v < mn 
+    then wrap mn mx (v + diff)
+    else if v > mx
+           then wrap mn mx (v - diff)
+           else v
+    where diff = mx - mn
+
+wrapDegrees :: (Num a, Ord a) => a -> a
+wrapDegrees = wrap (-180) 180
+
+clamp :: (Ord a) => a -> a -> a -> a
+clamp mn mx n = if mn > n then mn else if mx < n then mx else n
+
 {-
 randomThing :: (Random t, RandomGen s, MonadState s m) => m t
 randomThing = do

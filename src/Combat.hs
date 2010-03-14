@@ -15,6 +15,7 @@ import OpenGLUtils
 import Entity
 import Space
 import Cargo
+import Utils
 
 data Combat = Combat {
     ship1          :: Entity

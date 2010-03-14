@@ -8,6 +8,7 @@ import Graphics.Rendering.OpenGL as OpenGL
 import OpenGLUtils
 import Entity
 import Collision
+import Utils
 
 data AObject = AObject {
     aobjName     :: String

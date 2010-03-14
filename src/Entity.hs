@@ -6,6 +6,7 @@ import Control.Monad.State
 import Graphics.Rendering.OpenGL as OpenGL
 
 import OpenGLUtils
+import Utils
 
 -- Entity stuff
 data Entity = Entity {
@@ -51,21 +52,6 @@ modifyPrimitive f t = t{primitive = f (primitive t)}
 
 modifyScale :: (GLvector3 -> GLvector3) -> Entity -> Entity
 modifyScale f t = t{Entity.scale = f (Entity.scale t)}
-
-degToRad :: (Floating a) => a -> a
-degToRad d = d * pi / 180
-
-wrap :: (Num a, Ord a) => a -> a -> a -> a
-wrap mn mx v =
-  if v < mn 
-    then wrap mn mx (v + diff)
-    else if v > mx
-           then wrap mn mx (v - diff)
-           else v
-    where diff = mx - mn
-
-wrapDegrees :: (Num a, Ord a) => a -> a
-wrapDegrees = wrap (-180) 180
 
 updateEntity :: GLdouble -> Entity -> Entity
 updateEntity delta ent = flip execState ent $ do
