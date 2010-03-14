@@ -195,6 +195,13 @@ updateSpaceState = do
         else do
           gotoCity (aobjName lc)
           catapult (AObject.getPosition lc)
+          releaseKeys
+
+releaseKeys :: StateT TestState IO ()
+releaseKeys = do
+  setTurn 0
+  accelerate 0 -- prevent involuntary actions
+  Main.setZoom 0
 
 gameOver :: String -> StateT TestState IO ()
 gameOver s = do
@@ -221,9 +228,7 @@ startCombat = do
         return ()
       Nothing -> do
         gameOver "You've been exterminated . . ."
-  setTurn 0
-  accelerate 0 -- prevent involuntary actions
-  Main.setZoom 0
+  releaseKeys
 
 drawSpace :: StateT TestState IO ()
 drawSpace = do
