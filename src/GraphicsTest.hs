@@ -199,7 +199,7 @@ updateSpaceState = do
       when (val == 0) startCombat
     Just lc -> do
       if aobjName lc == "Star"
-        then gameOver "You and your spaceship burn in the star . . ."
+        then gameOver "You burn to death!"
         else do
           gotoCity (aobjName lc)
           catapult (AObject.getPosition lc)
