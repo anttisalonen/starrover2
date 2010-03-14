@@ -7,7 +7,8 @@ import OpenGLUtils
 import Entity
 
 data AObject = AObject {
-    angle        :: GLdouble
+    aobjName     :: String
+  , angle        :: GLdouble
   , color        :: Color4 GLfloat
   , size         :: GLdouble
   , orbitRadius  :: GLdouble

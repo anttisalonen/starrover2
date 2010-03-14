@@ -5,6 +5,7 @@ import System.Random
 import System.Directory
 import System.IO (hPutStrLn, stderr)
 import Text.Printf
+import Data.Maybe
 import Control.Monad
 import Control.Monad.State as State
 import System.IO.Error (mkIOError, doesNotExistErrorType)
@@ -60,11 +61,11 @@ main = catch (withInit [InitVideo] $ do
   (\e -> hPutStrLn stderr $ "Exception: " ++ show (e :: IOException)) 
 
 aobjs =
-  [ AObject 0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
-  , AObject 10  (Color4 0.5 0.5 1.0 1.0) 2.0 28
-  , AObject 250 (Color4 0.0 0.4 0.5 1.0) 4.0 80
-  , AObject 30  (Color4 0.6 0.6 0.6 1.0) 3.0 100
-  , AObject 80  (Color4 0.6 0.6 0.6 1.0) 2.0 130
+  [ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
+  , AObject "Murphy's"   10  (Color4 0.5 0.5 1.0 1.0) 2.0 28
+  , AObject "Loki"       250 (Color4 0.0 0.4 0.5 1.0) 4.0 80
+  , AObject "Harju"      30  (Color4 0.6 0.6 0.6 1.0) 3.0 100
+  , AObject "Riesenland" 80  (Color4 0.6 0.6 0.6 1.0) 2.0 130
   ]
 
 stdCamera :: CameraState
@@ -141,15 +142,15 @@ showInfo = do
 clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx n = if mn > n then mn else if mx < n then mx else n
 
-handleCollisions :: StateT TestState IO ()
-handleCollisions = do
-  state <- State.get
-  let plbox = getShipBox (tri state)
-  forM_ (aobjects state) $ \aobj -> do
-    let (objcoordx, objcoordy, _) = AObject.getPosition aobj
-        abox = boxArea (objcoordx, objcoordy) (size aobj)
-    when (collides2d plbox abox) $ do
-      liftIO $ putStrLn "inside planet!"
+handleCollisions :: ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> [AObject] -> Maybe AObject
+handleCollisions plbox aobs = 
+  listToMaybe . catMaybes $ map colliding aobs
+    where colliding aobj =
+            if collides2d plbox abox
+              then Just aobj
+              else Nothing
+            where (objcoordx, objcoordy, _) = AObject.getPosition aobj
+                  abox = boxArea (objcoordx, objcoordy) (size aobj)
 
 loop :: StateT TestState IO ()
 loop = do 
@@ -166,13 +167,35 @@ handleEvents = do
   processEvents inputMapping events
   return $ isQuit events
 
+gotoCity :: String -> StateT TestState IO ()
+gotoCity n = do
+  liftIO $ putStrLn $ "Landed on " ++ n ++ "!"
+
+catapult :: GLvector3 -> StateT TestState IO ()
+catapult vec = do
+  state <- State.get
+  let plloc = Entity.position (tri state)
+  let plvel = Entity.velocity (tri state)
+  let (dx, dy, _) = (plloc *-* vec)
+  let newvel = OpenGLUtils.normalize (dx, dy, 0) *** 0.2
+  modify $ modTri $ modifyPosition $ (*+* (newvel *** 5))
+  modify $ modTri $ modifyVelocity $ const newvel
+  modify $ modTri $ resetAcceleration
+  modify $ modTri $ modifyRotation $ (+180)
+
 updateSpaceState :: StateT TestState IO ()
 updateSpaceState = do
+  state <- State.get
   modify $ modTri (updateEntity 1)
   modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
-  handleCollisions
-  val <- liftIO $ randomRIO (0, 500 :: Int)
-  when (val == 0) startCombat
+  let mlanded = handleCollisions (getShipBox $ tri state) (aobjects state)
+  case mlanded of
+    Nothing -> do
+      val <- liftIO $ randomRIO (0, 500 :: Int)
+      when (val == 0) startCombat
+    Just lc -> do
+      gotoCity (aobjName lc)
+      catapult (AObject.getPosition lc)
 
 makeTextScreen :: [(Font, Color4 GLfloat, String)] -> IO ()
 makeTextScreen instructions = do
