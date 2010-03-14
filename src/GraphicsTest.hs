@@ -1,3 +1,4 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
 module Main()
 where
 
@@ -161,11 +162,12 @@ handleEvents = do
 gotoCity :: String -> StateT TestState IO ()
 gotoCity n = do
   state <- State.get
+  let exitb = ((100, 100), (100, 30)) :: (Num a) => ((a, a), (a, a))
   loopTextScreen (liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
                            (gamefont state, Color4 1.0 1.0 1.0 1.0, "Current cargo status:"),
                            (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo (cargo state))]
-                          (drawButton ((100, 100), (100, 30)) "Exit" (gamefont state)))
-                 (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
+                          (drawButton exitb "Exit" (gamefont state)))
+                 (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . mouseClickIn [ButtonLeft] exitb)
   return ()
 
 catapult :: GLvector3 -> StateT TestState IO ()
