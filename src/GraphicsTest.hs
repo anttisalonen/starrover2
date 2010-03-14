@@ -164,7 +164,7 @@ gotoCity n = do
   loopTextScreen (liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
                            (gamefont state, Color4 1.0 1.0 1.0 1.0, "Current cargo status:"),
                            (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo (cargo state))]
-                          (drawExitButton (gamefont state)))
+                          (drawButton ((100, 100), (100, 30)) "Exit" (gamefont state)))
                  (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   return ()
 

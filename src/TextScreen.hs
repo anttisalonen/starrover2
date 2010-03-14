@@ -33,14 +33,16 @@ loopTextScreen drawScreenFunc handleEventsFunc = untilDoneR $ do
   drawScreenFunc
   handleEventsFunc
 
-drawExitButton :: Font -> IO ()
-drawExitButton f = do
+drawButton :: ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> String -> Font -> IO ()
+drawButton ((tlx, tly), (diffx, diffy)) str f = do
   loadIdentity
-  translate $ Vector3 100 (100) (0 :: GLdouble)
+  translate $ Vector3 tlx tly (0 :: GLdouble)
   currentColor $= Color4 1.0 1.0 1.0 1.0
   renderPrimitive LineLoop $
-    mapM_ vertex [Vertex3 (0 :: GLdouble) 0 0, Vertex3 0 30 0, Vertex3 100 30 0, Vertex3 100 0 0]
+    mapM_ vertex [Vertex3 (0 :: GLdouble) 0 0, Vertex3 0 diffy 0, Vertex3 diffx diffy 0, Vertex3 diffx 0 0]
   translate $ Vector3 10 10 (0 :: GLdouble)
-  renderFont f "Exit" FTGL.Front
+  renderFont f str FTGL.Front
 
+drawExitButton :: Font -> IO ()
+drawExitButton = drawButton ((100, 100), (100, 30)) "Exit"
 
