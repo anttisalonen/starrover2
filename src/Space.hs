@@ -138,6 +138,8 @@ collides1d (a, b) (c, d) =
 collides2d (x1, y1) (x2, y2) =
   collides1d x1 x2 && collides1d y1 y2
 
+getShipBox
+  :: Entity -> ((GLdouble, GLdouble), (GLdouble, GLdouble))
 getShipBox e = 
   let (x, y, _) = Entity.position e
   in boxArea (x, y) 1
