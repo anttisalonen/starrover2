@@ -1,4 +1,3 @@
-{-# LANGUAGE NoMonomorphismRestriction #-}
 module Space(newStdShip,
   playerShipColor,
   enemyShipColor,
@@ -16,7 +15,8 @@ module Space(newStdShip,
   getSDLChar,
   getSpecificSDLChar,
   getSpecificSDLChars,
-  specificKeyPressed
+  specificKeyPressed,
+  mouseClickIn
   )
 where
 
@@ -80,7 +80,10 @@ playerShipColor, enemyShipColor :: Color4 GLfloat
 playerShipColor = Color4 0.0 0.5 0.0 1.0
 enemyShipColor  = Color4 0.5 0.0 0.0 1.0
 
+width :: (Num a) => a
 width = 800
+
+height :: (Num a) => a
 height = 600
 
 drawEntity :: Entity -> IO ()
@@ -144,6 +147,19 @@ keyWasPressed :: SDLKey -> [SDL.Event] -> Bool
 keyWasPressed j = hasEvent isk
   where isk (KeyDown (Keysym x _ _)) | x == j = True
         isk _                                 = False
+
+mouseClickIn :: [SDL.MouseButton] -> ((Int, Int), (Int, Int)) -> [SDL.Event] -> Bool
+mouseClickIn buttons ((minx, miny), (diffx, diffy)) =
+  hasEvent f
+    where f (MouseButtonDown x y b) = 
+            let x' = fromIntegral x
+                y' = height - fromIntegral y
+            in b `elem` buttons && 
+               x' >= minx && 
+               y' >= miny && 
+               x' <= minx + diffx && 
+               y' <= miny + diffy
+          f _ = False
 
 getShipBox
   :: Entity -> ((GLdouble, GLdouble), (GLdouble, GLdouble))
