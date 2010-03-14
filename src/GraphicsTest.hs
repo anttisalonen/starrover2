@@ -3,9 +3,13 @@ where
 
 import System.Random
 import System.Directory
+import System.IO (hPutStrLn, stderr)
 import Text.Printf
 import Control.Monad
 import Control.Monad.State as State
+import System.IO.Error (mkIOError, doesNotExistErrorType)
+import Control.Exception (throwIO, catch, IOException)
+import Prelude hiding (catch)
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
@@ -29,6 +33,7 @@ data TestState = TestState {
   , camstate     :: CameraState
   , stopped      :: Bool
   , gamefont     :: Font
+  , monofont     :: Font
   , cargo        :: Cargo
   }
 
@@ -48,10 +53,11 @@ modStopped f t = t{stopped = f (stopped t)}
 modCargo :: (Cargo -> Cargo) -> TestState -> TestState
 modCargo f t = t{cargo = f (cargo t)}
 
-main = withInit [InitVideo] $ do
+main = catch (withInit [InitVideo] $ do
   -- blendEquation $= FuncAdd
   -- blendFunc $= (OpenGL.SrcAlpha, OneMinusSrcAlpha)
-  createAWindow 
+  createAWindow)
+  (\e -> hPutStrLn stderr $ "Exception: " ++ show (e :: IOException)) 
 
 aobjs =
   [ AObject 0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
@@ -67,27 +73,34 @@ stdCamera = CameraState
       100
       0
 
-initState :: Font -> TestState
-initState f = TestState 
+initState :: Font -> Font -> TestState
+initState f f2 = TestState 
     (newStdShip (50.0, 30.0, 0.0) playerShipColor 0)
     aobjs
     stdCamera
     False
     f
+    f2
     M.empty
+
+loadDataFont :: FilePath -> IO Font
+loadDataFont fp = do
+  fn <- getDataFileName fp
+  exists <- doesFileExist fn
+  when (not exists) $ do
+    throwIO $ mkIOError doesNotExistErrorType "loading data font during initialization" Nothing (Just fn)
+  f <- createTextureFont fn
+  _ <- setFontFaceSize f 24 72
+  return f
 
 createAWindow = do
   _ <- setVideoMode width height 0 [OpenGL]
   depthFunc $= Just Less
   clearColor $= Color4 0 0 0 1
   viewport $= (Position 0 0, Size width height)
-  fn <- getDataFileName "share/DejaVuSans.ttf"
-  exists <- doesFileExist fn
-  when (not exists) $ do
-    error $ "Could not load font file from: " ++ fn
-  f <- createTextureFont fn
-  _ <- setFontFaceSize f 24 72
-  let is = initState f
+  f <- loadDataFont "share/DejaVuSans.ttf"
+  f2 <- loadDataFont "share/DejaVuSansMono.ttf"
+  let is = initState f f2
   setCamera (camera $ camstate is)
   evalStateT loop is
 
@@ -186,14 +199,16 @@ startCombat = do
     mnewcargo <- liftIO $ evalStateT combatLoop (newCombat (cargo state))
     case mnewcargo of
       Just newcargo -> do
-        liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:\n" ++ (showCargo newcargo) ++ "\nPress ENTER to continue")]
+        liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
+                                 (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
+                                 (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")]
         liftIO $ getSpecificSDLChar SDLK_RETURN
         modify $ modCargo (const newcargo)
         return ()
       Nothing -> do
         liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, "You've been exterminated . . .\nPress ENTER to continue")]
         liftIO $ getSpecificSDLChar SDLK_RETURN
-        let is = initState (gamefont state)
+        let is = initState (gamefont state) (monofont state)
         modify $ const is
         return ()
   setTurn 0
