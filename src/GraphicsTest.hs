@@ -188,7 +188,7 @@ makeTextScreen instructions = do
   glSwapBuffers
 
 showCargo :: Cargo -> String
-showCargo c = concatMap (\(k, v) -> printf "%-20s - %4d\n" k v) (M.toSeq c) 
+showCargo c = concatMap (\(k, v) -> printf "%-20s-%4d\n" k v) (M.toSeq c) 
 
 startCombat :: StateT TestState IO ()
 startCombat = do
