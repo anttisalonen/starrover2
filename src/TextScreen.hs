@@ -27,8 +27,8 @@ makeTextScreen instructions additional = do
   additional
   glSwapBuffers
 
-loopTextScreen :: (MonadIO m) => m () -> m Bool -> m ()
-loopTextScreen drawScreenFunc handleEventsFunc = untilDone $ do
+loopTextScreen :: (MonadIO m) => m () -> m (Maybe a) -> m a
+loopTextScreen drawScreenFunc handleEventsFunc = untilDoneR $ do
   liftIO $ delay 10
   drawScreenFunc
   handleEventsFunc

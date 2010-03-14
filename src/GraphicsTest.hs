@@ -209,15 +209,15 @@ gameOver :: String -> StateT TestState IO ()
 gameOver s = do
   state <- State.get
   loopTextScreen (liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")] (return ()))
-                 (liftIO $ pollAllSDLEvents >>= return . keyWasPressed SDLK_RETURN)
+                 (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   let is = initState (gamefont state) (monofont state)
   modify $ const is
 
 startCombat :: StateT TestState IO ()
 startCombat = do
   state <- State.get
-  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Combat beginning - press ENTER to start\nor ESCAPE to escape")] (return ())
-  c <- liftIO $ getSpecificSDLChars [SDLK_RETURN, SDLK_ESCAPE]
+  c <- loopTextScreen (liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Combat beginning - press ENTER to start\nor ESCAPE to escape")] (return ()))
+                      (liftIO $ pollAllSDLEvents >>= return . specificKeyPressed [SDLK_RETURN, SDLK_ESCAPE])
   when (c == SDLK_RETURN) $ do
     mnewcargo <- liftIO $ evalStateT combatLoop (newCombat (cargo state))
     case mnewcargo of
