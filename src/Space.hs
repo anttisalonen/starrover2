@@ -16,7 +16,8 @@ module Space(newStdShip,
   getSpecificSDLChar,
   getSpecificSDLChars,
   specificKeyPressed,
-  mouseClickIn
+  mouseClickIn,
+  mouseClickInAny
   )
 where
 
@@ -160,6 +161,9 @@ mouseClickIn buttons ((minx, miny), (diffx, diffy)) =
                x' <= minx + diffx && 
                y' <= miny + diffy
           f _ = False
+
+mouseClickInAny :: [SDL.MouseButton] -> [((Int, Int), (Int, Int))] -> [SDL.Event] -> Maybe ((Int, Int), (Int, Int))
+mouseClickInAny bs areas events = foldr (\x acc -> if mouseClickIn bs x events then Just x else acc) Nothing areas
 
 getShipBox
   :: Entity -> ((GLdouble, GLdouble), (GLdouble, GLdouble))
