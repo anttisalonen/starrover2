@@ -24,6 +24,7 @@ import Combat
 import Space
 import Cargo
 import Utils
+import TextScreen
 
 import Paths_starrover2
 
@@ -166,22 +167,6 @@ handleEvents = do
   processEvents inputMapping events
   return $ isQuit events
 
-drawExitButton :: Font -> IO ()
-drawExitButton f = do
-  loadIdentity
-  translate $ Vector3 100 (100) (0 :: GLdouble)
-  currentColor $= Color4 1.0 1.0 1.0 1.0
-  renderPrimitive LineLoop $
-    mapM_ vertex [Vertex3 (0 :: GLdouble) 0 0, Vertex3 0 30 0, Vertex3 100 30 0, Vertex3 100 0 0]
-  translate $ Vector3 10 10 (0 :: GLdouble)
-  renderFont f "Exit" FTGL.Front
-
-loopTextScreen :: (MonadIO m) => m () -> m Bool -> m ()
-loopTextScreen drawScreenFunc handleEventsFunc = untilDone $ do
-  liftIO $ delay 10
-  drawScreenFunc
-  handleEventsFunc
-
 gotoCity :: String -> StateT TestState IO ()
 gotoCity n = do
   state <- State.get
@@ -219,20 +204,6 @@ updateSpaceState = do
         else do
           gotoCity (aobjName lc)
           catapult (AObject.getPosition lc)
-
-makeTextScreen :: [(Font, Color4 GLfloat, String)] -> IO () -> IO ()
-makeTextScreen instructions additional = do
-  clear [ColorBuffer,DepthBuffer]
-  loadIdentity
-  setCamera ((0, 0), (width, height))
-  translate (Vector3 100 400 (0 :: GLdouble))
-  forM_ instructions $ \(f, c, s) -> do
-    currentColor $= c
-    forM_ (lines s) $ \str -> do
-      renderFont f str FTGL.Front
-      translate (Vector3 0 (-50) (0 :: GLdouble))
-  additional
-  glSwapBuffers
 
 gameOver :: String -> StateT TestState IO ()
 gameOver s = do
