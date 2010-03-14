@@ -166,13 +166,23 @@ handleEvents = do
   processEvents inputMapping events
   return $ isQuit events
 
+drawExitButton :: Font -> IO ()
+drawExitButton f = do
+  loadIdentity
+  translate $ Vector3 100 (100) (0 :: GLdouble)
+  currentColor $= Color4 1.0 1.0 1.0 1.0
+  renderPrimitive LineLoop $
+    mapM_ vertex [Vertex3 (0 :: GLdouble) 0 0, Vertex3 0 30 0, Vertex3 100 30 0, Vertex3 100 0 0]
+  translate $ Vector3 10 10 (0 :: GLdouble)
+  renderFont f "Exit" FTGL.Front
+
 gotoCity :: String -> StateT TestState IO ()
 gotoCity n = do
   state <- State.get
   liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ n),
                            (gamefont state, Color4 1.0 1.0 1.0 1.0, "Current cargo status:"),
-                           (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo (cargo state)),
-                           (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")]
+                           (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo (cargo state))]
+                          (drawExitButton (gamefont state))
   liftIO $ getSpecificSDLChar SDLK_RETURN
   return ()
 
@@ -204,8 +214,8 @@ updateSpaceState = do
           gotoCity (aobjName lc)
           catapult (AObject.getPosition lc)
 
-makeTextScreen :: [(Font, Color4 GLfloat, String)] -> IO ()
-makeTextScreen instructions = do
+makeTextScreen :: [(Font, Color4 GLfloat, String)] -> IO () -> IO ()
+makeTextScreen instructions additional = do
   clear [ColorBuffer,DepthBuffer]
   loadIdentity
   setCamera ((0, 0), (width, height))
@@ -215,12 +225,13 @@ makeTextScreen instructions = do
     forM_ (lines s) $ \str -> do
       renderFont f str FTGL.Front
       translate (Vector3 0 (-50) (0 :: GLdouble))
+  additional
   glSwapBuffers
 
 gameOver :: String -> StateT TestState IO ()
 gameOver s = do
   state <- State.get
-  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")]
+  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")] (return ())
   liftIO $ getSpecificSDLChar SDLK_RETURN
   let is = initState (gamefont state) (monofont state)
   modify $ const is
@@ -228,7 +239,7 @@ gameOver s = do
 startCombat :: StateT TestState IO ()
 startCombat = do
   state <- State.get
-  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Combat beginning - press ENTER to start\nor ESCAPE to escape")]
+  liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Combat beginning - press ENTER to start\nor ESCAPE to escape")] (return ())
   c <- liftIO $ getSpecificSDLChars [SDLK_RETURN, SDLK_ESCAPE]
   when (c == SDLK_RETURN) $ do
     mnewcargo <- liftIO $ evalStateT combatLoop (newCombat (cargo state))
@@ -236,7 +247,7 @@ startCombat = do
       Just newcargo -> do
         liftIO $ makeTextScreen [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
                                  (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
-                                 (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")]
+                                 (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
         liftIO $ getSpecificSDLChar SDLK_RETURN
         modify $ modCargo (const newcargo)
         return ()
