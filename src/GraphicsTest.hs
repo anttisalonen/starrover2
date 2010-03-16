@@ -108,9 +108,9 @@ doHighscore f f2 pts = do
   highscore' <- if madeit
                   then do
                     n <- getName f
-                    return $ take numentries $ insert (pts, n, ()) highscore
+                    return $ take numentries $ insertRev (pts, n, ()) highscore
                   else return highscore
-  let drawfunc = makeTextScreen (100, 500)
+  let drawfunc = makeTextScreen (100, 520)
                   [(f,  Color4 1.0 1.0 1.0 1.0, "High scores"),
                    (f2, Color4 1.0 1.0 1.0 1.0, displayHighscore highscore'),
                    (f,  Color4 1.0 1.0 1.0 1.0, "\n\nPress any key to exit")] (return ())
