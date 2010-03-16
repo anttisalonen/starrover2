@@ -7,6 +7,7 @@ module Space(newStdShip,
   drawGLScreen,
   drawEntity,
   pollAllSDLEvents,
+  pollAllSDLEvents',
   processEvents,
   isQuit,
   keyWasPressed,
@@ -24,6 +25,7 @@ where
 import Control.Monad
 import Data.List
 import Data.Maybe
+import Control.Exception (throwIO)
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
@@ -35,11 +37,19 @@ import Collision
 
 -- generic stuff
 pollAllSDLEvents :: IO [SDL.Event]
-pollAllSDLEvents = go []
+pollAllSDLEvents = pollAllSDLEvents'' True
+
+pollAllSDLEvents' :: IO [SDL.Event]
+pollAllSDLEvents' = pollAllSDLEvents'' False
+
+pollAllSDLEvents'' :: Bool -> IO [SDL.Event]
+pollAllSDLEvents'' throwOnQuit = go []
     where go l = do
-                   e <- SDL.pollEvent
-                   if e == SDL.NoEvent
-                     then return l
+            e <- SDL.pollEvent
+            if e == SDL.NoEvent
+              then return l
+              else if throwOnQuit && e == SDL.Quit
+                     then (throwIO $ userError "User wants to quit")
                      else do
                        es <- pollAllSDLEvents
                        return (e:es)
