@@ -49,8 +49,8 @@ createAWindow = do
   f2 <- loadDataFont "share/DejaVuSansMono.ttf"
   let is = initState f f2
   setCamera (camera $ camstate is)
-  points <- evalStateT loop is
-  doHighscore f f2 points
+  pts <- evalStateT loop is
+  doHighscore f f2 pts
 
 type Highscore a = [(Int, String, a)]
 
@@ -77,7 +77,7 @@ saveHighscore dir fn hs = do
   writeFile fpath (show hs)
 
 displayHighscore :: Highscore a -> String
-displayHighscore = concatMap (\(points, name, _) -> printf "%-16s %8d\n" name points)
+displayHighscore = concatMap (\(pts, n, _) -> printf "%-16s %8d\n" n pts)
 
 getName :: Font -> IO String
 getName f = do
@@ -99,18 +99,18 @@ getName f = do
     loopTextScreen drawfunc getInput
 
 doHighscore :: Font -> Font -> Int -> IO ()
-doHighscore f f2 points = do
+doHighscore f f2 pts = do
   let numentries = 7
   appdir <- getAppUserDataDirectory "starrover2"
   let hiscorefilename = "hiscore"
   highscore <- loadHighscore appdir hiscorefilename
   let madeit = if length highscore < numentries
                  then True
-                 else let (p, _, _) = (highscore !! (numentries - 1)) in p < points
+                 else let (p, _, _) = (highscore !! (numentries - 1)) in p < pts
   highscore' <- if madeit
                   then do
-                    name <- getName f
-                    return $ take numentries $ insert (points, name, ()) highscore
+                    n <- getName f
+                    return $ take numentries $ insert (pts, n, ()) highscore
                   else return highscore
   let drawfunc = makeTextScreen (100, 500)
                   [(f,  Color4 1.0 1.0 1.0 1.0, "High scores"),
