@@ -39,6 +39,18 @@ randomMarket = do
 fitCargo :: Cargo -> [(String, Int)]
 fitCargo c = map (\s -> (s, M.lookupWithDefault 0 s c)) cargonames
 
+fromMarket :: Int -> String -> Market -> Market
+fromMarket q = toMarket (-q)
+
+fromCargo :: Int -> String -> Cargo -> Cargo
+fromCargo q = toCargo (-q)
+
+toMarket :: Int -> String -> Market -> Market
+toMarket q = M.adjust (\(q', p) -> (q' + q, p))
+
+toCargo :: Int -> String -> Cargo -> Cargo
+toCargo q n = M.insertWith (+) n q
+
 showMarketAndCargo :: Market -> Cargo -> String
 showMarketAndCargo m c = title ++ infos
   where title = printf "%-14s%9s%6s%6s\n" "Good" "Quantity" "Price" "Cargo"

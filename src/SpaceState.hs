@@ -175,18 +175,6 @@ sell q n = do
     Nothing -> return ()
     Just q' -> buy (negate (min q' q)) n
 
-fromMarket :: Int -> String -> Market -> Market
-fromMarket q = toMarket (-q)
-
-fromCargo :: Int -> String -> Cargo -> Cargo
-fromCargo q = toCargo (-q)
-
-toMarket :: Int -> String -> Market -> Market
-toMarket q = M.adjust (\(q', p) -> (q' + q, p))
-
-toCargo :: Int -> String -> Cargo -> Cargo
-toCargo q n = M.insertWith (+) n q
-
 modFst :: (a -> a) -> (a, b) -> (a, b)
 modFst f (a, b) = (f a, b)
 
