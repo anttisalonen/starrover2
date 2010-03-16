@@ -34,6 +34,7 @@ data TestState = TestState {
   , cargo        :: Cargo
   , cash         :: Int
   , lastmarket   :: (String, Market)
+  , points       :: Int
   }
 
 -- TODO: generate mod-functions using TH
@@ -57,6 +58,9 @@ modCash f t = t{cash = f (cash t)}
 
 modMarket :: ((String, Market) -> (String, Market)) -> TestState -> TestState
 modMarket f t = t{lastmarket = f (lastmarket t)}
+
+modPoints :: (Int -> Int) -> TestState -> TestState
+modPoints f t = t{points = f (points t)}
 
 aobjs =
   [ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
@@ -83,6 +87,7 @@ initState f f2 = TestState
     M.empty
     100
     ("", M.empty)
+    0
 
 zoomChangeFactor :: (Floating a) => a
 zoomChangeFactor = 1.0
@@ -119,13 +124,26 @@ showInfo = do
   forM_ (aobjects s) $ \aobj -> do
     liftIO . putStrLn $ "Astronomical body position: " ++ show (AObject.getPosition aobj)
 
-loop :: StateT TestState IO ()
-loop = untilDone $ do 
+loop :: StateT TestState IO Int
+loop = untilDoneR $ do 
   liftIO $ delay 10
   state <- State.get
   drawSpace
-  when (not (stopped state)) updateSpaceState
-  handleEvents
+  dead <- if stopped state
+            then return False
+            else updateSpaceState
+  if not dead
+    then do
+      quits <- handleEvents
+      if quits
+        then die
+        else return Nothing
+    else die
+
+die :: StateT TestState IO (Maybe Int)
+die = do
+  state <- State.get
+  return $ Just $ points state
 
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
@@ -222,7 +240,7 @@ catapult vec = do
   modify $ modTri $ resetAcceleration
   modify $ modTri $ modifyRotation $ (+180)
 
-updateSpaceState :: StateT TestState IO ()
+updateSpaceState :: StateT TestState IO Bool
 updateSpaceState = do
   state <- State.get
   modify $ modTri (updateEntity 1)
@@ -231,14 +249,17 @@ updateSpaceState = do
   case mlanded of
     Nothing -> do
       val <- liftIO $ randomRIO (0, 500 :: Int)
-      when (val == 0) startCombat
+      if (val == 0) 
+        then startCombat
+        else return False
     Just lc -> do
       if aobjName lc == "Star"
-        then gameOver "You burn to death!"
+        then gameOver "You burn to death!" >> return True
         else do
           gotoCity (aobjName lc)
           catapult (AObject.getPosition lc)
           releaseKeys
+          return False
 
 releaseKeys :: StateT TestState IO ()
 releaseKeys = do
@@ -254,24 +275,28 @@ gameOver s = do
   let is = initState (gamefont state) (monofont state)
   modify $ const is
 
-startCombat :: StateT TestState IO ()
+startCombat :: StateT TestState IO Bool
 startCombat = do
   state <- State.get
   c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Combat beginning - press ENTER to start\nor ESCAPE to escape")] (return ()))
                       (liftIO $ pollAllSDLEvents >>= return . specificKeyPressed [SDLK_RETURN, SDLK_ESCAPE])
-  when (c == SDLK_RETURN) $ do
-    mnewcargo <- liftIO $ evalStateT combatLoop (newCombat (cargo state))
-    case mnewcargo of
-      Just newcargo -> do
-        liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
-                                 (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
-                                 (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
-        liftIO $ getSpecificSDLChar SDLK_RETURN
-        modify $ modCargo (const newcargo)
-        return ()
-      Nothing -> do
-        gameOver "You've been exterminated . . ."
-  releaseKeys
+  if c == SDLK_RETURN
+    then do
+      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat (cargo state))
+      case mnewcargo of
+        Just newcargo -> do
+          liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
+                                   (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
+                                   (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
+          liftIO $ getSpecificSDLChar SDLK_RETURN
+          modify $ modCargo (const newcargo)
+          return False
+        Nothing -> do
+          gameOver "You've been exterminated . . ."
+          return True
+    else do
+      releaseKeys
+      return False
 
 drawSpace :: StateT TestState IO ()
 drawSpace = do

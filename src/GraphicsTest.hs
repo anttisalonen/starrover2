@@ -3,6 +3,8 @@ where
 
 import System.Directory
 import System.IO (hPutStrLn, stderr)
+import Text.Printf
+import Data.List
 import Data.Maybe
 import Control.Monad
 import Control.Monad.State as State
@@ -17,6 +19,8 @@ import Graphics.Rendering.FTGL as FTGL
 import Camera
 import Space
 import SpaceState
+import Utils
+import TextScreen
 
 import Paths_starrover2
 
@@ -45,5 +49,74 @@ createAWindow = do
   f2 <- loadDataFont "share/DejaVuSansMono.ttf"
   let is = initState f f2
   setCamera (camera $ camstate is)
-  evalStateT loop is
+  points <- evalStateT loop is
+  doHighscore f f2 points
+
+type Highscore a = [(Int, String, a)]
+
+loadHighscore :: (Read a) => FilePath -> FilePath -> IO (Highscore a)
+loadHighscore dir fn = do
+  createDirectoryIfMissing False dir
+  let fpath = dir ++ "/" ++ fn
+  exists <- doesFileExist fpath
+  if exists
+    then do
+      contents <- readFile fpath
+      case safeRead contents of
+        Nothing -> do
+          hPutStrLn stderr $ "Corrupt high score file (" ++ fpath ++ ") - deleting"
+          removeFile fpath
+          return []
+        Just h -> return h
+    else return []
+
+saveHighscore :: (Show a) => FilePath -> FilePath -> Highscore a -> IO ()
+saveHighscore dir fn hs = do
+  createDirectoryIfMissing False dir
+  let fpath = dir ++ "/" ++ fn
+  writeFile fpath (show hs)
+
+displayHighscore :: Highscore a -> String
+displayHighscore = concatMap (\(points, name, _) -> printf "%-16s %8d\n" name points)
+
+getName :: Font -> IO String
+getName f = do
+  Prelude.flip evalStateT "" $ do
+    let drawfunc = do n <- State.get 
+                      liftIO $ makeTextScreen (100, 500)
+                        [(f, Color4 1.0 1.0 1.0 1.0, "Please enter your name:\n"),
+                         (f, Color4 1.0 1.0 1.0 1.0, n)] (return ())
+    let getInput = do
+          evts <- liftIO $ pollAllSDLEvents
+          s <- State.get
+          let (s', fin) = inputLine evts s
+          when (not (null evts)) $ liftIO $ putStrLn $ show evts
+          when (not (null evts)) $ liftIO $ putStrLn $ s'
+          when (not (null evts)) $ liftIO $ putStrLn $ show fin
+          if fin && not (null s')
+            then do liftIO (putStrLn "returning"); return (Just s')
+            else put s' >> return Nothing
+    loopTextScreen drawfunc getInput
+
+doHighscore :: Font -> Font -> Int -> IO ()
+doHighscore f f2 points = do
+  let numentries = 7
+  appdir <- getAppUserDataDirectory "starrover2"
+  let hiscorefilename = "hiscore"
+  highscore <- loadHighscore appdir hiscorefilename
+  let madeit = if length highscore < numentries
+                 then True
+                 else let (p, _, _) = (highscore !! (numentries - 1)) in p < points
+  highscore' <- if madeit
+                  then do
+                    name <- getName f
+                    return $ take numentries $ insert (points, name, ()) highscore
+                  else return highscore
+  let drawfunc = makeTextScreen (100, 500)
+                  [(f,  Color4 1.0 1.0 1.0 1.0, "High scores"),
+                   (f2, Color4 1.0 1.0 1.0 1.0, displayHighscore highscore'),
+                   (f,  Color4 1.0 1.0 1.0 1.0, "\n\nPress any key to exit")] (return ())
+  loopTextScreen drawfunc 
+                 (pollAllSDLEvents >>= return . boolToMaybe . anyKeyOrMouseWasPressed)
+  when (madeit) $ saveHighscore appdir hiscorefilename highscore'
 
