@@ -186,8 +186,11 @@ shiftDown = do
   mods <- getModState
   return (KeyModLeftShift `elem` mods || KeyModRightShift `elem` mods || KeyModShift `elem` mods)
 
+-- TODO: add special characters
 sdlkKeyToChar :: SDLKey -> Maybe Char
-sdlkKeyToChar = Prelude.flip M.lookupM (M.fromSeq (zip (SDLU.enumFromTo SDLK_a SDLK_z) ['a'..'z']))
+sdlkKeyToChar = Prelude.flip M.lookupM (M.fromSeq 
+    (zip (SDLU.enumFromTo SDLK_a SDLK_z ++ SDLU.enumFromTo SDLK_0 SDLK_9 ++ [SDLK_SPACE]) 
+         (['a'..'z'] ++ ['0'..'9'] ++ " ")))
 
 mouseClickIn :: [SDL.MouseButton] -> ((Int, Int), (Int, Int)) -> [SDL.Event] -> Bool
 mouseClickIn buttons ((minx, miny), (diffx, diffy)) =
