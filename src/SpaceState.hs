@@ -278,6 +278,7 @@ startCombat = do
                                    (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
           liftIO $ getSpecificSDLChar SDLK_RETURN
           modify $ modCargo (const newcargo)
+          modify $ modPoints (+100)
           return False
         Nothing -> do
           gameOver "You've been exterminated . . ."
