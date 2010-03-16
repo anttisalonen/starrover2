@@ -111,6 +111,13 @@ wrapDegrees = wrap (-180) 180
 clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx n = if mn > n then mn else if mx < n then mx else n
 
+insertRev :: (Ord a) => a -> [a] -> [a]
+insertRev x xs = insertBy f x xs
+  where f a b = case compare a b of
+                  LT -> GT
+                  EQ -> EQ
+                  GT -> LT
+
 {-
 randomThing :: (Random t, RandomGen s, MonadState s m) => m t
 randomThing = do
