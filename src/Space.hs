@@ -18,6 +18,7 @@ module Space(newStdShip,
   getSpecificSDLChar,
   getSpecificSDLChars,
   inputLine,
+  shiftDown,
   specificKeyPressed,
   mouseClickIn,
   mouseClickInAny
@@ -25,6 +26,7 @@ module Space(newStdShip,
 where
 
 import Control.Monad
+import Data.Char
 import Data.List
 import Data.Maybe
 import Control.Exception (throwIO)
@@ -169,11 +171,20 @@ anyKeyOrMouseWasPressed = hasEvent isk
         isk (MouseButtonDown _ _ _) = True
         isk _                       = False
 
-inputLine :: [SDL.Event] -> String -> (String, Bool)
-inputLine es sd = (sd', entered)
-  where sd'      = sd ++ newInput
+inputLine :: Bool -> [SDL.Event] -> String -> (String, Bool)
+inputLine shift es sd = (sd', entered)
+  where sd'      = osd ++ newInput
+        osd      = reverse . drop backspaces $ reverse sd
+        backspaces = Data.List.length $ filter (== SDLK_BACKSPACE) keys
+        keys     = keyDowns es
         entered  = keyWasPressed SDLK_RETURN es
-        newInput = catMaybes (map sdlkKeyToChar (keyDowns es))
+        newInput = map up $ catMaybes $ map sdlkKeyToChar keys
+        up       = if shift then toUpper else id
+
+shiftDown :: IO Bool
+shiftDown = do
+  mods <- getModState
+  return (KeyModLeftShift `elem` mods || KeyModRightShift `elem` mods || KeyModShift `elem` mods)
 
 sdlkKeyToChar :: SDLKey -> Maybe Char
 sdlkKeyToChar = Prelude.flip M.lookupM (M.fromSeq (zip (SDLU.enumFromTo SDLK_a SDLK_z) ['a'..'z']))

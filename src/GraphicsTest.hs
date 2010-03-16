@@ -88,13 +88,11 @@ getName f = do
                          (f, Color4 1.0 1.0 1.0 1.0, n)] (return ())
     let getInput = do
           evts <- liftIO $ pollAllSDLEvents
+          shift <- liftIO $ shiftDown
           s <- State.get
-          let (s', fin) = inputLine evts s
-          when (not (null evts)) $ liftIO $ putStrLn $ show evts
-          when (not (null evts)) $ liftIO $ putStrLn $ s'
-          when (not (null evts)) $ liftIO $ putStrLn $ show fin
+          let (s', fin) = inputLine shift evts s
           if fin && not (null s')
-            then do liftIO (putStrLn "returning"); return (Just s')
+            then return (Just s')
             else put s' >> return Nothing
     loopTextScreen drawfunc getInput
 
