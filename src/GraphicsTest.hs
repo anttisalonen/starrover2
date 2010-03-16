@@ -84,7 +84,7 @@ getName f = do
   Prelude.flip evalStateT "" $ do
     let drawfunc = do n <- State.get 
                       liftIO $ makeTextScreen (100, 500)
-                        [(f, Color4 1.0 1.0 1.0 1.0, "Please enter your name:\n"),
+                        [(f, Color4 1.0 1.0 1.0 1.0, "You've made it to the high score list!\nPlease enter your name:\n"),
                          (f, Color4 1.0 1.0 1.0 1.0, n)] (return ())
     let getInput = do
           evts <- liftIO $ pollAllSDLEvents
