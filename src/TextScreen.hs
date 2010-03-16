@@ -27,6 +27,8 @@ makeTextScreen (xstart, ystart) instructions additional = do
   additional
   glSwapBuffers
 
+-- TODO: write another version of this based on FPS
+-- and another one with m Bool as event function
 loopTextScreen :: (MonadIO m) => m () -> m (Maybe a) -> m a
 loopTextScreen drawScreenFunc handleEventsFunc = untilDoneR $ do
   liftIO $ delay 10
