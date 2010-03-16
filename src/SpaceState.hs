@@ -143,7 +143,7 @@ loop = untilDoneR $ do
 die :: StateT TestState IO (Maybe Int)
 die = do
   state <- State.get
-  return $ Just $ points state
+  return $ Just $ points state + cash state
 
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
@@ -242,7 +242,7 @@ updateSpaceState = do
         else return False
     Just lc -> do
       if aobjName lc == "Star"
-        then gameOver "You burn to death!" >> return True
+        then gameOver "You burn to death!"
         else do
           gotoCity (aobjName lc)
           catapult (AObject.getPosition lc)
@@ -255,13 +255,12 @@ releaseKeys = do
   accelerate 0 -- prevent involuntary actions
   setZoomDelta 0
 
-gameOver :: String -> StateT TestState IO ()
+gameOver :: String -> StateT TestState IO Bool
 gameOver s = do
   state <- State.get
   loopTextScreen (liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")] (return ()))
                  (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
-  let is = initState (gamefont state) (monofont state)
-  modify $ const is
+  return True
 
 startCombat :: StateT TestState IO Bool
 startCombat = do
@@ -282,9 +281,8 @@ startCombat = do
           releaseKeys
           return False
         Nothing -> do
-          gameOver "You've been exterminated . . ."
           releaseKeys
-          return True
+          gameOver "You've been exterminated . . ."
     else do
       releaseKeys
       return False
