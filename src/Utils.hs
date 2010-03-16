@@ -18,7 +18,10 @@ getOneChar = do
   return c
 
 readInt :: String -> Maybe Int
-readInt s = case reads s of
+readInt = safeRead
+
+safeRead :: (Read a) => String -> Maybe a
+safeRead s = case reads s of
               [(n, _)] -> Just n
               _        -> Nothing
 
