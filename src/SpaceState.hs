@@ -279,9 +279,11 @@ startCombat = do
           liftIO $ getSpecificSDLChar SDLK_RETURN
           modify $ modCargo (const newcargo)
           modify $ modPoints (+100)
+          releaseKeys
           return False
         Nothing -> do
           gameOver "You've been exterminated . . ."
+          releaseKeys
           return True
     else do
       releaseKeys
