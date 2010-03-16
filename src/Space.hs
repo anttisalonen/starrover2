@@ -11,11 +11,13 @@ module Space(newStdShip,
   processEvents,
   isQuit,
   keyWasPressed,
+  anyKeyOrMouseWasPressed,
   collides2d,
   getShipBox,
   getSDLChar,
   getSpecificSDLChar,
   getSpecificSDLChars,
+  inputLine,
   specificKeyPressed,
   mouseClickIn,
   mouseClickInAny
@@ -29,6 +31,8 @@ import Control.Exception (throwIO)
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
+import qualified Graphics.UI.SDL.Utilities as SDLU
+import qualified Data.Edison.Assoc.StandardMap as M
 
 import OpenGLUtils
 import Entity
@@ -158,6 +162,21 @@ keyWasPressed :: SDLKey -> [SDL.Event] -> Bool
 keyWasPressed j = hasEvent isk
   where isk (KeyDown (Keysym x _ _)) | x == j = True
         isk _                                 = False
+
+anyKeyOrMouseWasPressed :: [SDL.Event] -> Bool
+anyKeyOrMouseWasPressed = hasEvent isk
+  where isk (KeyDown _)             = True
+        isk (MouseButtonDown _ _ _) = True
+        isk _                       = False
+
+inputLine :: [SDL.Event] -> String -> (String, Bool)
+inputLine es sd = (sd', entered)
+  where sd'      = sd ++ newInput
+        entered  = keyWasPressed SDLK_RETURN es
+        newInput = catMaybes (map sdlkKeyToChar (keyDowns es))
+
+sdlkKeyToChar :: SDLKey -> Maybe Char
+sdlkKeyToChar = Prelude.flip M.lookupM (M.fromSeq (zip (SDLU.enumFromTo SDLK_a SDLK_z) ['a'..'z']))
 
 mouseClickIn :: [SDL.MouseButton] -> ((Int, Int), (Int, Int)) -> [SDL.Event] -> Bool
 mouseClickIn buttons ((minx, miny), (diffx, diffy)) =
