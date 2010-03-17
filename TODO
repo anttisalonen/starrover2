@@ -1,6 +1,44 @@
 GraphicsTest:
-- Planet textures
-- Moons
-- Landing on planets
-- Visual acceleration effect
-- Text
+The game's too easy.
+ - The AI should be smarter.
+  - The AI should predict the position of the player depending on velocity
+    and acceleration.
+  - There should be different modes for fighting - the easy opponents
+    wouldn't predict (like now), some should try to escape at some point.
+ - There should be more enemies, and different ships to combat against.
+  - Bounty hunter, a pirate or pirate group, a trader, trader convoy.
+ - There should be limited time for the player, which is spent whenever 
+   losing the ship and flying in the space.
+ - The cargo hold should be limited. When capturing cargo, the player
+   must be able to choose which cargo to take and which to leave behind.
+ - There's a need for some dispensable good, like fuel. (Maybe also
+   "hyperspace fuel" for traveling to other star systems.)
+ - The cities on planets should have limited cash as well, so that you
+   can't jump dump a huge cargo there and get rich.
+The game may seem a bit dull to some.
+ - Adding some background stars should be easy.
+ - Adding planet textures may be doable.
+ - There should be a visual effect when accelerating.
+ - Sound effects.
+ - Music.
+The game world needs expanding.
+ - We need moons, more planets and more stars.
+ - Space stations should be added as well.
+ - We need a concept on how to travel between star systems.
+ - The market prices should be generated less randomly, depending on the
+   characteristics of the planet and nearby planets.
+The player needs more activity.
+ - There should be missions, and different countries, fractions and politics
+   as a mission generator. We need a concept on how this exactly looks like.
+ - Maybe there should be more things for the player to do, like mining on
+   planets and on asteroids.
+ - One should also be able to fight on planets and attack cities (maybe as a 
+   part of a mission).
+There's a need for some small enhancements.
+ - A popup when the player pressed 'q', asking y/n.
+ - A 'paused' popup.
+ - A main menu with the possibility to view the high score list.
+ - An info screen accessible when in space or in cities, showing the cargo
+   and cash.
+ - Player's name should be entered before the game.
+ - The gravity of the astronomical objects should pull the player's ship.
