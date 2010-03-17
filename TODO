@@ -34,6 +34,7 @@ The player needs more activity.
    planets and on asteroids.
  - One should also be able to fight on planets and attack cities (maybe as a 
    part of a mission).
+ - The player should be able to buy a different space ship.
 There's a need for some small enhancements.
  - A popup when the player pressed 'q', asking y/n.
  - A 'paused' popup.
@@ -42,3 +43,6 @@ There's a need for some small enhancements.
    and cash.
  - Player's name should be entered before the game.
  - The gravity of the astronomical objects should pull the player's ship.
+ - Combats should have time limits.
+ - The hits on the player should be saved for the following combats and be
+   repairable on a shipyard.
