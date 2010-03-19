@@ -265,11 +265,17 @@ gameOver s = do
 startCombat :: StateT TestState IO Bool
 startCombat = do
   state <- State.get
-  c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "Combat beginning - press ENTER to start\nor ESCAPE to escape")] (return ()))
+  aimode <- liftIO $ randomAI
+  c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) 
+                         [(gamefont state, Color4 1.0 1.0 1.0 1.0, 
+                           concat ["You spot another ship traveling nearby.\n",
+                                   "It seems to be a " ++ (show aimode) ++ ".\n",
+                                   "Press ENTER to start a battle against the foreign ship\n",
+                                   "or ESCAPE to escape"])]
+                          (return ()))
                       (liftIO $ pollAllSDLEvents >>= return . specificKeyPressed [SDLK_RETURN, SDLK_ESCAPE])
   if c == SDLK_RETURN
     then do
-      aimode <- liftIO $ randomAI
       mnewcargo <- liftIO $ evalStateT combatLoop (newCombat aimode (cargo state))
       case mnewcargo of
         Just newcargo -> do

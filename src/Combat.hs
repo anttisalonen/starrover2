@@ -1,4 +1,4 @@
-module Combat(combatLoop, newCombat, randomAI)
+module Combat(combatLoop, newCombat, randomAI, AIMode)
 where
 
 import System.Random
@@ -21,7 +21,7 @@ data AIMode = Human
             | Dummy
             | PoorAim
             | BetterAim
-  deriving (Enum, Bounded)
+  deriving (Enum, Bounded, Show)
 
 randomAI :: IO AIMode
 randomAI = do
