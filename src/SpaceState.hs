@@ -283,8 +283,9 @@ startCombat = do
                                    (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
                                    (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
           liftIO $ getSpecificSDLChar SDLK_RETURN
-          modify $ modCargo (const newcargo)
-          modify $ modPoints (+100)
+          when (not (M.sameMap newcargo (cargo state))) $ do
+            modify $ modCargo (const newcargo)
+            modify $ modPoints (+100)
           releaseKeys
           return False
         Nothing -> do

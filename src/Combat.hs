@@ -1,7 +1,8 @@
-module Combat(combatLoop, newCombat, randomAI, AIMode)
+module Combat(combatLoop, newCombat, randomAI, AIMode(..))
 where
 
 import System.Random
+import Data.Maybe
 import Data.Either
 import Control.Monad
 import Control.Monad.State as State
@@ -25,9 +26,8 @@ data AIMode = Human
 
 randomAI :: IO AIMode
 randomAI = do
-  n <- randomRIO (1, 3 :: Int)
+  n <- randomRIO (1, 2 :: Int)
   case n of
-    0 -> return Dummy
     1 -> return PoorAim
     _ -> return BetterAim
 
@@ -88,6 +88,9 @@ setTurnCombat n a = modify $ modShipN n $ modShipEntity $ modifyAngVelocity (con
 laserLength :: GLdouble
 laserLength = 1
 
+laserSpeed :: GLdouble
+laserSpeed = 1
+
 shipNShoot :: Int -> StateT Combat IO ()
 shipNShoot n = do
   state <- State.get
@@ -103,7 +106,7 @@ shipNShoot n = do
           shiprot = Entity.rotation en + 90
           lookVector = (cos (degToRad shiprot), sin (degToRad shiprot), 0)
           laserpos = shippos *+* (lookVector *** 3)
-          laservel = shipvel *+* (lookVector *** 1)
+          laservel = shipvel *+* (lookVector *** laserSpeed)
           laserrot = shiprot
       let nent = Entity laserpos laservel glVector3Null laserrot 0 0 (Color4 1.0 0.0 0.0 1.0) Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
       modify $ modLasers $ S.rcons nent
@@ -125,7 +128,27 @@ combatMapping =
   , (SDLK_RIGHT, (turnCombat 1 (-turnRate), turnCombat 1 turnRate))
   , (SDLK_p,     (modify $ modCombatPaused not, return ()))
   , (SDLK_SPACE, (shipNShoot 1, return ()))
+  , (SDLK_i,     (showCombatInfo, return ()))
   ]
+
+showCombatInfo :: StateT Combat IO ()
+showCombatInfo = do
+  state <- State.get
+  let mpos = Entity.position (shipentity $ ship2 state)
+  let epos = Entity.position (shipentity $ ship1 state)
+  let evel = Entity.velocity (shipentity $ ship1 state)
+  let mvel = Entity.velocity (shipentity $ ship2 state)
+  let mtgtpos = findHitpoint (epos *-* mpos) (evel *-* mvel) laserSpeed
+  liftIO $ putStrLn $ "Pos diff: " ++ (show (epos *-* mpos))
+  liftIO $ putStrLn $ "Player Velocity: " ++ (show evel)
+  liftIO $ putStrLn $ "Hit point: " ++ (show mtgtpos)
+
+handleTooFar :: StateT Combat IO Bool
+handleTooFar = do
+  state <- State.get
+  let mpos = Entity.position (shipentity $ ship2 state)
+  let epos = Entity.position (shipentity $ ship1 state)
+  return $ OpenGLUtils.length (mpos *-* epos) > 200.0
 
 combatLoop :: StateT Combat IO (Maybe Cargo)
 combatLoop = do
@@ -136,12 +159,15 @@ combatLoop = do
                then return 0
                else updateCombatState
   handleCombatAI
+  toofar <- handleTooFar
   quits <- handleCombatEvents
   if quits || oneDead == 1
     then return Nothing
     else if oneDead == 2
       then (fmap . fmap) Just liftIO $ arrangeCargo (cargo state)
-      else combatLoop
+      else if toofar
+             then return (Just (cargo state))
+             else combatLoop
 
 createRandomCargo :: Int -> IO Cargo
 createRandomCargo i = do
@@ -156,7 +182,7 @@ arrangeCargo c = do
   return $ M.unionWith (+) c c'
 
 handleCombatAI :: StateT Combat IO ()
-handleCombatAI = do -- accelerateCombat 2 (accelForce * 0.5)
+handleCombatAI = do
   state <- State.get
   case aimode (ship2 state) of
     Human     -> return ()
@@ -164,8 +190,47 @@ handleCombatAI = do -- accelerateCombat 2 (accelForce * 0.5)
     PoorAim   -> doPoorAim
     BetterAim -> doBetterAim
 
+findHitpoint :: GLvector3 -- ^ target position relative to (0, 0, _)
+  -> GLvector3 -- ^ target velocity
+  -> GLdouble  -- ^ expanding rate of circle radius from own position
+  -> Maybe GLvector3 -- ^ meeting point of target and radius
+findHitpoint (a, q, _) (d, e, _) c 
+  | c == 0 && d == 0 && e == 0 = Nothing
+  | otherwise                  =
+    let (t1, t2) = tps a q d e c
+        tf = filter (>= 0) [t1, t2]
+        tf' = minimum tf
+    in if null tf
+         then Nothing
+         else Just (a + d * tf', q + e * tf', 0)
+
+tps x y p q c = ((term1 - term2) / term3, (term1 + term2) / term3)
+  where term1 = p * x + q * y
+        term2 = sqrt (c*c*x*x - q*q*x*x + 2 * p * q * x * y + c*c*y*y - p*p*y*y)
+        term3 = c*c - p*p - q*q
+
 doBetterAim :: StateT Combat IO ()
-doBetterAim = return ()
+doBetterAim = do
+  state <- State.get
+  accelerateCombat 2 accelForce
+  let mpos@(myposx, myposy, _) = Entity.position (shipentity $ ship2 state)
+  let epos@(enemyposx, enemyposy, _) = Entity.position (shipentity $ ship1 state)
+  let evel = Entity.velocity (shipentity $ ship1 state)
+  let mvel = Entity.velocity (shipentity $ ship2 state)
+  let mtgtpos = findHitpoint (epos *-* mpos) (evel *-* mvel) laserSpeed
+  let angleToEnemy = case mtgtpos of
+                       Nothing     -> atan2 (enemyposy - myposy) (enemyposx - myposx)
+                       Just (tgtposx, tgtposy, _) -> atan2 tgtposy tgtposx
+  let myangle = degToRad $ wrapDegrees $ Entity.rotation (shipentity $ ship2 state) + 90
+  let epsilon = 0.01
+  if myangle + epsilon < angleToEnemy
+    then setTurnCombat 2 turnRate
+    else if myangle - epsilon > angleToEnemy
+           then setTurnCombat 2 (-turnRate)
+           else setTurnCombat 2 0
+  when (isJust mtgtpos && abs (myangle - angleToEnemy) < 0.3) $ do
+    val <- liftIO $ randomRIO (0, 10 :: Int)
+    when (val == 0) $ shipNShoot 2
 
 doPoorAim :: StateT Combat IO ()
 doPoorAim = do
