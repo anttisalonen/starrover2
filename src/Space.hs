@@ -1,4 +1,4 @@
-module Space(newStdShip,
+module Space(newStdShipEntity,
   playerShipColor,
   enemyShipColor,
   boxArea,
@@ -90,8 +90,8 @@ keyDowns = foldl' (\acc e -> case e of KeyDown (Keysym n _ _) -> (n:acc); _ -> a
 specificKeyPressed :: [SDLKey] -> [SDL.Event] -> Maybe SDLKey
 specificKeyPressed ks evts = listToMaybe $ intersect ks (keyDowns evts)
 
-newStdShip :: GLvector3 -> Color4 GLfloat -> GLdouble -> Entity
-newStdShip pos c rot = newEntity pos rot c TriangleFan trianglePoints glVector3AllUnit
+newStdShipEntity :: GLvector3 -> Color4 GLfloat -> GLdouble -> Entity
+newStdShipEntity pos c rot = newEntity pos rot c TriangleFan trianglePoints glVector3AllUnit
 
 playerShipColor, enemyShipColor :: Color4 GLfloat
 playerShipColor = Color4 0.0 0.5 0.0 1.0

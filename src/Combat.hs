@@ -1,4 +1,4 @@
-module Combat(combatLoop, newCombat)
+module Combat(combatLoop, newCombat, randomAI)
 where
 
 import System.Random
@@ -17,27 +17,45 @@ import Space
 import Cargo
 import Utils
 
+data AIMode = Human
+            | Dummy
+            | PoorAim
+            | BetterAim
+  deriving (Enum, Bounded)
+
+randomAI :: IO AIMode
+randomAI = do
+  n <- randomRIO (1, 3 :: Int)
+  case n of
+    0 -> return Dummy
+    1 -> return PoorAim
+    _ -> return BetterAim
+
+data Ship = Ship {
+    shipentity :: Entity
+  , health     :: Int
+  , aimode     :: AIMode
+  }
+
+modShipEntity :: (Entity -> Entity) -> Ship -> Ship
+modShipEntity f t = t{shipentity = f (shipentity t)}
+
+modHealth :: (Int -> Int) -> Ship -> Ship
+modHealth f t = t{health = f (health t)}
+
 data Combat = Combat {
-    ship1          :: Entity
-  , ship2          :: Entity
-  , ship1health    :: Int
-  , ship2health    :: Int
+    ship1          :: Ship
+  , ship2          :: Ship
   , lasers         :: S.Seq Entity
   , cargo          :: Cargo
   , combatPaused   :: Bool
   }
 
-modShip1 :: (Entity -> Entity) -> Combat -> Combat
+modShip1 :: (Ship -> Ship) -> Combat -> Combat
 modShip1 f t = t{ship1 = f (ship1 t)}
 
-modShip2 :: (Entity -> Entity) -> Combat -> Combat
+modShip2 :: (Ship -> Ship) -> Combat -> Combat
 modShip2 f t = t{ship2 = f (ship2 t)}
-
-modShip1Health :: (Int -> Int) -> Combat -> Combat
-modShip1Health f t = t{ship1health = f (ship1health t)}
-
-modShip2Health :: (Int -> Int) -> Combat -> Combat
-modShip2Health f t = t{ship2health = f (ship2health t)}
 
 modLasers :: (S.Seq Entity -> S.Seq Entity) -> Combat -> Combat
 modLasers f t = t{lasers = f (lasers t)}
@@ -45,23 +63,27 @@ modLasers f t = t{lasers = f (lasers t)}
 modCombatPaused :: (Bool -> Bool) -> Combat -> Combat
 modCombatPaused f t = t{combatPaused = f (combatPaused t)}
 
-modShipN :: Int -> (Entity -> Entity) -> Combat -> Combat
+modShipN :: Int -> (Ship -> Ship) -> Combat -> Combat
 modShipN 1 f = modShip1 f
 modShipN 2 f = modShip2 f
 modShipN _ _ = id
 
-newCombat :: Cargo -> Combat
-newCombat c = Combat (newStdShip (0, 0, 0) playerShipColor 0)
-                   (newStdShip (90, 60, 0) enemyShipColor 180)
-                   3
-                   3
-                   S.empty
-                   c
-                   False
+newStdShip :: GLvector3 -> Color4 GLfloat -> GLdouble -> AIMode -> Ship
+newStdShip pos c rot mode = 
+  Ship (newStdShipEntity pos c rot)
+       3 mode
 
-accelerateCombat n a = modify $ modShipN n $ modifyAcceleration (const (0.0,  a, 0.0))
-turnCombat n a = modify $ modShipN n $ modifyAngVelocity (+a)
-setTurnCombat n a = modify $ modShipN n $ modifyAngVelocity (const a)
+newCombat :: AIMode -> Cargo -> Combat
+newCombat mode c = 
+  Combat (newStdShip (0, 0, 0) playerShipColor 0 Human)
+   (newStdShip (90, 60, 0) enemyShipColor 180 mode)
+   S.empty
+   c
+   False
+
+accelerateCombat n a = modify $ modShipN n $ modShipEntity $ modifyAcceleration (const (0.0,  a, 0.0))
+turnCombat n a = modify $ modShipN n $ modShipEntity $ modifyAngVelocity (+a)
+setTurnCombat n a = modify $ modShipN n $ modShipEntity $ modifyAngVelocity (const a)
 
 laserLength :: GLdouble
 laserLength = 1
@@ -70,8 +92,8 @@ shipNShoot :: Int -> StateT Combat IO ()
 shipNShoot n = do
   state <- State.get
   let men = case n of
-              1 -> Just $ ship1 state
-              2 -> Just $ ship2 state
+              1 -> Just $ shipentity $ ship1 state
+              2 -> Just $ shipentity $ ship2 state
               _ -> Nothing
   case men of
     Nothing -> return ()
@@ -136,10 +158,22 @@ arrangeCargo c = do
 handleCombatAI :: StateT Combat IO ()
 handleCombatAI = do -- accelerateCombat 2 (accelForce * 0.5)
   state <- State.get
-  let (myposx, myposy, _) = Entity.position (ship2 state)
-  let (enemyposx, enemyposy, _) = Entity.position (ship1 state)
+  case aimode (ship2 state) of
+    Human     -> return ()
+    Dummy     -> accelerateCombat 2 (accelForce * 0.5)
+    PoorAim   -> doPoorAim
+    BetterAim -> doBetterAim
+
+doBetterAim :: StateT Combat IO ()
+doBetterAim = return ()
+
+doPoorAim :: StateT Combat IO ()
+doPoorAim = do
+  state <- State.get
+  let (myposx, myposy, _) = Entity.position (shipentity $ ship2 state)
+  let (enemyposx, enemyposy, _) = Entity.position (shipentity $ ship1 state)
   let angleToEnemy = atan2 (enemyposy - myposy) (enemyposx - myposx)
-  let myangle = degToRad $ wrapDegrees $ Entity.rotation (ship2 state) + 90
+  let myangle = degToRad $ wrapDegrees $ Entity.rotation (shipentity $ ship2 state) + 90
   let epsilon = 0.001
   if myangle + epsilon < angleToEnemy
     then setTurnCombat 2 turnRate
@@ -153,8 +187,8 @@ handleCombatAI = do -- accelerateCombat 2 (accelForce * 0.5)
 drawCombat :: StateT Combat IO ()
 drawCombat = do
   state <- State.get
-  let (x1, y1, _) = Entity.position (ship1 state)
-      (x2, y2, _) = Entity.position (ship2 state)
+  let (x1, y1, _) = Entity.position (shipentity $ ship1 state)
+      (x2, y2, _) = Entity.position (shipentity $ ship2 state)
       ((minx1, maxx1), (miny1, maxy1)) = boxArea (x1, y1) 10
       ((minx2, maxx2), (miny2, maxy2)) = boxArea (x2, y2) 10
       minx = min minx1 minx2
@@ -175,18 +209,18 @@ drawCombat = do
   liftIO $ loadIdentity
   liftIO $ ortho minx' maxx' miny' maxy' (-10) 10
   liftIO $ matrixMode $= Modelview 0
-  liftIO $ drawGLScreen ([ship1 state, ship2 state] ++ (S.toList (lasers state))) []
+  liftIO $ drawGLScreen ([shipentity (ship1 state), shipentity (ship2 state)] ++ (S.toList (lasers state))) []
 
 updateCombatState :: StateT Combat IO Int
 updateCombatState = do
   modify $ modLasers $ S.map (updateEntity 1)
-  modify $ modShip1 (updateEntity 1)
-  modify $ modShip2 (updateEntity 1)
+  modify $ modShip1 $ modShipEntity (updateEntity 1)
+  modify $ modShip2 $ modShipEntity (updateEntity 1)
   handleCombatCollisions
   state <- State.get
-  if (ship1health state == 0)
+  if (health (ship1 state) == 0)
     then return 1
-    else if (ship2health state == 0)
+    else if (health (ship2 state) == 0)
            then return 2
            else return 0
 
@@ -221,8 +255,8 @@ checkCollision plbox1 plbox2 las =
 handleCombatCollisions :: StateT Combat IO ()
 handleCombatCollisions = do
   state <- State.get
-  let plbox1 = getShipBox (ship1 state)
-  let plbox2 = getShipBox (ship2 state)
+  let plbox1 = getShipBox (shipentity $ ship1 state)
+  let plbox2 = getShipBox (shipentity $ ship2 state)
   let colls = map (checkCollision plbox1 plbox2) (S.toList $ lasers state)
   let (hits, newlasers) = partitionEithers colls
   let numhits1 = Prelude.length $ filter (==1) hits
@@ -230,7 +264,7 @@ handleCombatCollisions = do
   when (numhits1 > 0) $ liftIO $ putStrLn "Ship 1 hit!"
   when (numhits2 > 0) $ liftIO $ putStrLn "Ship 2 hit!"
   modify $ modLasers $ const (S.fromList newlasers)
-  modify $ modShip1Health (subtract numhits1)
-  modify $ modShip2Health (subtract numhits2)
+  modify $ modShipN 1 $ modHealth (subtract numhits1)
+  modify $ modShipN 2 $ modHealth (subtract numhits2)
 
 

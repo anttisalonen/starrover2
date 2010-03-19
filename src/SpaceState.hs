@@ -78,7 +78,7 @@ stdCamera = CameraState
 
 initState :: Font -> Font -> TestState
 initState f f2 = TestState 
-    (newStdShip (50.0, 30.0, 0.0) playerShipColor 0)
+    (newStdShipEntity (50.0, 30.0, 0.0) playerShipColor 0)
     aobjs
     stdCamera
     False
@@ -269,7 +269,8 @@ startCombat = do
                       (liftIO $ pollAllSDLEvents >>= return . specificKeyPressed [SDLK_RETURN, SDLK_ESCAPE])
   if c == SDLK_RETURN
     then do
-      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat (cargo state))
+      aimode <- liftIO $ randomAI
+      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat aimode (cargo state))
       case mnewcargo of
         Just newcargo -> do
           liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
