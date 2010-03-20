@@ -158,43 +158,38 @@ handleEvents = do
   processEvents inputMapping events
   return $ isQuit events
 
-buy :: Int -> String -> StateT TestState IO ()
+type TradeState = (Market, Cargo, Int)
+
+buy :: Int -> String -> StateT TradeState IO ()
 buy q n = do
-  state <- State.get
-  let mval = M.lookupM n (snd (lastmarket state))
+  (market, cargo, cash) <- State.get
+  let mval = M.lookupM n market
   case mval of
     Nothing      -> return ()
     Just (q', p) -> do
       let totalq = min (max 0 q') q
       let totalp = totalq * p
-      if totalp > cash state || totalq == 0
+      if totalp > cash || totalq == 0
         then return ()
         else do
-          modify $ modMarket $ modSnd $ fromMarket totalq n
-          modify $ modCargo $ toCargo totalq n
-          modify $ modCash $ (subtract totalp)
+          State.put (fromMarket totalq n market,
+               toCargo totalq n cargo,
+               subtract totalp cash)
 
-sell :: Int -> String -> StateT TestState IO ()
+sell :: Int -> String -> StateT TradeState IO ()
 sell q n = do
-  state <- State.get
-  let mval = M.lookupM n (cargo state)
+  (market, cargo, cash) <- State.get
+  let mval = M.lookupM n cargo
   case mval of
     Nothing -> return ()
     Just q' -> buy (negate (min q' q)) n
 
-gotoCity :: String -> StateT TestState IO ()
-gotoCity planetname = do
-  state <- State.get
-  nmarket <- if planetname == fst (lastmarket state)
-               then return $ lastmarket state
-               else do
-                 m <- liftIO $ randomMarket
-                 return (planetname, m)
-  let market = snd nmarket
-  modify $ modMarket $ const nmarket
+tradeScreen :: String -> Font -> Font -> StateT TradeState IO ()
+tradeScreen str f1 f2 = do
+  (market, cargo, cash) <- State.get
   let exitb = ((100, 100), (100, 30)) :: (Num a) => ((a, a), (a, a))
-      buybuttons  = map (\i -> ((550, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems] :: (Num a) => [((a, a), (a, a))]
-      sellbuttons = map (\i -> ((680, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems] :: (Num a) => [((a, a), (a, a))]
+      buybuttons  = map (\i -> ((550, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
+      sellbuttons = map (\i -> ((680, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
       buyactions  = map (\(n, (_, _)) -> buy  1 n >> return Nothing) (M.toOrdSeq market)
       sellactions = map (\(n, (_, _)) -> sell 1 n >> return Nothing) (M.toOrdSeq market)
       allbuttons  = exitb : (buybuttons ++ sellbuttons)
@@ -208,15 +203,33 @@ gotoCity planetname = do
           Just n  -> case lookup n bttoaction of
                        Just act -> act
                        Nothing  -> return Nothing
-  loopTextScreen (do st <- State.get; liftIO $ makeTextScreen (10, 500) 
-                               [(gamefont st, Color4 1.0 1.0 1.0 1.0, "Landed on " ++ planetname),
-                                (monofont st, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo (snd (lastmarket st)) (cargo st)),
-                                (gamefont st, Color4 1.0 1.0 1.0 1.0, "Cash: " ++ show (cash st))]
-                               (drawButton "Exit" (gamefont st) exitb >>
-                                mapM_ (drawButton "Buy" (gamefont st)) buybuttons >>
-                                mapM_ (drawButton "Sell" (gamefont st)) sellbuttons))
+  loopTextScreen (do (market, cargo, cash) <- State.get
+                     liftIO $ makeTextScreen (10, 500) 
+                               [(f1, Color4 1.0 1.0 1.0 1.0, str),
+                                (f2, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo market cargo),
+                                (f1, Color4 1.0 1.0 1.0 1.0, "Cash: " ++ show cash)]
+                               (drawButton "Exit" f1 exitb >>
+                                mapM_ (drawButton "Buy" f1) buybuttons >>
+                                mapM_ (drawButton "Sell" f1) sellbuttons))
                  handleInput
-  return ()
+
+gotoCity :: String -> StateT TestState IO ()
+gotoCity planetname = do
+  state <- State.get
+  nmarket <- if planetname == fst (lastmarket state)
+               then return $ lastmarket state
+               else do
+                 m <- liftIO $ randomMarket
+                 return (planetname, m)
+  let market = snd nmarket
+  modify $ modMarket $ const nmarket
+  (m', cargo', cash') <- liftIO $ execStateT 
+                             (tradeScreen ("Landed on " ++ planetname) 
+                                 (gamefont state) (monofont state)) 
+                             (market, cargo state, cash state)
+  modify $ modMarket $ modSnd $ const m'
+  modify $ modCargo $ const cargo'
+  modify $ modCash $ const cash'
 
 catapult :: GLvector3 -> StateT TestState IO ()
 catapult vec = do
