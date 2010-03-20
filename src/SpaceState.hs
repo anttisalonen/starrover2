@@ -258,7 +258,10 @@ releaseKeys = do
 gameOver :: String -> StateT TestState IO Bool
 gameOver s = do
   state <- State.get
-  loopTextScreen (liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\nPress ENTER to continue")] (return ()))
+  let pts = points state
+  loopTextScreen (liftIO $ makeTextScreen (100, 400) [(gamefont state, 
+                     Color4 1.0 0.2 0.2 1.0, s ++ "\n\nTotal points: " ++ (show pts) ++ "\nPress ENTER to continue")] 
+                     (return ()))
                  (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   return True
 
@@ -285,7 +288,7 @@ startCombat = do
       enemyrot <- liftIO $ fromIntegral `fmap` randomRIO (-180, 180 :: Int)
       plpos <- liftIO $ randPos ((0, 0), (50, 100))
       enpos <- liftIO $ randPos ((100, 0), (150, 100))
-      let plrot =angleFromTo plpos enpos - 90
+      let plrot = angleFromTo plpos enpos - 90
       mnewcargo <- liftIO $ evalStateT combatLoop (newCombat plpos enpos plrot enemyrot aimode (cargo state))
       case mnewcargo of
         Just newcargo -> do
@@ -300,7 +303,7 @@ startCombat = do
           return False
         Nothing -> do
           releaseKeys
-          gameOver "You've been exterminated . . ."
+          gameOver "You fought bravely, but your ship was blown to pieces."
     else do
       releaseKeys
       return False
