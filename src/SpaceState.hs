@@ -3,6 +3,7 @@ module SpaceState
 where
 
 import System.Random
+import Data.List
 import Data.Maybe
 import Control.Monad
 import Control.Monad.State as State
@@ -14,6 +15,7 @@ import Graphics.Rendering.FTGL as FTGL
 import qualified Data.Edison.Assoc.StandardMap as M
 
 import OpenGLUtils
+import Statistics
 import Entity
 import Camera
 import AObject
@@ -35,6 +37,7 @@ data TestState = TestState {
   , cash         :: Int
   , lastmarket   :: (String, Market)
   , points       :: Int
+  , lives        :: Int
   }
 
 -- TODO: generate mod-functions using TH
@@ -62,6 +65,9 @@ modMarket f t = t{lastmarket = f (lastmarket t)}
 modPoints :: (Int -> Int) -> TestState -> TestState
 modPoints f t = t{points = f (points t)}
 
+modLives :: (Int -> Int) -> TestState -> TestState
+modLives f t = t{lives = f (lives t)}
+
 aobjs =
   [ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
   , AObject "Murphy's"   10  (Color4 0.5 0.5 1.0 1.0) 2.0 28
@@ -88,6 +94,7 @@ initState f f2 = TestState
     100
     ("", M.empty)
     0
+    3
 
 zoomChangeFactor :: (Floating a) => a
 zoomChangeFactor = 1.0
@@ -242,7 +249,15 @@ updateSpaceState = do
         else return False
     Just lc -> do
       if aobjName lc == "Star"
-        then gameOver "You burn to death!"
+        then lostLife "You flew too close to the star!" $
+                  intercalate "\n" 
+                    ["After ejecting from your space ship, you drifted in space",
+                     "until a friendly alien picked you up and took you with him",
+                     "to a nearby trading post, where you recovered some of your",
+                     "strength.",
+                     "",
+                     "After a long search, you manage to find a used ",
+                     "space ship, and embark on a new adventure..."]
         else do
           gotoCity (aobjName lc)
           catapult (AObject.getPosition lc)
@@ -254,6 +269,32 @@ releaseKeys = do
   setTurn 0
   accelerate 0 -- prevent involuntary actions
   setZoomDelta 0
+
+getRandomPlanet :: StateT TestState IO AObject
+getRandomPlanet = do
+  state <- State.get
+  n <- liftIO $ chooseIO (aobjects state)
+  if (aobjName n == "Star")
+    then getRandomPlanet
+    else return n
+
+lostLife :: String -> String -> StateT TestState IO Bool
+lostLife s1 s2 = do
+  modify $ modLives pred
+  state <- State.get
+  if lives state <= 0
+    then gameOver s1
+    else do
+      loopTextScreen (liftIO $ makeTextScreen (30, 550) [(gamefont state, 
+                         Color4 1.0 0.2 0.2 1.0, s1 ++ "\n\n" ++ s2 ++ "\n\nPress ENTER to continue")] 
+                         (return ()))
+                     (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
+      lc <- getRandomPlanet
+      modify $ modTri $ modifyPosition (const $ (getPosition lc *+* (glVector3UnitX *** (AObject.size lc))))
+      gotoCity (aobjName lc)
+      catapult (AObject.getPosition lc)
+      releaseKeys
+      return False
 
 gameOver :: String -> StateT TestState IO Bool
 gameOver s = do
