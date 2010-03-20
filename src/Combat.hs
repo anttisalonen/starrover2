@@ -2,7 +2,6 @@ module Combat(combatLoop, newCombat, randomAI, AIMode(..))
 where
 
 import System.Random
-import Data.Maybe
 import Data.Either
 import Control.Monad
 import Control.Monad.State as State
@@ -209,28 +208,33 @@ tps x y p q c = ((term1 - term2) / term3, (term1 + term2) / term3)
         term2 = sqrt (c*c*x*x - q*q*x*x + 2 * p * q * x * y + c*c*y*y - p*p*y*y)
         term3 = c*c - p*p - q*q
 
+chargeTarget :: GLdouble -> StateT Combat IO ()
+chargeTarget angleToTarget = do
+  state <- State.get
+  let myangle = degToRad $ wrapDegrees $ Entity.rotation (shipentity $ ship2 state) + 90
+  let epsilon = 0.01
+  if myangle + epsilon < angleToTarget
+    then setTurnCombat 2 turnRate
+    else if myangle - epsilon > angleToTarget
+           then setTurnCombat 2 (-turnRate)
+           else setTurnCombat 2 0
+  when (abs (myangle - angleToTarget) < 0.3) $ do
+    val <- liftIO $ randomRIO (0, 10 :: Int)
+    when (val == 0) $ shipNShoot 2
+  accelerateCombat 2 accelForce
+
 doBetterAim :: StateT Combat IO ()
 doBetterAim = do
   state <- State.get
-  accelerateCombat 2 accelForce
   let mpos@(myposx, myposy, _) = Entity.position (shipentity $ ship2 state)
   let epos@(enemyposx, enemyposy, _) = Entity.position (shipentity $ ship1 state)
   let evel = Entity.velocity (shipentity $ ship1 state)
   let mvel = Entity.velocity (shipentity $ ship2 state)
   let mtgtpos = findHitpoint (epos *-* mpos) (evel *-* mvel) laserSpeed
   let angleToEnemy = case mtgtpos of
-                       Nothing     -> atan2 (enemyposy - myposy) (enemyposx - myposx)
+                       Nothing                    -> atan2 (enemyposy - myposy) (enemyposx - myposx)
                        Just (tgtposx, tgtposy, _) -> atan2 tgtposy tgtposx
-  let myangle = degToRad $ wrapDegrees $ Entity.rotation (shipentity $ ship2 state) + 90
-  let epsilon = 0.01
-  if myangle + epsilon < angleToEnemy
-    then setTurnCombat 2 turnRate
-    else if myangle - epsilon > angleToEnemy
-           then setTurnCombat 2 (-turnRate)
-           else setTurnCombat 2 0
-  when (isJust mtgtpos && abs (myangle - angleToEnemy) < 0.3) $ do
-    val <- liftIO $ randomRIO (0, 10 :: Int)
-    when (val == 0) $ shipNShoot 2
+  chargeTarget angleToEnemy
 
 doPoorAim :: StateT Combat IO ()
 doPoorAim = do
@@ -238,16 +242,7 @@ doPoorAim = do
   let (myposx, myposy, _) = Entity.position (shipentity $ ship2 state)
   let (enemyposx, enemyposy, _) = Entity.position (shipentity $ ship1 state)
   let angleToEnemy = atan2 (enemyposy - myposy) (enemyposx - myposx)
-  let myangle = degToRad $ wrapDegrees $ Entity.rotation (shipentity $ ship2 state) + 90
-  let epsilon = 0.001
-  if myangle + epsilon < angleToEnemy
-    then setTurnCombat 2 turnRate
-    else if myangle - epsilon > angleToEnemy
-           then setTurnCombat 2 (-turnRate)
-           else setTurnCombat 2 0
-  accelerateCombat 2 accelForce
-  val <- liftIO $ randomRIO (0, 20 :: Int)
-  when (val == 0) $ shipNShoot 2
+  chargeTarget angleToEnemy
 
 drawCombat :: StateT Combat IO ()
 drawCombat = do
