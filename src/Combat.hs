@@ -47,7 +47,6 @@ data Combat = Combat {
     ship1          :: Ship
   , ship2          :: Ship
   , lasers         :: S.Seq Entity
-  , cargo          :: Cargo
   , combatPaused   :: Bool
   }
 
@@ -73,12 +72,11 @@ newStdShip pos c rot mode =
   Ship (newStdShipEntity pos c rot)
        3 mode
 
-newCombat :: GLvector3 -> GLvector3 -> GLdouble -> GLdouble -> AIMode -> Cargo -> Combat
-newCombat plpos enpos rot rot2 mode c = 
+newCombat :: GLvector3 -> GLvector3 -> GLdouble -> GLdouble -> AIMode -> Combat
+newCombat plpos enpos rot rot2 mode = 
   Combat (newStdShip plpos playerShipColor rot Human)
    (newStdShip enpos enemyShipColor rot2 mode)
    S.empty
-   c
    False
 
 accelerateCombat n a = modify $ modShipN n $ modShipEntity $ modifyAcceleration (const (0.0,  a, 0.0))
@@ -165,22 +163,17 @@ combatLoop = do
   if quits || oneDead == 1
     then return Nothing
     else if oneDead == 2
-      then (fmap . fmap) Just liftIO $ arrangeCargo (cargo state)
+      then fmap Just $ liftIO $ createRandomCargo
       else if toofar
-             then return (Just (cargo state))
+             then return (Just M.empty)
              else combatLoop
 
-createRandomCargo :: Int -> IO Cargo
-createRandomCargo i = do
-  cnames <- replicateM i randomCargo
-  cargoquantities <- replicateM i (randomRIO (1, 20 :: Int)) 
-  return $ M.fromSeqWith (+) (zip cnames cargoquantities)
-
-arrangeCargo :: Cargo -> IO Cargo
-arrangeCargo c = do
+createRandomCargo :: IO Cargo
+createRandomCargo = do
   difftypes <- randomRIO (1, 3 :: Int)
-  c' <- createRandomCargo difftypes
-  return $ M.unionWith (+) c c'
+  cnames <- replicateM difftypes randomCargo
+  cargoquantities <- replicateM difftypes (randomRIO (1, 20 :: Int)) 
+  return $ M.fromSeqWith (+) (zip cnames cargoquantities)
 
 handleCombatAI :: StateT Combat IO ()
 handleCombatAI = do

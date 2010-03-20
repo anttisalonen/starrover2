@@ -143,7 +143,7 @@ loop = untilDoneR $ do
     then do
       quits <- handleEvents
       if quits
-        then gameOver "You deciced to retire." "" >> die
+        then gameOver "You decided to retire." "" >> die
         else return Nothing
     else die
 
@@ -293,16 +293,22 @@ startCombat = do
       plpos <- liftIO $ randPos ((0, 0), (50, 100))
       enpos <- liftIO $ randPos ((100, 0), (150, 100))
       let plrot = angleFromTo plpos enpos - 90
-      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat plpos enpos plrot enemyrot aimode (plcargo state))
+      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat plpos enpos plrot enemyrot aimode)
       case mnewcargo of
         Just newcargo -> do
-          liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
-                                   (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
-                                   (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
-          liftIO $ getSpecificSDLChar SDLK_RETURN
-          when (not (M.sameMap newcargo (plcargo state))) $ do
-            modify $ modPlCargo (const newcargo)
-            modify $ modPoints (+100)
+          if M.null newcargo
+            then do
+              liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
+                                       (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
+                                       (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
+              liftIO $ getSpecificSDLChar SDLK_RETURN
+            else do
+              modify $ modPoints (+100)
+              (_, cargo', _) <- liftIO $ execStateT 
+                             (takeScreen ("Captured cargo") 
+                                 (gamefont state) (monofont state)) 
+                             (newcargo, plcargo state, plcash state)
+              modify $ modPlCargo (const cargo')
           releaseKeys
           return False
         Nothing -> do
