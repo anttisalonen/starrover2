@@ -249,20 +249,30 @@ updateSpaceState = do
         else return False
     Just lc -> do
       if aobjName lc == "Star"
-        then lostLife "You flew too close to the star!" $
-                  intercalate "\n" 
-                    ["After ejecting from your space ship, you drifted in space",
-                     "until a friendly alien picked you up and took you with him",
-                     "to a nearby trading post, where you recovered some of your",
-                     "strength.",
-                     "",
-                     "After a long search, you manage to find a used ",
-                     "space ship, and embark on a new adventure..."]
+        then lostLife "You flew too close to the star!" recoveryText
         else do
           gotoCity (aobjName lc)
           catapult (AObject.getPosition lc)
           releaseKeys
           return False
+
+recoveryText :: String
+recoveryText = 
+  intercalate "\n" 
+    ["After ejecting from your space ship, you drifted in space",
+     "until a friendly alien picked you up and took you with him",
+     "to a nearby trading post, where you recovered some of your",
+     "strength.",
+     "",
+     "After a long search, you manage to find a used ",
+     "space ship, and embark on a new adventure..."]
+
+gameoverText :: String
+gameoverText = 
+  intercalate "\n" 
+    ["After escaping with your emergency capsule and",
+     "returning to civilization, you realize your",
+     "adventurous days are over."]
 
 releaseKeys :: StateT TestState IO ()
 releaseKeys = do
@@ -285,12 +295,14 @@ lostLife s1 s2 = do
   if lives state <= 0
     then gameOver s1
     else do
-      loopTextScreen (liftIO $ makeTextScreen (30, 550) [(gamefont state, 
+      loopTextScreen (liftIO $ makeTextScreen (30, 550) [(gamefont state,
                          Color4 1.0 0.2 0.2 1.0, s1 ++ "\n\n" ++ s2 ++ "\n\nPress ENTER to continue")] 
                          (return ()))
                      (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
       lc <- getRandomPlanet
       modify $ modTri $ modifyPosition (const $ (getPosition lc *+* (glVector3UnitX *** (AObject.size lc))))
+      modify $ modCash $ const 100
+      modify $ modCargo $ const M.empty
       gotoCity (aobjName lc)
       catapult (AObject.getPosition lc)
       releaseKeys
@@ -300,10 +312,13 @@ gameOver :: String -> StateT TestState IO Bool
 gameOver s = do
   state <- State.get
   let pts = points state
-  loopTextScreen (liftIO $ makeTextScreen (100, 400) [(gamefont state, 
-                     Color4 1.0 0.2 0.2 1.0, s ++ "\n\nTotal points: " ++ (show pts) ++ "\nPress ENTER to continue")] 
-                     (return ()))
-                 (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
+  loopTextScreen 
+      (liftIO $ makeTextScreen (100, 500) 
+          [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\n\n" ++ gameoverText ++ "\n" ++ "\n"),
+           (gamefont state, Color4 1.0 1.0 1.0 1.0, "Total points: " ++ show pts),
+           (gamefont state, Color4 1.0 0.2 0.2 1.0, "Press ENTER to continue")]
+          (return ()))
+      (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   return True
 
 randPos :: ((Int, Int), (Int, Int)) -> IO GLvector3
@@ -344,7 +359,7 @@ startCombat = do
           return False
         Nothing -> do
           releaseKeys
-          gameOver "You fought bravely, but your ship was blown to pieces."
+          lostLife "You fought bravely, but your ship was blown to pieces." recoveryText
     else do
       releaseKeys
       return False
