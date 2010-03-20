@@ -143,14 +143,17 @@ loop = untilDoneR $ do
     then do
       quits <- handleEvents
       if quits
-        then die
+        then gameOver "You deciced to retire." "" >> die
         else return Nothing
     else die
+
+finalPoints :: TestState -> Int
+finalPoints s = points s + cash s + (lives s * 50)
 
 die :: StateT TestState IO (Maybe Int)
 die = do
   state <- State.get
-  return $ Just $ points state + cash state
+  return $ Just $ finalPoints state
 
 handleEvents :: StateT TestState IO Bool
 handleEvents = do
@@ -300,7 +303,7 @@ lostLife s1 s2 = do
   modify $ modLives pred
   state <- State.get
   if lives state <= 0
-    then gameOver s1
+    then gameOver s1 gameoverText
     else do
       loopTextScreen (liftIO $ makeTextScreen (30, 550) [(gamefont state,
                          Color4 1.0 0.2 0.2 1.0, s1 ++ "\n\n" ++ s2 ++ "\n\nPress ENTER to continue")] 
@@ -315,14 +318,13 @@ lostLife s1 s2 = do
       releaseKeys
       return False
 
-gameOver :: String -> StateT TestState IO Bool
-gameOver s = do
+gameOver :: String -> String -> StateT TestState IO Bool
+gameOver s s2 = do
   state <- State.get
-  let pts = points state
   loopTextScreen 
       (liftIO $ makeTextScreen (100, 500) 
-          [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\n\n" ++ gameoverText ++ "\n" ++ "\n"),
-           (gamefont state, Color4 1.0 1.0 1.0 1.0, "Total points: " ++ show pts),
+          [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\n\n" ++ s2 ++ "\n" ++ "\n"),
+           (gamefont state, Color4 1.0 1.0 1.0 1.0, "Total points: " ++ show (finalPoints state)),
            (gamefont state, Color4 1.0 0.2 0.2 1.0, "Press ENTER to continue")]
           (return ()))
       (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
