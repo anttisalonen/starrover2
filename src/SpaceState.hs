@@ -283,13 +283,10 @@ startCombat = do
   if c == SDLK_RETURN
     then do
       enemyrot <- liftIO $ fromIntegral `fmap` randomRIO (-180, 180 :: Int)
-      pos1 <- liftIO $ randPos ((0, 0), (50, 100))
-      pos2 <- liftIO $ randPos ((100, 0), (150, 100))
-      doswap <- liftIO $ randomIO
-      let (plpos, enpos) = if doswap
-                             then (pos2, pos1)
-                             else (pos1, pos2)
-      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat plpos enpos (Entity.rotation $ tri state) enemyrot aimode (cargo state))
+      plpos <- liftIO $ randPos ((0, 0), (50, 100))
+      enpos <- liftIO $ randPos ((100, 0), (150, 100))
+      let plrot =angleFromTo plpos enpos - 90
+      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat plpos enpos plrot enemyrot aimode (cargo state))
       case mnewcargo of
         Just newcargo -> do
           liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),

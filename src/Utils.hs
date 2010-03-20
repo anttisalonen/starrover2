@@ -93,6 +93,9 @@ boolToMaybe False = Nothing
 untilDone :: (Monad m) => m Bool -> m ()
 untilDone f = untilDoneR (f >>= return . boolToMaybe)
 
+radToDeg :: (Floating a) => a -> a
+radToDeg r = r * 180 / pi
+
 degToRad :: (Floating a) => a -> a
 degToRad d = d * pi / 180
 

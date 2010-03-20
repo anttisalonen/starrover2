@@ -21,7 +21,9 @@ module Space(newStdShipEntity,
   shiftDown,
   specificKeyPressed,
   mouseClickIn,
-  mouseClickInAny
+  mouseClickInAny,
+  angleFromTo,
+  angleFromToRad
   )
 where
 
@@ -39,6 +41,7 @@ import qualified Data.Edison.Assoc.StandardMap as M
 import OpenGLUtils
 import Entity
 import AObject
+import Utils
 import Collision
 
 -- generic stuff
@@ -207,6 +210,17 @@ mouseClickIn buttons ((minx, miny), (diffx, diffy)) =
 
 mouseClickInAny :: [SDL.MouseButton] -> [((Int, Int), (Int, Int))] -> [SDL.Event] -> Maybe ((Int, Int), (Int, Int))
 mouseClickInAny bs areas events = foldr (\x acc -> if mouseClickIn bs x events then Just x else acc) Nothing areas
+
+angleFromTo :: (RealFloat t) => (t, t, t)
+            -> (t, t, t)
+            -> t
+angleFromTo a b = radToDeg $ angleFromToRad a b
+
+angleFromToRad :: (RealFloat t) => (t, t, t)
+            -> (t, t, t)
+            -> t
+angleFromToRad (ax, ay, _) (bx, by, _) =
+  atan2 (by - ay) (bx - ax)
 
 getShipBox
   :: Entity -> ((GLdouble, GLdouble), (GLdouble, GLdouble))

@@ -226,23 +226,22 @@ chargeTarget angleToTarget = do
 doBetterAim :: StateT Combat IO ()
 doBetterAim = do
   state <- State.get
-  let mpos@(myposx, myposy, _) = Entity.position (shipentity $ ship2 state)
-  let epos@(enemyposx, enemyposy, _) = Entity.position (shipentity $ ship1 state)
+  let mpos = Entity.position (shipentity $ ship2 state)
+  let epos = Entity.position (shipentity $ ship1 state)
   let evel = Entity.velocity (shipentity $ ship1 state)
   let mvel = Entity.velocity (shipentity $ ship2 state)
   let mtgtpos = findHitpoint (epos *-* mpos) (evel *-* mvel) laserSpeed
   let angleToEnemy = case mtgtpos of
-                       Nothing                    -> atan2 (enemyposy - myposy) (enemyposx - myposx)
-                       Just (tgtposx, tgtposy, _) -> atan2 tgtposy tgtposx
+                       Nothing     -> angleFromToRad mpos epos
+                       Just tgtpos -> angleFromToRad glVector3Null tgtpos 
   chargeTarget angleToEnemy
 
 doPoorAim :: StateT Combat IO ()
 doPoorAim = do
   state <- State.get
-  let (myposx, myposy, _) = Entity.position (shipentity $ ship2 state)
-  let (enemyposx, enemyposy, _) = Entity.position (shipentity $ ship1 state)
-  let angleToEnemy = atan2 (enemyposy - myposy) (enemyposx - myposx)
-  chargeTarget angleToEnemy
+  let mpos = Entity.position (shipentity $ ship2 state)
+  let epos = Entity.position (shipentity $ ship1 state)
+  chargeTarget (angleFromToRad mpos epos)
 
 drawCombat :: StateT Combat IO ()
 drawCombat = do
