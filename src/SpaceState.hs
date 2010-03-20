@@ -1,4 +1,3 @@
-{-# LANGUAGE NoMonomorphismRestriction #-}
 module SpaceState
 where
 
@@ -161,61 +160,6 @@ handleEvents = do
   processEvents inputMapping events
   return $ isQuit events
 
-type TradeState = (Market, Cargo, Int)
-
-buy :: Int -> String -> StateT TradeState IO ()
-buy q n = do
-  (market, cargo, cash) <- State.get
-  let mval = M.lookupM n market
-  case mval of
-    Nothing      -> return ()
-    Just (q', p) -> do
-      let totalq = min (max 0 q') q
-      let totalp = totalq * p
-      if totalp > cash || totalq == 0
-        then return ()
-        else do
-          State.put (fromMarket totalq n market,
-               toCargo totalq n cargo,
-               subtract totalp cash)
-
-sell :: Int -> String -> StateT TradeState IO ()
-sell q n = do
-  (_, cargo, _) <- State.get
-  let mval = M.lookupM n cargo
-  case mval of
-    Nothing -> return ()
-    Just q' -> buy (negate (min q' q)) n
-
-tradeScreen :: String -> Font -> Font -> StateT TradeState IO ()
-tradeScreen str f1 f2 = do
-  (market, _, _) <- State.get
-  let exitb = ((100, 100), (100, 30)) :: (Num a) => ((a, a), (a, a))
-      buybuttons  = map (\i -> ((550, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
-      sellbuttons = map (\i -> ((680, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
-      buyactions  = map (\(n, (_, _)) -> buy  1 n >> return Nothing) (M.toOrdSeq market)
-      sellactions = map (\(n, (_, _)) -> sell 1 n >> return Nothing) (M.toOrdSeq market)
-      allbuttons  = exitb : (buybuttons ++ sellbuttons)
-      allactions  = return (Just ()) : (buyactions ++ sellactions)
-      bttoaction  = zip allbuttons allactions
-  let handleInput = do
-        events <- liftIO $ pollAllSDLEvents
-        let mbutton = mouseClickInAny [ButtonLeft] allbuttons events
-        case mbutton of
-          Nothing -> return Nothing
-          Just n  -> case lookup n bttoaction of
-                       Just act -> act
-                       Nothing  -> return Nothing
-  loopTextScreen (do (market', cargo, cash) <- State.get
-                     liftIO $ makeTextScreen (10, 500) 
-                               [(f1, Color4 1.0 1.0 1.0 1.0, str),
-                                (f2, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo market' cargo),
-                                (f1, Color4 1.0 1.0 1.0 1.0, "Cash: " ++ show cash)]
-                               (drawButton "Exit" f1 exitb >>
-                                mapM_ (drawButton "Buy" f1) buybuttons >>
-                                mapM_ (drawButton "Sell" f1) sellbuttons))
-                 handleInput
-
 gotoCity :: String -> StateT TestState IO ()
 gotoCity planetname = do
   state <- State.get
@@ -329,12 +273,6 @@ gameOver s s2 = do
           (return ()))
       (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   return True
-
-randPos :: ((Int, Int), (Int, Int)) -> IO GLvector3
-randPos ((minx, miny), (maxx, maxy)) = do
-  x <- fromIntegral `fmap` randomRIO (minx, maxx)
-  y <- fromIntegral `fmap` randomRIO (miny, maxy)
-  return (x, y, 0)
 
 startCombat :: StateT TestState IO Bool
 startCombat = do

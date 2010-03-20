@@ -23,7 +23,8 @@ module Space(newStdShipEntity,
   mouseClickIn,
   mouseClickInAny,
   angleFromTo,
-  angleFromToRad
+  angleFromToRad,
+  randPos
   )
 where
 
@@ -31,6 +32,7 @@ import Control.Monad
 import Data.Char
 import Data.List
 import Data.Maybe
+import System.Random
 import Control.Exception (throwIO)
 
 import Graphics.Rendering.OpenGL as OpenGL
@@ -221,6 +223,12 @@ angleFromToRad :: (RealFloat t) => (t, t, t)
             -> t
 angleFromToRad (ax, ay, _) (bx, by, _) =
   atan2 (by - ay) (bx - ax)
+
+randPos :: ((Int, Int), (Int, Int)) -> IO GLvector3
+randPos ((minx, miny), (maxx, maxy)) = do
+  x <- fromIntegral `fmap` randomRIO (minx, maxx)
+  y <- fromIntegral `fmap` randomRIO (miny, maxy)
+  return (x, y, 0)
 
 getShipBox
   :: Entity -> ((GLdouble, GLdouble), (GLdouble, GLdouble))

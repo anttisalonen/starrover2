@@ -1,3 +1,4 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
 module Cargo
 where
 
@@ -5,10 +6,16 @@ import System.Random
 import Text.Printf
 import Data.List
 import Control.Monad
+import Control.Monad.State as State
 
 import qualified Data.Edison.Assoc.StandardMap as M
+import Graphics.Rendering.OpenGL as OpenGL
+import Graphics.UI.SDL as SDL
+import Graphics.Rendering.FTGL as FTGL
 
 import Statistics
+import TextScreen
+import Space
 
 type Cargo = M.FM String Int
 type Market = M.FM String (Int, Int)
@@ -55,3 +62,59 @@ showMarketAndCargo :: Market -> Cargo -> String
 showMarketAndCargo m c = title ++ infos
   where title = printf "%-14s%9s%6s%6s\n" "Good" "Quantity" "Price" "Cargo"
         infos = concatMap (\((n, (q, p)), (_, q')) -> printf "%-14s%9d%6d%6d\n" n q p q') (zip (M.toOrdSeq m) (fitCargo c))
+
+type TradeState = (Market, Cargo, Int)
+
+buy :: Int -> String -> StateT TradeState IO ()
+buy q n = do
+  (market, cargo, cash) <- State.get
+  let mval = M.lookupM n market
+  case mval of
+    Nothing      -> return ()
+    Just (q', p) -> do
+      let totalq = min (max 0 q') q
+      let totalp = totalq * p
+      if totalp > cash || totalq == 0
+        then return ()
+        else do
+          State.put (fromMarket totalq n market,
+               toCargo totalq n cargo,
+               subtract totalp cash)
+
+sell :: Int -> String -> StateT TradeState IO ()
+sell q n = do
+  (_, cargo, _) <- State.get
+  let mval = M.lookupM n cargo
+  case mval of
+    Nothing -> return ()
+    Just q' -> buy (negate (min q' q)) n
+
+tradeScreen :: String -> Font -> Font -> StateT TradeState IO ()
+tradeScreen str f1 f2 = do
+  (market, _, _) <- State.get
+  let exitb = ((100, 100), (100, 30))
+      buybuttons  = map (\i -> ((550, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
+      sellbuttons = map (\i -> ((680, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
+      buyactions  = map (\(n, (_, _)) -> buy  1 n >> return Nothing) (M.toOrdSeq market)
+      sellactions = map (\(n, (_, _)) -> sell 1 n >> return Nothing) (M.toOrdSeq market)
+      allbuttons  = exitb : (buybuttons ++ sellbuttons)
+      allactions  = return (Just ()) : (buyactions ++ sellactions)
+      bttoaction  = zip allbuttons allactions
+  let handleInput = do
+        events <- liftIO $ pollAllSDLEvents
+        let mbutton = mouseClickInAny [ButtonLeft] allbuttons events
+        case mbutton of
+          Nothing -> return Nothing
+          Just n  -> case lookup n bttoaction of
+                       Just act -> act
+                       Nothing  -> return Nothing
+  loopTextScreen (do (market', cargo, cash) <- State.get
+                     liftIO $ makeTextScreen (10, 500) 
+                               [(f1, Color4 1.0 1.0 1.0 1.0, str),
+                                (f2, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo market' cargo),
+                                (f1, Color4 1.0 1.0 1.0 1.0, "Cash: " ++ show cash)]
+                               (drawButton "Exit" f1 exitb >>
+                                mapM_ (drawButton "Buy" f1) buybuttons >>
+                                mapM_ (drawButton "Sell" f1) sellbuttons))
+                 handleInput
+
