@@ -33,8 +33,8 @@ data TestState = TestState {
   , stopped      :: Bool
   , gamefont     :: Font
   , monofont     :: Font
-  , cargo        :: Cargo
-  , cash         :: Int
+  , plcargo      :: Cargo
+  , plcash       :: Int
   , lastmarket   :: (String, Market)
   , points       :: Int
   , lives        :: Int
@@ -53,11 +53,11 @@ modCameraState f t = t{camstate = f (camstate t)}
 modStopped :: (Bool -> Bool) -> TestState -> TestState
 modStopped f t = t{stopped = f (stopped t)}
 
-modCargo :: (Cargo -> Cargo) -> TestState -> TestState
-modCargo f t = t{cargo = f (cargo t)}
+modPlCargo :: (Cargo -> Cargo) -> TestState -> TestState
+modPlCargo f t = t{plcargo = f (plcargo t)}
 
-modCash :: (Int -> Int) -> TestState -> TestState
-modCash f t = t{cash = f (cash t)}
+modPlCash :: (Int -> Int) -> TestState -> TestState
+modPlCash f t = t{plcash = f (plcash t)}
 
 modMarket :: ((String, Market) -> (String, Market)) -> TestState -> TestState
 modMarket f t = t{lastmarket = f (lastmarket t)}
@@ -148,7 +148,7 @@ loop = untilDoneR $ do
     else die
 
 finalPoints :: TestState -> Int
-finalPoints s = points s + cash s + (lives s * 50)
+finalPoints s = points s + plcash s + (lives s * 50)
 
 die :: StateT TestState IO (Maybe Int)
 die = do
@@ -181,7 +181,7 @@ buy q n = do
 
 sell :: Int -> String -> StateT TradeState IO ()
 sell q n = do
-  (market, cargo, cash) <- State.get
+  (_, cargo, _) <- State.get
   let mval = M.lookupM n cargo
   case mval of
     Nothing -> return ()
@@ -189,7 +189,7 @@ sell q n = do
 
 tradeScreen :: String -> Font -> Font -> StateT TradeState IO ()
 tradeScreen str f1 f2 = do
-  (market, cargo, cash) <- State.get
+  (market, _, _) <- State.get
   let exitb = ((100, 100), (100, 30)) :: (Num a) => ((a, a), (a, a))
       buybuttons  = map (\i -> ((550, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
       sellbuttons = map (\i -> ((680, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
@@ -206,10 +206,10 @@ tradeScreen str f1 f2 = do
           Just n  -> case lookup n bttoaction of
                        Just act -> act
                        Nothing  -> return Nothing
-  loopTextScreen (do (market, cargo, cash) <- State.get
+  loopTextScreen (do (market', cargo, cash) <- State.get
                      liftIO $ makeTextScreen (10, 500) 
                                [(f1, Color4 1.0 1.0 1.0 1.0, str),
-                                (f2, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo market cargo),
+                                (f2, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo market' cargo),
                                 (f1, Color4 1.0 1.0 1.0 1.0, "Cash: " ++ show cash)]
                                (drawButton "Exit" f1 exitb >>
                                 mapM_ (drawButton "Buy" f1) buybuttons >>
@@ -229,10 +229,10 @@ gotoCity planetname = do
   (m', cargo', cash') <- liftIO $ execStateT 
                              (tradeScreen ("Landed on " ++ planetname) 
                                  (gamefont state) (monofont state)) 
-                             (market, cargo state, cash state)
+                             (market, plcargo state, plcash state)
   modify $ modMarket $ modSnd $ const m'
-  modify $ modCargo $ const cargo'
-  modify $ modCash $ const cash'
+  modify $ modPlCargo $ const cargo'
+  modify $ modPlCash $ const cash'
 
 catapult :: GLvector3 -> StateT TestState IO ()
 catapult vec = do
@@ -311,8 +311,8 @@ lostLife s1 s2 = do
                      (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
       lc <- getRandomPlanet
       modify $ modTri $ modifyPosition (const $ (getPosition lc *+* (glVector3UnitX *** (AObject.size lc))))
-      modify $ modCash $ const 100
-      modify $ modCargo $ const M.empty
+      modify $ modPlCash $ const 100
+      modify $ modPlCargo $ const M.empty
       gotoCity (aobjName lc)
       catapult (AObject.getPosition lc)
       releaseKeys
@@ -354,15 +354,15 @@ startCombat = do
       plpos <- liftIO $ randPos ((0, 0), (50, 100))
       enpos <- liftIO $ randPos ((100, 0), (150, 100))
       let plrot = angleFromTo plpos enpos - 90
-      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat plpos enpos plrot enemyrot aimode (cargo state))
+      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat plpos enpos plrot enemyrot aimode (plcargo state))
       case mnewcargo of
         Just newcargo -> do
           liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
                                    (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
                                    (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
           liftIO $ getSpecificSDLChar SDLK_RETURN
-          when (not (M.sameMap newcargo (cargo state))) $ do
-            modify $ modCargo (const newcargo)
+          when (not (M.sameMap newcargo (plcargo state))) $ do
+            modify $ modPlCargo (const newcargo)
             modify $ modPoints (+100)
           releaseKeys
           return False
