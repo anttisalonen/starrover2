@@ -16,6 +16,7 @@ import Entity
 import Space
 import Cargo
 import Utils
+import SDLUtils
 
 data AIMode = Human
             | Dummy

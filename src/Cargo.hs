@@ -16,6 +16,7 @@ import Graphics.Rendering.FTGL as FTGL
 import Statistics
 import TextScreen
 import Space
+import SDLUtils
 
 type Cargo = M.FM String Int
 type Market = M.FM String (Int, Int)
@@ -102,7 +103,7 @@ tradeScreen str f1 f2 = do
       bttoaction  = zip allbuttons allactions
   let handleInput = do
         events <- liftIO $ pollAllSDLEvents
-        let mbutton = mouseClickInAny [ButtonLeft] allbuttons events
+        let mbutton = mouseClickInAny height [ButtonLeft] allbuttons events
         case mbutton of
           Nothing -> return Nothing
           Just n  -> case lookup n bttoaction of

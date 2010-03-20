@@ -23,6 +23,7 @@ import Space
 import Cargo
 import Utils
 import TextScreen
+import SDLUtils
 
 -- test scenario
 data TestState = TestState {

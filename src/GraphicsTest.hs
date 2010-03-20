@@ -21,6 +21,7 @@ import Space
 import SpaceState
 import Utils
 import TextScreen
+import SDLUtils
 
 import Paths_starrover2
 
