@@ -114,7 +114,7 @@ doHighscore f f2 pts = do
                    then "Unfortunately you didn't make it to the high score list."
                    else "High scores"
   let drawfunc = makeTextScreen (100, 520)
-                  [(f,  Color4 1.0 1.0 1.0 1.0, inittext),
+                  [(f,  Color4 1.0 1.0 1.0 1.0, inittext ++ "\n"),
                    (f2, Color4 1.0 1.0 1.0 1.0, displayHighscore highscore'),
                    (f,  Color4 1.0 1.0 1.0 1.0, "\n\nPress any key to exit")] (return ())
   loopTextScreen drawfunc 
