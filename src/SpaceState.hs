@@ -262,6 +262,12 @@ gameOver s = do
                  (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   return True
 
+randPos :: ((Int, Int), (Int, Int)) -> IO GLvector3
+randPos ((minx, miny), (maxx, maxy)) = do
+  x <- fromIntegral `fmap` randomRIO (minx, maxx)
+  y <- fromIntegral `fmap` randomRIO (miny, maxy)
+  return (x, y, 0)
+
 startCombat :: StateT TestState IO Bool
 startCombat = do
   state <- State.get
@@ -276,7 +282,14 @@ startCombat = do
                       (liftIO $ pollAllSDLEvents >>= return . specificKeyPressed [SDLK_RETURN, SDLK_ESCAPE])
   if c == SDLK_RETURN
     then do
-      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat aimode (cargo state))
+      enemyrot <- liftIO $ fromIntegral `fmap` randomRIO (-180, 180 :: Int)
+      pos1 <- liftIO $ randPos ((0, 0), (50, 100))
+      pos2 <- liftIO $ randPos ((100, 0), (150, 100))
+      doswap <- liftIO $ randomIO
+      let (plpos, enpos) = if doswap
+                             then (pos2, pos1)
+                             else (pos1, pos2)
+      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat plpos enpos (Entity.rotation $ tri state) enemyrot aimode (cargo state))
       case mnewcargo of
         Just newcargo -> do
           liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),

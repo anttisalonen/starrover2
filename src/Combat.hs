@@ -73,10 +73,10 @@ newStdShip pos c rot mode =
   Ship (newStdShipEntity pos c rot)
        3 mode
 
-newCombat :: AIMode -> Cargo -> Combat
-newCombat mode c = 
-  Combat (newStdShip (0, 0, 0) playerShipColor 0 Human)
-   (newStdShip (90, 60, 0) enemyShipColor 180 mode)
+newCombat :: GLvector3 -> GLvector3 -> GLdouble -> GLdouble -> AIMode -> Cargo -> Combat
+newCombat plpos enpos rot rot2 mode c = 
+  Combat (newStdShip plpos playerShipColor rot Human)
+   (newStdShip enpos enemyShipColor rot2 mode)
    S.empty
    c
    False
