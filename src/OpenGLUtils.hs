@@ -34,6 +34,15 @@ glVector3Null = (0, 0, 0)
 glVector3AllUnit :: GLvector3
 glVector3AllUnit = (1, 1, 1)
 
+glVector3UnitX :: GLvector3
+glVector3UnitX = (1, 0, 0)
+
+glVector3UnitY :: GLvector3
+glVector3UnitY = (0, 1, 0)
+
+glVector3UnitZ :: GLvector3
+glVector3UnitZ = (0, 0, 1)
+
 circlePoints :: Int -> [GLvector3]
 circlePoints n = 
   let xs = map (sin . (2 * pi *) . (/(fromIntegral n)) . fromIntegral) [0..(n - 1)]
