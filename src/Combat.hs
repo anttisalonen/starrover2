@@ -107,7 +107,8 @@ shipNShoot n = do
           laserpos = shippos *+* (lookVector *** 3)
           laservel = shipvel *+* (lookVector *** laserSpeed)
           laserrot = shiprot
-      let nent = Entity laserpos laservel glVector3Null laserrot 0 0 (Color4 1.0 0.0 0.0 1.0) Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
+          lasercol = if n == 1 then Color4 0.0 1.0 0.0 1.0 else Color4 1.0 0.0 0.0 1.0
+      let nent = Entity laserpos laservel glVector3Null laserrot 0 0 lasercol Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
       modify $ modLasers $ S.rcons nent
 
 accelForce :: GLdouble
