@@ -182,12 +182,6 @@ sell q n = do
     Nothing -> return ()
     Just q' -> buy (negate (min q' q)) n
 
-modFst :: (a -> a) -> (a, b) -> (a, b)
-modFst f (a, b) = (f a, b)
-
-modSnd :: (b -> b) -> (a, b) -> (a, b)
-modSnd f (a, b) = (a, f b)
-
 gotoCity :: String -> StateT TestState IO ()
 gotoCity planetname = do
   state <- State.get

@@ -121,6 +121,12 @@ insertRev x xs = insertBy f x xs
                   EQ -> EQ
                   GT -> LT
 
+modFst :: (a -> a) -> (a, b) -> (a, b)
+modFst f (a, b) = (f a, b)
+
+modSnd :: (b -> b) -> (a, b) -> (a, b)
+modSnd f (a, b) = (a, f b)
+
 {-
 randomThing :: (Random t, RandomGen s, MonadState s m) => m t
 randomThing = do
