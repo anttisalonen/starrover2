@@ -15,6 +15,20 @@ Build-type:     Simple
 
 data-files: share/DejaVuSans.ttf, share/DejaVuSansMono.ttf
 
+extra-source-files: src/Statistics.hs,
+                    src/Collision.hs, 
+                    src/OpenGLUtils.hs,
+                    src/Camera.hs,
+                    src/SDLUtils.hs,
+                    src/Utils.hs,
+                    src/Entity.hs,
+                    src/AObject.hs,
+                    src/Space.hs,
+                    src/TextScreen.hs,
+                    src/Cargo.hs,
+                    src/Combat.hs,
+                    src/SpaceState.hs
+
 source-repository head
   type:      git
   location:  git://github.com/anttisalonen/starrover2.git
