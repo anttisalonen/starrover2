@@ -72,28 +72,29 @@ showMarketAndCargo t m c = title ++ infos
                   then concatMap (\((n, (q, p)), (_, q')) -> printf "%-14s%9d%6d%6d\n" n q p q') (zip (M.toOrdSeq m) (fitCargo c))
                   else concatMap (\((n, (q, _)), (_, q')) -> printf "%-17s%-12d%-9d\n" n q q') (zip (M.toOrdSeq m) (fitCargo c))
 
-type TradeState = (Market, Cargo, Int)
-type TakeState = (Cargo, Cargo, Int)
+type TradeState = (Market, Cargo, Int, Int)
+type TakeState = (Cargo, Cargo, Int, Int)
 
 buy :: Int -> String -> StateT TradeState IO ()
 buy q n = do
-  (market, cargo, cash) <- State.get
+  (market, cargo, cash, holdspace) <- State.get
   let mval = M.lookupM n market
   case mval of
     Nothing      -> return ()
     Just (q', p) -> do
-      let totalq = min (max 0 q') q
+      let totalq = minimum [max 0 q', q, holdspace]
       let totalp = totalq * p
       if totalp > cash || totalq == 0
         then return ()
         else do
           State.put (fromMarket totalq n market,
                toCargo totalq n cargo,
-               subtract totalp cash)
+               subtract totalp cash,
+               holdspace - totalq)
 
 sell :: Int -> String -> StateT TradeState IO ()
 sell q n = do
-  (_, cargo, _) <- State.get
+  (_, cargo, _, _) <- State.get
   let mval = M.lookupM n cargo
   case mval of
     Nothing -> return ()
@@ -103,11 +104,11 @@ tradeScreen :: String -> Font -> Font -> StateT TradeState IO ()
 tradeScreen = screenGeneric True
 
 withdraw :: Int -> String -> StateT TradeState IO ()
-withdraw q n = withStateT (\(m, c, _) -> (m, c, maxBound)) (buy q n)
+withdraw q n = withStateT (\(m, c, _, hold) -> (m, c, maxBound, hold)) (buy q n)
 
 screenGeneric :: Bool -> String -> Font -> Font -> StateT TradeState IO ()
 screenGeneric trade str f1 f2 = do
-  (market, _, _) <- State.get
+  (market, _, _, _) <- State.get
   let exitb = ((100, 100), (100, 30))
       buybuttons  = map (\i -> ((550, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
       sellbuttons = map (\i -> ((680, 440 - 50 * fromIntegral i), (100, 30))) [1..numCargoItems]
@@ -124,11 +125,12 @@ screenGeneric trade str f1 f2 = do
           Just n  -> case lookup n bttoaction of
                        Just act -> act
                        Nothing  -> return Nothing
-  loopTextScreen (do (market', cargo, cash) <- State.get
+  loopTextScreen (do (market', cargo, cash, holdspace) <- State.get
                      liftIO $ makeTextScreen (10, 500) 
                                [(f1, Color4 1.0 1.0 1.0 1.0, str),
                                 (f2, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo trade market' cargo),
-                                (f1, Color4 1.0 1.0 1.0 1.0, if trade then "Cash: " ++ show cash else "")]
+                                (f1, Color4 1.0 1.0 1.0 1.0, if trade then "Cash: " ++ show cash else ""),
+                                (f1, Color4 1.0 1.0 1.0 1.0, "Hold space: " ++ show holdspace)]
                                (drawButton "Exit" f1 exitb >>
                                 mapM_ (drawButton (if trade then "Buy" else "Take") f1) buybuttons >>
                                 mapM_ (drawButton (if trade then "Sell" else "Leave") f1) sellbuttons))
@@ -136,6 +138,6 @@ screenGeneric trade str f1 f2 = do
 
 takeScreen :: String -> Font -> Font -> StateT TakeState IO ()
 takeScreen str f1 f2 = do
-  (stuff, cargo, cash) <- State.get
-  (_, cargo', _) <- liftIO $ execStateT (screenGeneric False str f1 f2) (cargoToMarket stuff, cargo, cash)
-  State.put (stuff, cargo', cash)
+  (stuff, cargo, cash, hold) <- State.get
+  (_, cargo', _, hold') <- liftIO $ execStateT (screenGeneric False str f1 f2) (cargoToMarket stuff, cargo, cash, hold)
+  State.put (stuff, cargo', cash, hold')

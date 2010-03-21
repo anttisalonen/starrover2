@@ -34,6 +34,7 @@ data TestState = TestState {
   , gamefont     :: Font
   , monofont     :: Font
   , plcargo      :: Cargo
+  , maxhold      :: Int
   , plcash       :: Int
   , lastmarket   :: (String, Market)
   , points       :: Int
@@ -58,6 +59,9 @@ modPlCargo f t = t{plcargo = f (plcargo t)}
 
 modPlCash :: (Int -> Int) -> TestState -> TestState
 modPlCash f t = t{plcash = f (plcash t)}
+
+modMaxHold :: (Int -> Int) -> TestState -> TestState
+modMaxHold f t = t{maxhold = f (maxhold t)}
 
 modMarket :: ((String, Market) -> (String, Market)) -> TestState -> TestState
 modMarket f t = t{lastmarket = f (lastmarket t)}
@@ -91,6 +95,7 @@ initState f f2 = TestState
     f
     f2
     M.empty
+    10
     100
     ("", M.empty)
     0
@@ -171,13 +176,14 @@ gotoCity planetname = do
                  return (planetname, m)
   let market = snd nmarket
   modify $ modMarket $ const nmarket
-  (m', cargo', cash') <- liftIO $ execStateT 
-                             (tradeScreen ("Landed on " ++ planetname) 
-                                 (gamefont state) (monofont state)) 
-                             (market, plcargo state, plcash state)
+  (m', cargo', cash', hold') <- liftIO $ execStateT 
+                                  (tradeScreen ("Landed on " ++ planetname) 
+                                      (gamefont state) (monofont state)) 
+                                  (market, plcargo state, plcash state, maxhold state)
   modify $ modMarket $ modSnd $ const m'
   modify $ modPlCargo $ const cargo'
   modify $ modPlCash $ const cash'
+  modify $ modMaxHold $ const hold'
 
 catapult :: GLvector3 -> StateT TestState IO ()
 catapult vec = do
@@ -304,11 +310,12 @@ startCombat = do
               liftIO $ getSpecificSDLChar SDLK_RETURN
             else do
               modify $ modPoints (+100)
-              (_, cargo', _) <- liftIO $ execStateT 
+              (_, cargo', _, hold') <- liftIO $ execStateT 
                              (takeScreen ("Captured cargo") 
                                  (gamefont state) (monofont state)) 
-                             (newcargo, plcargo state, plcash state)
+                             (newcargo, plcargo state, plcash state, maxhold state)
               modify $ modPlCargo (const cargo')
+              modify $ modMaxHold (const hold')
           releaseKeys
           return False
         Nothing -> do
