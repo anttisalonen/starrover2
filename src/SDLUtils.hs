@@ -82,9 +82,10 @@ isQuit = hasEvent isq
         isq _ = False
 
 keyWasPressed :: SDLKey -> [SDL.Event] -> Bool
-keyWasPressed j = hasEvent isk
-  where isk (KeyDown (Keysym x _ _)) | x == j = True
-        isk _                                 = False
+keyWasPressed j es = j `elem` keyDowns es
+
+oneofKeyWasPressed :: [SDLKey] -> [SDL.Event] -> Bool
+oneofKeyWasPressed j es = not . null $ j `intersect` keyDowns es
 
 anyKeyOrMouseWasPressed :: [SDL.Event] -> Bool
 anyKeyOrMouseWasPressed = hasEvent isk

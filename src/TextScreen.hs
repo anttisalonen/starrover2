@@ -13,6 +13,15 @@ import Camera
 import Space
 import Utils
 
+writeLine :: (GLdouble, GLdouble) -> (Font, Color4 GLfloat, String) -> IO ()
+writeLine (xstart, ystart) (f, c, s) = do
+  loadIdentity
+  translate (Vector3 xstart ystart (0 :: GLdouble))
+  currentColor $= c
+  forM_ (lines s) $ \str -> do
+    renderFont f str FTGL.Front
+    translate (Vector3 0 (-50) (0 :: GLdouble))
+
 makeTextScreen :: (GLdouble, GLdouble) -> [(Font, Color4 GLfloat, String)] -> IO () -> IO ()
 makeTextScreen (xstart, ystart) instructions additional = do
   clear [ColorBuffer,DepthBuffer]

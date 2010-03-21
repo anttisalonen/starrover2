@@ -28,7 +28,7 @@ import Paths_starrover2
 main = catch (withInit [InitVideo] $ do
   -- blendEquation $= FuncAdd
   -- blendFunc $= (OpenGL.SrcAlpha, OneMinusSrcAlpha)
-  createAWindow)
+  initAll)
   (\e -> hPutStrLn stderr $ "Exception: " ++ show (e :: IOException)) 
 
 loadDataFont :: FilePath -> IO Font
@@ -41,17 +41,46 @@ loadDataFont fp = do
   _ <- setFontFaceSize f 24 72
   return f
 
-createAWindow = do
+initAll = do
   _ <- setVideoMode width height 0 [OpenGL]
   depthFunc $= Just Less
   clearColor $= Color4 0 0 0 1
   viewport $= (Position 0 0, Size width height)
   f <- loadDataFont "share/DejaVuSans.ttf"
   f2 <- loadDataFont "share/DejaVuSansMono.ttf"
+  mainMenu f f2
+
+mainMenu f f2 = do
+  n <- Prelude.flip evalStateT (1 :: Int) $ do
+    let drawfunc = do n <- State.get 
+                      liftIO $ makeTextScreen (200, 500)
+                        [(f, Color4 1.0 1.0 1.0 1.0, "Star Rover 2\n\nStart a new game\nHigh scores\nQuit\n")]
+                        (liftIO $ writeLine (150, 450 - 50 * fromIntegral n) (f, Color4 0.0 0.0 1.0 1.0, "x"))
+    let getInput = do
+          evts <- liftIO $ pollAllSDLEvents
+          when (keyWasPressed SDLK_DOWN evts) $
+            modify (\p -> min 3 $ p + 1)
+          when (keyWasPressed SDLK_UP evts) $
+            modify (\p -> max 1 $ p - 1)
+          if oneofKeyWasPressed [SDLK_RETURN, SDLK_SPACE] evts
+            then State.get >>= return . Just 
+            else return Nothing
+    loopTextScreen drawfunc getInput
+  case n of
+    1 -> runGame f f2
+    2 -> do
+           appdir <- getAppUserDataDirectory "starrover2"
+           highscore <- loadHighscore appdir hiscorefilename
+           showHighscore f f2 "High scores" highscore
+           mainMenu f f2
+    _ -> return ()
+
+runGame f f2 = do
   let is = initState f f2
   setCamera (camera $ camstate is)
   pts <- evalStateT loop is
   doHighscore f f2 pts
+  mainMenu f f2
 
 type Highscore a = [(Int, String, a)]
 
@@ -97,11 +126,12 @@ getName f = do
             else put s' >> return Nothing
     loopTextScreen drawfunc getInput
 
+hiscorefilename = "hiscore"
+
 doHighscore :: Font -> Font -> Int -> IO ()
 doHighscore f f2 pts = do
   let numentries = 7
   appdir <- getAppUserDataDirectory "starrover2"
-  let hiscorefilename = "hiscore"
   highscore <- loadHighscore appdir hiscorefilename
   let madeit = if length highscore < numentries
                  then True
@@ -114,11 +144,15 @@ doHighscore f f2 pts = do
   let inittext = if not madeit
                    then "Unfortunately you didn't make it to the high score list."
                    else "High scores"
+  when (madeit) $ saveHighscore appdir hiscorefilename highscore'
+  showHighscore f f2 inittext highscore'
+
+showHighscore :: Font -> Font -> String -> Highscore () -> IO ()
+showHighscore f f2 inittext hs = do
   let drawfunc = makeTextScreen (100, 520)
                   [(f,  Color4 1.0 1.0 1.0 1.0, inittext ++ "\n"),
-                   (f2, Color4 1.0 1.0 1.0 1.0, displayHighscore highscore'),
-                   (f,  Color4 1.0 1.0 1.0 1.0, "\n\nPress any key to exit")] (return ())
+                   (f2, Color4 1.0 1.0 1.0 1.0, displayHighscore hs),
+                   (f,  Color4 1.0 1.0 1.0 1.0, "\n\nPress any key")] (return ())
   loopTextScreen drawfunc 
                  (pollAllSDLEvents >>= return . boolToMaybe . anyKeyOrMouseWasPressed)
-  when (madeit) $ saveHighscore appdir hiscorefilename highscore'
 
