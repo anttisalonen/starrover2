@@ -1,7 +1,10 @@
 ChangeLog:
 
-0.0.4 - ???
+0.0.4 - 21.03.2010
 Added main menu
+Changed starting point
+Tuned starting cash and capture cargo
+Improved AI variability
 
 0.0.3 - 21.03.2010
 Added smarter AI
