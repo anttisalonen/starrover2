@@ -20,16 +20,13 @@ import SDLUtils
 
 data AIMode = Human
             | Dummy
-            | PoorAim
-            | BetterAim
-  deriving (Enum, Bounded, Show)
+            | Shooter GLdouble
+  deriving (Show)
 
 randomAI :: IO AIMode
 randomAI = do
-  n <- randomRIO (1, 2 :: Int)
-  case n of
-    1 -> return PoorAim
-    _ -> return BetterAim
+  n <- randomRIO (0, 100 :: Int)
+  return $ Shooter (fromIntegral n / 100)
 
 data Ship = Ship {
     shipentity :: Entity
@@ -181,8 +178,7 @@ handleCombatAI = do
   case aimode (ship2 state) of
     Human     -> return ()
     Dummy     -> accelerateCombat 2 (accelForce * 0.5)
-    PoorAim   -> doPoorAim
-    BetterAim -> doBetterAim
+    Shooter n -> doShooter n
 
 findHitpoint :: GLvector3 -- ^ target position relative to (0, 0, _)
   -> GLvector3 -- ^ target velocity
@@ -218,25 +214,19 @@ chargeTarget angleToTarget = do
     when (val == 0) $ shipNShoot 2
   accelerateCombat 2 accelForce
 
-doBetterAim :: StateT Combat IO ()
-doBetterAim = do
+doShooter :: GLdouble -> StateT Combat IO ()
+doShooter n = do
   state <- State.get
   let mpos = Entity.position (shipentity $ ship2 state)
   let epos = Entity.position (shipentity $ ship1 state)
   let evel = Entity.velocity (shipentity $ ship1 state)
+  let estEnemyVel = evel *** n
   let mvel = Entity.velocity (shipentity $ ship2 state)
-  let mtgtpos = findHitpoint (epos *-* mpos) (evel *-* mvel) laserSpeed
+  let mtgtpos = findHitpoint (epos *-* mpos) (estEnemyVel *-* mvel) laserSpeed
   let angleToEnemy = case mtgtpos of
                        Nothing     -> angleFromToRad mpos epos
                        Just tgtpos -> angleFromToRad glVector3Null tgtpos 
   chargeTarget angleToEnemy
-
-doPoorAim :: StateT Combat IO ()
-doPoorAim = do
-  state <- State.get
-  let mpos = Entity.position (shipentity $ ship2 state)
-  let epos = Entity.position (shipentity $ ship1 state)
-  chargeTarget (angleFromToRad mpos epos)
 
 drawCombat :: StateT Combat IO ()
 drawCombat = do
