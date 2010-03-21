@@ -204,10 +204,29 @@ gotoCity planetname = do
                else do
                  m <- liftIO $ randomMarket
                  return (planetname, m)
-  let market = snd nmarket
   modify $ modMarket $ const nmarket
+  cityLoop planetname
+
+cityLoop :: String -> StateT TestState IO ()
+cityLoop planetname = do
+  state <- State.get
+  let f = gamefont state
+  n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, "Starport on " ++ planetname)
+            [(f, Color4 1.0 1.0 0.0 1.0, "Market"),
+             (f, Color4 1.0 1.0 0.0 1.0, "Shipyard"),
+             (f, Color4 1.0 1.0 0.0 1.0, "Leave" ++ planetname)]
+            (f, Color4 1.0 1.0 0.0 1.0, "=>")
+  case n of
+    1 -> gotoMarket planetname >> cityLoop planetname
+    2 -> cityLoop planetname
+    _ -> return ()
+
+gotoMarket :: String -> StateT TestState IO ()
+gotoMarket planetname = do
+  state <- State.get
+  let market = snd . lastmarket $ state
   (m', cargo', cash', hold') <- liftIO $ execStateT 
-                                  (tradeScreen ("Landed on " ++ planetname) 
+                                  (tradeScreen ("Market on " ++ planetname) 
                                       (gamefont state) (monofont state)) 
                                   (market, plcargo state, plcash state, plholdspace state)
   modify $ modMarket $ modSnd $ const m'
