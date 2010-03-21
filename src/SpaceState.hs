@@ -1,4 +1,4 @@
-module SpaceState
+module SpaceState(runGame)
 where
 
 import System.Random
@@ -34,7 +34,7 @@ data TestState = TestState {
   , gamefont     :: Font
   , monofont     :: Font
   , plcargo      :: Cargo
-  , maxhold      :: Int
+  , holdspace    :: Int
   , plcash       :: Int
   , lastmarket   :: (String, Market)
   , points       :: Int
@@ -60,8 +60,8 @@ modPlCargo f t = t{plcargo = f (plcargo t)}
 modPlCash :: (Int -> Int) -> TestState -> TestState
 modPlCash f t = t{plcash = f (plcash t)}
 
-modMaxHold :: (Int -> Int) -> TestState -> TestState
-modMaxHold f t = t{maxhold = f (maxhold t)}
+modHoldspace :: (Int -> Int) -> TestState -> TestState
+modHoldspace f t = t{holdspace = f (holdspace t)}
 
 modMarket :: ((String, Market) -> (String, Market)) -> TestState -> TestState
 modMarket f t = t{lastmarket = f (lastmarket t)}
@@ -71,6 +71,9 @@ modPoints f t = t{points = f (points t)}
 
 modLives :: (Int -> Int) -> TestState -> TestState
 modLives f t = t{lives = f (lives t)}
+
+maxHold = 10
+startCash = 100
 
 aobjs =
   [ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
@@ -86,8 +89,8 @@ stdCamera = CameraState
       100
       0
 
-initState :: Font -> Font -> TestState
-initState f f2 = TestState 
+startState :: Font -> Font -> TestState
+startState f f2 = TestState 
     (newStdShipEntity (50.0, 30.0, 0.0) playerShipColor 0)
     aobjs
     stdCamera
@@ -95,8 +98,8 @@ initState f f2 = TestState
     f
     f2
     M.empty
-    10
-    100
+    maxHold
+    startCash
     ("", M.empty)
     0
     3
@@ -135,6 +138,26 @@ showInfo = do
   liftIO . putStrLn $ "Player position: " ++ show (Entity.position $ tri s)
   forM_ (aobjects s) $ \aobj -> do
     liftIO . putStrLn $ "Astronomical body position: " ++ show (AObject.getPosition aobj)
+
+initState :: StateT TestState IO ()
+initState = do
+  lc <- getRandomPlanet
+  modify $ modTri $ modifyPosition (const $ (getPosition lc *+* (glVector3UnitX *** (AObject.size lc))))
+  modify $ modPlCash $ const startCash
+  modify $ modHoldspace $ const maxHold
+  modify $ modPlCargo $ const M.empty
+  gotoCity (aobjName lc)
+  catapult (AObject.getPosition lc)
+  releaseKeys
+
+runGame :: Font -> Font -> IO Int
+runGame f f2 = do
+  let is = startState f f2
+  setCamera (camera $ camstate is)
+  evalStateT (do
+    initState
+    loop)
+    is
 
 loop :: StateT TestState IO Int
 loop = untilDoneR $ do 
@@ -179,11 +202,11 @@ gotoCity planetname = do
   (m', cargo', cash', hold') <- liftIO $ execStateT 
                                   (tradeScreen ("Landed on " ++ planetname) 
                                       (gamefont state) (monofont state)) 
-                                  (market, plcargo state, plcash state, maxhold state)
+                                  (market, plcargo state, plcash state, holdspace state)
   modify $ modMarket $ modSnd $ const m'
   modify $ modPlCargo $ const cargo'
   modify $ modPlCash $ const cash'
-  modify $ modMaxHold $ const hold'
+  modify $ modHoldspace $ const hold'
 
 catapult :: GLvector3 -> StateT TestState IO ()
 catapult vec = do
@@ -260,13 +283,7 @@ lostLife s1 s2 = do
                          Color4 1.0 0.2 0.2 1.0, s1 ++ "\n\n" ++ s2 ++ "\n\nPress ENTER to continue")] 
                          (return ()))
                      (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
-      lc <- getRandomPlanet
-      modify $ modTri $ modifyPosition (const $ (getPosition lc *+* (glVector3UnitX *** (AObject.size lc))))
-      modify $ modPlCash $ const 100
-      modify $ modPlCargo $ const M.empty
-      gotoCity (aobjName lc)
-      catapult (AObject.getPosition lc)
-      releaseKeys
+      initState
       return False
 
 gameOver :: String -> String -> StateT TestState IO Bool
@@ -313,9 +330,9 @@ startCombat = do
               (_, cargo', _, hold') <- liftIO $ execStateT 
                              (takeScreen ("Captured cargo") 
                                  (gamefont state) (monofont state)) 
-                             (newcargo, plcargo state, plcash state, maxhold state)
+                             (newcargo, plcargo state, plcash state, holdspace state)
               modify $ modPlCargo (const cargo')
-              modify $ modMaxHold (const hold')
+              modify $ modHoldspace (const hold')
           releaseKeys
           return False
         Nothing -> do

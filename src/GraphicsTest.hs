@@ -16,7 +16,6 @@ import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
 import Graphics.Rendering.FTGL as FTGL
 
-import Camera
 import Space
 import SpaceState
 import Utils
@@ -67,7 +66,7 @@ mainMenu f f2 = do
             else return Nothing
     loopTextScreen drawfunc getInput
   case n of
-    1 -> runGame f f2
+    1 -> startGame f f2
     2 -> do
            appdir <- getAppUserDataDirectory "starrover2"
            highscore <- loadHighscore appdir hiscorefilename
@@ -75,10 +74,8 @@ mainMenu f f2 = do
            mainMenu f f2
     _ -> return ()
 
-runGame f f2 = do
-  let is = initState f f2
-  setCamera (camera $ camstate is)
-  pts <- evalStateT loop is
+startGame f f2 = do
+  pts <- runGame f f2
   doHighscore f f2 pts
   mainMenu f f2
 
