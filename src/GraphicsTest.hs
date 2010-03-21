@@ -54,8 +54,8 @@ mainMenu f f2 = do
   n <- Prelude.flip evalStateT (1 :: Int) $ do
     let drawfunc = do n <- State.get 
                       liftIO $ makeTextScreen (200, 500)
-                        [(f, Color4 1.0 1.0 1.0 1.0, "Star Rover 2\n\nStart a new game\nHigh scores\nQuit\n")]
-                        (liftIO $ writeLine (150, 450 - 50 * fromIntegral n) (f, Color4 0.0 0.0 1.0 1.0, "x"))
+                        [(f, Color4 1.0 1.0 1.0 1.0, "Star Rover 2\n\n\nStart a new game\nHigh scores\nQuit\n")]
+                        (liftIO $ writeLine (150, 400 - 50 * fromIntegral n) (f, Color4 0.1 0.1 1.0 1.0, "=>"))
     let getInput = do
           evts <- liftIO $ pollAllSDLEvents
           when (keyWasPressed SDLK_DOWN evts) $
