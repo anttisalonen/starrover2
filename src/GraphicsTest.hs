@@ -130,7 +130,7 @@ doHighscore f f2 pts = do
   let numentries = 7
   appdir <- getAppUserDataDirectory "starrover2"
   highscore <- loadHighscore appdir hiscorefilename
-  let madeit = if length highscore < numentries
+  let madeit = if pts > 0 && length highscore < numentries
                  then True
                  else let (p, _, _) = (highscore !! (numentries - 1)) in p < pts
   highscore' <- if madeit
