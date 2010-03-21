@@ -11,6 +11,7 @@ import Graphics.Rendering.FTGL as FTGL
 
 import Camera
 import Space
+import SDLUtils
 import Utils
 
 writeLine :: (GLdouble, GLdouble) -> (Font, Color4 GLfloat, String) -> IO ()
@@ -53,4 +54,28 @@ drawButton str f ((tlx, tly), (diffx, diffy)) = do
     mapM_ vertex [Vertex3 (0 :: GLdouble) 0 0, Vertex3 0 diffy 0, Vertex3 diffx diffy 0, Vertex3 diffx 0 0]
   translate $ Vector3 10 8 (0 :: GLdouble)
   renderFont f str FTGL.Front
+
+menu :: (Font, Color4 GLfloat, String) -> [(Font, Color4 GLfloat, String)] -> (Font, Color4 GLfloat, String) -> IO Int
+menu (titlef, titlec, titlestr) options cursor = do
+  let numitems = length options
+  let title = (titlef, titlec, titlestr ++ "\n\n\n")
+  if numitems == 0
+    then return 0
+    else do
+      n <- Prelude.flip evalStateT (1 :: Int) $ do
+        let drawfunc = do n <- State.get 
+                          liftIO $ makeTextScreen (200, 500)
+                            (title:options)
+                            (liftIO $ writeLine (150, 400 - 50 * fromIntegral n) cursor)
+        let getInput = do
+              evts <- liftIO $ pollAllSDLEvents
+              when (keyWasPressed SDLK_DOWN evts) $
+                modify (\p -> min numitems $ p + 1)
+              when (keyWasPressed SDLK_UP evts) $
+                modify (\p -> max 1 $ p - 1)
+              if oneofKeyWasPressed [SDLK_RETURN, SDLK_SPACE] evts
+                then State.get >>= return . Just 
+                else return Nothing
+        loopTextScreen drawfunc getInput
+      return n
 

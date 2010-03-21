@@ -50,21 +50,11 @@ initAll = do
   mainMenu f f2
 
 mainMenu f f2 = do
-  n <- Prelude.flip evalStateT (1 :: Int) $ do
-    let drawfunc = do n <- State.get 
-                      liftIO $ makeTextScreen (200, 500)
-                        [(f, Color4 1.0 1.0 1.0 1.0, "Star Rover 2\n\n\nStart a new game\nHigh scores\nQuit\n")]
-                        (liftIO $ writeLine (150, 400 - 50 * fromIntegral n) (f, Color4 0.1 0.1 1.0 1.0, "=>"))
-    let getInput = do
-          evts <- liftIO $ pollAllSDLEvents
-          when (keyWasPressed SDLK_DOWN evts) $
-            modify (\p -> min 3 $ p + 1)
-          when (keyWasPressed SDLK_UP evts) $
-            modify (\p -> max 1 $ p - 1)
-          if oneofKeyWasPressed [SDLK_RETURN, SDLK_SPACE] evts
-            then State.get >>= return . Just 
-            else return Nothing
-    loopTextScreen drawfunc getInput
+  n <- menu (f, Color4 1.0 1.0 1.0 1.0, "Star Rover 2")
+            [(f, Color4 1.0 1.0 1.0 1.0, "Start a new game"),
+             (f, Color4 1.0 1.0 1.0 1.0, "High scores"),
+             (f, Color4 1.0 1.0 1.0 1.0, "Quit")]
+            (f, Color4 0.1 0.1 1.0 1.0, "=>")
   case n of
     1 -> startGame f f2
     2 -> do
