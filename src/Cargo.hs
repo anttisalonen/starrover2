@@ -136,9 +136,9 @@ screenGeneric trade str f1 f2 = do
                                 (f2, Color4 1.0 1.0 0.0 1.0, showMarketAndCargo trade market' cargo),
                                 (f1, Color4 1.0 1.0 1.0 1.0, if trade then "Cash: " ++ show cash else ""),
                                 (f1, Color4 1.0 1.0 1.0 1.0, "Hold space: " ++ show holdspace)]
-                               (drawButton "Exit" f1 exitb >>
-                                mapM_ (drawButton (if trade then "Buy" else "Take") f1) buybuttons >>
-                                mapM_ (drawButton (if trade then "Sell" else "Leave") f1) sellbuttons))
+                               (drawButton (Just ("Exit", f1)) exitb >>
+                                mapM_ (drawButton (Just (if trade then "Buy" else "Take", f1))) buybuttons >>
+                                mapM_ (drawButton (Just (if trade then "Sell" else "Leave", f1))) sellbuttons))
                  handleInput
 
 takeScreen :: String -> Font -> Font -> StateT TakeState IO ()

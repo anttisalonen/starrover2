@@ -4,6 +4,7 @@ module TextScreen(loopTextScreen,
   menu)
 where
 
+import Data.List
 import Control.Monad
 import Control.Monad.State as State
 import Prelude hiding (catch)
@@ -48,20 +49,28 @@ loopTextScreen drawScreenFunc handleEventsFunc = untilDoneR $ do
   drawScreenFunc
   handleEventsFunc
 
-drawButton :: String -> Font -> ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> IO ()
-drawButton str f ((tlx, tly), (diffx, diffy)) = do
+drawButton :: Maybe (String, Font) -> ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> IO ()
+drawButton ms ((tlx, tly), (diffx, diffy)) = do
   loadIdentity
   translate $ Vector3 tlx (tly + 2) (0 :: GLdouble)
   currentColor $= Color4 1.0 1.0 1.0 1.0
   renderPrimitive LineLoop $
     mapM_ vertex [Vertex3 (0 :: GLdouble) 0 0, Vertex3 0 diffy 0, Vertex3 diffx diffy 0, Vertex3 diffx 0 0]
-  translate $ Vector3 10 8 (0 :: GLdouble)
-  renderFont f str FTGL.Front
+  case ms of
+    Nothing -> return ()
+    Just (str, f) -> do
+      translate $ Vector3 10 8 (0 :: GLdouble)
+      renderFont f str FTGL.Front
 
 menu :: (Font, Color4 GLfloat, String) -> [(Font, Color4 GLfloat, String)] -> (Font, Color4 GLfloat, String) -> IO Int
 menu (titlef, titlec, titlestr) options cursor = do
   let numitems = length options
   let title = (titlef, titlec, titlestr ++ "\n\n\n")
+  let drawCursor n = liftIO $ writeLine (130, 400 - 50 * fromIntegral n) cursor
+  let buttoncoords :: (Num a) => [((a, a), (a, a))]
+      buttoncoords = [((180, 385 - 50 * fromIntegral i), (300, 40)) | i <- [1..numitems]]
+  let drawButtons = forM_ buttoncoords $ \b -> do
+      drawButton Nothing b
   if numitems == 0
     then return 0
     else do
@@ -69,7 +78,7 @@ menu (titlef, titlec, titlestr) options cursor = do
         let drawfunc = do n <- State.get 
                           liftIO $ makeTextScreen (200, 500)
                             (title:options)
-                            (liftIO $ writeLine (150, 400 - 50 * fromIntegral n) cursor)
+                            (drawButtons >> drawCursor n)
         let getInput = do
               evts <- liftIO $ pollAllSDLEvents
               when (keyWasPressed SDLK_DOWN evts) $
@@ -78,7 +87,9 @@ menu (titlef, titlec, titlestr) options cursor = do
                 modify (\p -> max 1 $ p - 1)
               if oneofKeyWasPressed [SDLK_RETURN, SDLK_SPACE] evts
                 then State.get >>= return . Just 
-                else return Nothing
+                else do
+                  let mbutton = mouseClickInAny height [ButtonLeft] buttoncoords evts
+                  return $ mbutton >>= (fmap . fmap) (+1) (Prelude.flip elemIndex buttoncoords)
         loopTextScreen drawfunc getInput
       return n
 
