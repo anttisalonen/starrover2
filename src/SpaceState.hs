@@ -73,7 +73,7 @@ modLives :: (Int -> Int) -> TestState -> TestState
 modLives f t = t{lives = f (lives t)}
 
 maxHold = 10
-startCash = 100
+startCash = 10
 
 aobjs =
   [ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
