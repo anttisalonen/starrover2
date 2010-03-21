@@ -1,4 +1,5 @@
-module Combat(combatLoop, newCombat, randomAI, AIMode(..))
+module Combat(combatLoop, newCombat, randomEnemy, describeEnemy,
+  fightership, intermediate, cargovessel)
 where
 
 import System.Random
@@ -23,15 +24,49 @@ data AIMode = Human
             | Shooter GLdouble
   deriving (Show)
 
+data ShipProp = ShipProp {
+    maxaccel  :: GLdouble
+  , maxturn   :: GLdouble
+  , maxhealth :: Int
+  , shipdescr :: String
+  }
+
 randomAI :: IO AIMode
 randomAI = do
   n <- randomRIO (0, 100 :: Int)
   return $ Shooter (fromIntegral n / 100)
 
+fightership = ShipProp
+  0.003
+  2.0
+  2
+  "Fighter ship"
+
+intermediate = ShipProp
+  0.002
+  1.5
+  3
+  "Trader ship"
+
+cargovessel = ShipProp
+  0.001
+  1.0
+  5
+  "Cargo vessel"
+
+randomShipProp :: IO ShipProp
+randomShipProp = do
+  n <- randomRIO (1, 3 :: Int)
+  case n of
+    1 -> return fightership
+    2 -> return intermediate
+    _ -> return cargovessel
+
 data Ship = Ship {
     shipentity :: Entity
   , health     :: Int
   , aimode     :: AIMode
+  , shipprop   :: ShipProp
   }
 
 modShipEntity :: (Entity -> Entity) -> Ship -> Ship
@@ -64,15 +99,36 @@ modShipN 1 f = modShip1 f
 modShipN 2 f = modShip2 f
 modShipN _ _ = id
 
-newStdShip :: GLvector3 -> Color4 GLfloat -> GLdouble -> AIMode -> Ship
-newStdShip pos c rot mode = 
+newStdShip :: ShipProp -> GLvector3 -> Color4 GLfloat -> GLdouble -> AIMode -> Ship
+newStdShip prop pos c rot mode = 
   Ship (newStdShipEntity pos c rot)
-       3 mode
+       (maxhealth prop) mode prop
 
-newCombat :: GLvector3 -> GLvector3 -> GLdouble -> GLdouble -> AIMode -> Combat
-newCombat plpos enpos rot rot2 mode = 
-  Combat (newStdShip plpos playerShipColor rot Human)
-   (newStdShip enpos enemyShipColor rot2 mode)
+type Enemy = (AIMode, ShipProp)
+
+randomEnemy :: IO Enemy
+randomEnemy = do
+  m <- randomAI
+  case m of
+    Shooter v -> do
+      if v < 0.15
+        then return (m, cargovessel)
+        else if v > 0.85
+               then return (m, fightership)
+               else do
+                 n <- randomShipProp
+                 return (m, n)
+    t         -> do
+      n <- randomShipProp
+      return (t, n)
+
+describeEnemy :: Enemy -> String
+describeEnemy (_, p) = shipdescr p
+
+newCombat :: ShipProp -> GLvector3 -> GLvector3 -> GLdouble -> GLdouble -> Enemy -> Combat
+newCombat plprop plpos enpos rot rot2 (mode, enprop) = 
+  Combat (newStdShip plprop plpos playerShipColor rot Human)
+   (newStdShip enprop enpos enemyShipColor rot2 mode)
    S.empty
    False
 
@@ -107,21 +163,15 @@ shipNShoot n = do
       let nent = Entity laserpos laservel glVector3Null laserrot 0 0 lasercol Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
       modify $ modLasers $ S.rcons nent
 
-accelForce :: GLdouble
-accelForce = 0.002
-
-turnRate :: GLdouble
-turnRate = 1.5
-
-combatMapping = 
-  [ (SDLK_w,     (accelerateCombat 1 accelForce,    accelerateCombat 1 0))
-  , (SDLK_s,     (accelerateCombat 1 (-accelForce), accelerateCombat 1 0))
-  , (SDLK_a,     (turnCombat 1 turnRate, turnCombat 1 (-turnRate)))
-  , (SDLK_d,     (turnCombat 1 (-turnRate), turnCombat 1 turnRate))
-  , (SDLK_UP,    (accelerateCombat 1 accelForce, accelerateCombat 1 0))
-  , (SDLK_DOWN,  (accelerateCombat 1 (-accelForce), accelerateCombat 1 0))
-  , (SDLK_LEFT,  (turnCombat 1 turnRate, turnCombat 1 (-turnRate)))
-  , (SDLK_RIGHT, (turnCombat 1 (-turnRate), turnCombat 1 turnRate))
+combatMapping shipprop = 
+  [ (SDLK_w,     (accelerateCombat 1 (maxaccel shipprop),    accelerateCombat 1 0))
+  , (SDLK_s,     (accelerateCombat 1 (-maxaccel shipprop), accelerateCombat 1 0))
+  , (SDLK_a,     (turnCombat 1 (maxturn shipprop), turnCombat 1 (-maxturn shipprop)))
+  , (SDLK_d,     (turnCombat 1 (-maxturn shipprop), turnCombat 1 (maxturn shipprop)))
+  , (SDLK_UP,    (accelerateCombat 1 (maxaccel shipprop), accelerateCombat 1 0))
+  , (SDLK_DOWN,  (accelerateCombat 1 (-maxaccel shipprop), accelerateCombat 1 0))
+  , (SDLK_LEFT,  (turnCombat 1 (maxturn shipprop), turnCombat 1 (-maxturn shipprop)))
+  , (SDLK_RIGHT, (turnCombat 1 (-maxturn shipprop), turnCombat 1 (maxturn shipprop)))
   , (SDLK_p,     (modify $ modCombatPaused not, return ()))
   , (SDLK_SPACE, (shipNShoot 1, return ()))
   , (SDLK_i,     (showCombatInfo, return ()))
@@ -177,7 +227,7 @@ handleCombatAI = do
   state <- State.get
   case aimode (ship2 state) of
     Human     -> return ()
-    Dummy     -> accelerateCombat 2 (accelForce * 0.5)
+    Dummy     -> accelerateCombat 2 (maxaccel (shipprop (ship2 state)) * 0.5)
     Shooter n -> doShooter n
 
 findHitpoint :: GLvector3 -- ^ target position relative to (0, 0, _)
@@ -204,6 +254,7 @@ chargeTarget angleToTarget = do
   state <- State.get
   let myangle = degToRad $ wrapDegrees $ Entity.rotation (shipentity $ ship2 state) + 90
   let epsilon = 0.01
+  let turnRate = maxturn $ shipprop $ ship2 state
   if myangle + epsilon < angleToTarget
     then setTurnCombat 2 turnRate
     else if myangle - epsilon > angleToTarget
@@ -212,7 +263,7 @@ chargeTarget angleToTarget = do
   when (abs (myangle - angleToTarget) < 0.3) $ do
     val <- liftIO $ randomRIO (0, 10 :: Int)
     when (val == 0) $ shipNShoot 2
-  accelerateCombat 2 accelForce
+  accelerateCombat 2 (maxaccel $ shipprop $ ship2 state)
 
 doShooter :: GLdouble -> StateT Combat IO ()
 doShooter n = do
@@ -271,7 +322,8 @@ updateCombatState = do
 handleCombatEvents :: StateT Combat IO Bool
 handleCombatEvents = do
   events <- liftIO $ pollAllSDLEvents
-  processEvents combatMapping events
+  state <- State.get
+  processEvents (combatMapping (shipprop $ ship1 state)) events
   return $ isQuit events
 
 checkCollision ::

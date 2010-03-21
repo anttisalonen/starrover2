@@ -305,11 +305,11 @@ gameOver s s2 = do
 startCombat :: StateT TestState IO Bool
 startCombat = do
   state <- State.get
-  aimode <- liftIO $ randomAI
+  en <- liftIO $ randomEnemy
   c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) 
                          [(gamefont state, Color4 1.0 1.0 1.0 1.0, 
                            concat ["You spot another ship traveling nearby.\n",
-                                   "It seems to be a " ++ (show aimode) ++ ".\n",
+                                   "It seems to be a " ++ (describeEnemy en) ++ ".\n",
                                    "Press ENTER to start a battle against the foreign ship\n",
                                    "or ESCAPE to escape"])]
                           (return ()))
@@ -320,7 +320,7 @@ startCombat = do
       plpos <- liftIO $ randPos ((0, 0), (50, 100))
       enpos <- liftIO $ randPos ((100, 0), (150, 100))
       let plrot = angleFromTo plpos enpos - 90
-      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat plpos enpos plrot enemyrot aimode)
+      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat intermediate plpos enpos plrot enemyrot en)
       case mnewcargo of
         Just newcargo -> do
           if M.null newcargo
