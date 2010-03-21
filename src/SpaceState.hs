@@ -34,7 +34,7 @@ data TestState = TestState {
   , gamefont     :: Font
   , monofont     :: Font
   , plcargo      :: Cargo
-  , holdspace    :: Int
+  , plholdspace    :: Int
   , plcash       :: Int
   , lastmarket   :: (String, Market)
   , points       :: Int
@@ -60,8 +60,8 @@ modPlCargo f t = t{plcargo = f (plcargo t)}
 modPlCash :: (Int -> Int) -> TestState -> TestState
 modPlCash f t = t{plcash = f (plcash t)}
 
-modHoldspace :: (Int -> Int) -> TestState -> TestState
-modHoldspace f t = t{holdspace = f (holdspace t)}
+modPlHoldspace :: (Int -> Int) -> TestState -> TestState
+modPlHoldspace f t = t{plholdspace = f (plholdspace t)}
 
 modMarket :: ((String, Market) -> (String, Market)) -> TestState -> TestState
 modMarket f t = t{lastmarket = f (lastmarket t)}
@@ -72,7 +72,7 @@ modPoints f t = t{points = f (points t)}
 modLives :: (Int -> Int) -> TestState -> TestState
 modLives f t = t{lives = f (lives t)}
 
-maxHold = 10
+maxHold = holdspace intermediate
 startCash = 10
 
 aobjs =
@@ -144,7 +144,7 @@ initState = do
   lc <- getRandomPlanet
   modify $ modTri $ modifyPosition (const $ (getPosition lc *+* (glVector3UnitX *** (AObject.size lc))))
   modify $ modPlCash $ const startCash
-  modify $ modHoldspace $ const maxHold
+  modify $ modPlHoldspace $ const maxHold
   modify $ modPlCargo $ const M.empty
   gotoCity (aobjName lc)
   catapult (AObject.getPosition lc)
@@ -202,11 +202,11 @@ gotoCity planetname = do
   (m', cargo', cash', hold') <- liftIO $ execStateT 
                                   (tradeScreen ("Landed on " ++ planetname) 
                                       (gamefont state) (monofont state)) 
-                                  (market, plcargo state, plcash state, holdspace state)
+                                  (market, plcargo state, plcash state, plholdspace state)
   modify $ modMarket $ modSnd $ const m'
   modify $ modPlCargo $ const cargo'
   modify $ modPlCash $ const cash'
-  modify $ modHoldspace $ const hold'
+  modify $ modPlHoldspace $ const hold'
 
 catapult :: GLvector3 -> StateT TestState IO ()
 catapult vec = do
@@ -276,7 +276,7 @@ lostLife :: String -> String -> StateT TestState IO Bool
 lostLife s1 s2 = do
   modify $ modLives pred
   modify $ modPlCash $ const 0
-  modify $ modHoldspace $ const maxHold
+  modify $ modPlHoldspace $ const maxHold
   modify $ modPlCargo $ const M.empty
   state <- State.get
   if lives state <= 0
@@ -334,9 +334,9 @@ startCombat = do
               (_, cargo', _, hold') <- liftIO $ execStateT 
                              (takeScreen ("Captured cargo") 
                                  (gamefont state) (monofont state)) 
-                             (newcargo, plcargo state, plcash state, holdspace state)
+                             (newcargo, plcargo state, plcash state, plholdspace state)
               modify $ modPlCargo (const cargo')
-              modify $ modHoldspace (const hold')
+              modify $ modPlHoldspace (const hold')
           releaseKeys
           return False
         Nothing -> do

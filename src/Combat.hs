@@ -1,4 +1,5 @@
 module Combat(combatLoop, newCombat, randomEnemy, describeEnemy,
+  ShipProp(..),
   fightership, intermediate, cargovessel)
 where
 
@@ -28,6 +29,7 @@ data ShipProp = ShipProp {
     maxaccel  :: GLdouble
   , maxturn   :: GLdouble
   , maxhealth :: Int
+  , holdspace :: Int
   , shipdescr :: String
   }
 
@@ -40,18 +42,21 @@ fightership = ShipProp
   0.003
   2.0
   2
+  6
   "Fighter ship"
 
 intermediate = ShipProp
   0.002
   1.5
   3
+  10
   "Trader ship"
 
 cargovessel = ShipProp
   0.001
   1.0
   5
+  15
   "Cargo vessel"
 
 randomShipProp :: IO ShipProp
@@ -163,15 +168,15 @@ shipNShoot n = do
       let nent = Entity laserpos laservel glVector3Null laserrot 0 0 lasercol Lines [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)] (glVector3AllUnit *** laserLength)
       modify $ modLasers $ S.rcons nent
 
-combatMapping shipprop = 
-  [ (SDLK_w,     (accelerateCombat 1 (maxaccel shipprop),    accelerateCombat 1 0))
-  , (SDLK_s,     (accelerateCombat 1 (-maxaccel shipprop), accelerateCombat 1 0))
-  , (SDLK_a,     (turnCombat 1 (maxturn shipprop), turnCombat 1 (-maxturn shipprop)))
-  , (SDLK_d,     (turnCombat 1 (-maxturn shipprop), turnCombat 1 (maxturn shipprop)))
-  , (SDLK_UP,    (accelerateCombat 1 (maxaccel shipprop), accelerateCombat 1 0))
-  , (SDLK_DOWN,  (accelerateCombat 1 (-maxaccel shipprop), accelerateCombat 1 0))
-  , (SDLK_LEFT,  (turnCombat 1 (maxturn shipprop), turnCombat 1 (-maxturn shipprop)))
-  , (SDLK_RIGHT, (turnCombat 1 (-maxturn shipprop), turnCombat 1 (maxturn shipprop)))
+combatMapping sprop = 
+  [ (SDLK_w,     (accelerateCombat 1 (maxaccel sprop),    accelerateCombat 1 0))
+  , (SDLK_s,     (accelerateCombat 1 (-maxaccel sprop), accelerateCombat 1 0))
+  , (SDLK_a,     (turnCombat 1 (maxturn sprop), turnCombat 1 (-maxturn sprop)))
+  , (SDLK_d,     (turnCombat 1 (-maxturn sprop), turnCombat 1 (maxturn sprop)))
+  , (SDLK_UP,    (accelerateCombat 1 (maxaccel sprop), accelerateCombat 1 0))
+  , (SDLK_DOWN,  (accelerateCombat 1 (-maxaccel sprop), accelerateCombat 1 0))
+  , (SDLK_LEFT,  (turnCombat 1 (maxturn sprop), turnCombat 1 (-maxturn sprop)))
+  , (SDLK_RIGHT, (turnCombat 1 (-maxturn sprop), turnCombat 1 (maxturn sprop)))
   , (SDLK_p,     (modify $ modCombatPaused not, return ()))
   , (SDLK_SPACE, (shipNShoot 1, return ()))
   , (SDLK_i,     (showCombatInfo, return ()))
@@ -210,16 +215,17 @@ combatLoop = do
   if quits || oneDead == 1
     then return Nothing
     else if oneDead == 2
-      then fmap Just $ liftIO $ createRandomCargo
+      then fmap Just $ liftIO $ createRandomCargo (holdspace $ shipprop $ ship2 state)
       else if toofar
              then return (Just M.empty)
              else combatLoop
 
-createRandomCargo :: IO Cargo
-createRandomCargo = do
-  difftypes <- randomRIO (1, 3 :: Int)
+createRandomCargo :: Int -> IO Cargo
+createRandomCargo maxhold = do
+  let maxnumtypes = 3
+  difftypes <- randomRIO (1, maxnumtypes :: Int)
   cnames <- replicateM difftypes randomCargo
-  cargoquantities <- replicateM difftypes (randomRIO (1, 3 :: Int)) 
+  cargoquantities <- replicateM difftypes (randomRIO (1, maxhold `div` difftypes))
   return $ M.fromSeqWith (+) (zip cnames cargoquantities)
 
 handleCombatAI :: StateT Combat IO ()
