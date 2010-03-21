@@ -1,5 +1,10 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-module Cargo
+module Cargo(Cargo, Market,
+  randomCargo, randomMarket,
+  showCargo, showMarket,
+  fromMarket, fromCargo,
+  withdraw,
+  tradeScreen, takeScreen)
 where
 
 import System.Random

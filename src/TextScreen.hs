@@ -1,4 +1,7 @@
-module TextScreen
+module TextScreen(loopTextScreen,
+  makeTextScreen,
+  drawButton,
+  menu)
 where
 
 import Control.Monad
