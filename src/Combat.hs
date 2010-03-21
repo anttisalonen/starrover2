@@ -172,7 +172,7 @@ createRandomCargo :: IO Cargo
 createRandomCargo = do
   difftypes <- randomRIO (1, 3 :: Int)
   cnames <- replicateM difftypes randomCargo
-  cargoquantities <- replicateM difftypes (randomRIO (1, 20 :: Int)) 
+  cargoquantities <- replicateM difftypes (randomRIO (1, 3 :: Int)) 
   return $ M.fromSeqWith (+) (zip cnames cargoquantities)
 
 handleCombatAI :: StateT Combat IO ()
