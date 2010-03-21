@@ -39,6 +39,7 @@ data TestState = TestState {
   , lastmarket   :: (String, Market)
   , points       :: Int
   , lives        :: Int
+  , plhealth     :: Int
   }
 
 -- TODO: generate mod-functions using TH
@@ -72,7 +73,11 @@ modPoints f t = t{points = f (points t)}
 modLives :: (Int -> Int) -> TestState -> TestState
 modLives f t = t{lives = f (lives t)}
 
+modPlHealth :: (Int -> Int) -> TestState -> TestState
+modPlHealth f t = t{plhealth = f (plhealth t)}
+
 maxHold = holdspace intermediate
+startPlHealth = maxhealth intermediate
 startCash = 10
 
 aobjs =
@@ -103,6 +108,7 @@ startState f f2 = TestState
     ("", M.empty)
     0
     3
+    startPlHealth
 
 zoomChangeFactor :: (Floating a) => a
 zoomChangeFactor = 1.0
@@ -146,6 +152,7 @@ initState = do
   modify $ modPlCash $ const startCash
   modify $ modPlHoldspace $ const maxHold
   modify $ modPlCargo $ const M.empty
+  modify $ modPlHealth $ const startPlHealth
   gotoCity (aobjName lc)
   catapult (AObject.getPosition lc)
   releaseKeys
@@ -275,9 +282,7 @@ getRandomPlanet = do
 lostLife :: String -> String -> StateT TestState IO Bool
 lostLife s1 s2 = do
   modify $ modLives pred
-  modify $ modPlCash $ const 0
-  modify $ modPlHoldspace $ const maxHold
-  modify $ modPlCargo $ const M.empty
+  modify $ modPlCash $ const 0 -- so that no points are given for cash
   state <- State.get
   if lives state <= 0
     then do
@@ -320,13 +325,17 @@ startCombat = do
       plpos <- liftIO $ randPos ((0, 0), (50, 100))
       enpos <- liftIO $ randPos ((100, 0), (150, 100))
       let plrot = angleFromTo plpos enpos - 90
-      mnewcargo <- liftIO $ evalStateT combatLoop (newCombat intermediate plpos enpos plrot enemyrot en)
-      case mnewcargo of
-        Just newcargo -> do
+      (newhealth, newcargo) <- liftIO $ evalStateT combatLoop 
+                                  (newCombat intermediate (plhealth state) plpos enpos plrot enemyrot en)
+      if newhealth == 0
+        then do
+          releaseKeys
+          lostLife "You fought bravely, but your ship was blown to pieces." recoveryText
+        else do
+          modify $ modPlHealth $ const newhealth
           if M.null newcargo
             then do
-              liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "You survived - Current cargo status:"),
-                                       (monofont state, Color4 1.0 1.0 0.0 1.0, showCargo newcargo),
+              liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "The enemy is out of your sight.\n\n"),
                                        (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
               liftIO $ getSpecificSDLChar SDLK_RETURN
             else do
@@ -339,9 +348,6 @@ startCombat = do
               modify $ modPlHoldspace (const hold')
           releaseKeys
           return False
-        Nothing -> do
-          releaseKeys
-          lostLife "You fought bravely, but your ship was blown to pieces." recoveryText
     else do
       releaseKeys
       return False

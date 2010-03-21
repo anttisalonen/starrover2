@@ -4,6 +4,7 @@ module Combat(combatLoop, newCombat, randomEnemy, describeEnemy,
 where
 
 import System.Random
+import Data.Maybe
 import Data.Either
 import Control.Monad
 import Control.Monad.State as State
@@ -104,10 +105,10 @@ modShipN 1 f = modShip1 f
 modShipN 2 f = modShip2 f
 modShipN _ _ = id
 
-newStdShip :: ShipProp -> GLvector3 -> Color4 GLfloat -> GLdouble -> AIMode -> Ship
-newStdShip prop pos c rot mode = 
+newStdShip :: Maybe Int -> ShipProp -> GLvector3 -> Color4 GLfloat -> GLdouble -> AIMode -> Ship
+newStdShip mh prop pos c rot mode = 
   Ship (newStdShipEntity pos c rot)
-       (maxhealth prop) mode prop
+       (fromMaybe (maxhealth prop) mh) mode prop
 
 type Enemy = (AIMode, ShipProp)
 
@@ -130,10 +131,10 @@ randomEnemy = do
 describeEnemy :: Enemy -> String
 describeEnemy (_, p) = shipdescr p
 
-newCombat :: ShipProp -> GLvector3 -> GLvector3 -> GLdouble -> GLdouble -> Enemy -> Combat
-newCombat plprop plpos enpos rot rot2 (mode, enprop) = 
-  Combat (newStdShip plprop plpos playerShipColor rot Human)
-   (newStdShip enprop enpos enemyShipColor rot2 mode)
+newCombat :: ShipProp -> Int -> GLvector3 -> GLvector3 -> GLdouble -> GLdouble -> Enemy -> Combat
+newCombat plprop plhealth plpos enpos rot rot2 (mode, enprop) = 
+  Combat (newStdShip (Just plhealth) plprop plpos playerShipColor rot Human)
+   (newStdShip Nothing enprop enpos enemyShipColor rot2 mode)
    S.empty
    False
 
@@ -201,7 +202,7 @@ handleTooFar = do
   let epos = Entity.position (shipentity $ ship1 state)
   return $ OpenGLUtils.length (mpos *-* epos) > 200.0
 
-combatLoop :: StateT Combat IO (Maybe Cargo)
+combatLoop :: StateT Combat IO (Int, Cargo)
 combatLoop = do
   liftIO $ delay 10
   state <- State.get
@@ -213,11 +214,14 @@ combatLoop = do
   toofar <- handleTooFar
   quits <- handleCombatEvents
   if quits || oneDead == 1
-    then return Nothing
+    then return (0, M.empty)
     else if oneDead == 2
-      then fmap Just $ liftIO $ createRandomCargo (holdspace $ shipprop $ ship2 state)
+      then do
+        c <- liftIO $ createRandomCargo (holdspace $ shipprop $ ship2 state)
+        s' <- State.get
+        return (health $ ship1 s', c)
       else if toofar
-             then return (Just M.empty)
+             then return (health $ ship1 state, M.empty)
              else combatLoop
 
 createRandomCargo :: Int -> IO Cargo
