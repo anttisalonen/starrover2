@@ -214,11 +214,33 @@ cityLoop planetname = do
   n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, "Starport on " ++ planetname)
             [(f, Color4 1.0 1.0 0.0 1.0, "Market"),
              (f, Color4 1.0 1.0 0.0 1.0, "Shipyard"),
-             (f, Color4 1.0 1.0 0.0 1.0, "Leave" ++ planetname)]
+             (f, Color4 1.0 1.0 0.0 1.0, "Leave " ++ planetname)]
             (f, Color4 1.0 1.0 0.0 1.0, "=>")
   case n of
     1 -> gotoMarket planetname >> cityLoop planetname
-    2 -> cityLoop planetname
+    2 -> gotoShipyard >> cityLoop planetname
+    _ -> return ()
+
+gotoShipyard :: StateT TestState IO ()
+gotoShipyard = do
+  state <- State.get
+  let f = gamefont state
+  let damages = startPlHealth - plhealth state
+  let cost = damages * 20
+  let repairtext =
+        if damages == 0
+          then "Repair (no damages)"
+          else "Repair ship (Cost: " ++ show cost ++ " credits)"
+  n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, "Shipyard")
+            [(f, Color4 1.0 1.0 0.0 1.0, repairtext),
+             (f, Color4 1.0 1.0 0.0 1.0, "Exit")]
+            (f, Color4 1.0 1.0 0.0 1.0, "=>")
+  case n of
+    1 -> do
+           when (cost > 0 && plcash state >= cost) $ do
+             modify $ modPlCash $ (subtract cost)
+             modify $ modPlHealth $ const startPlHealth
+           gotoShipyard
     _ -> return ()
 
 gotoMarket :: String -> StateT TestState IO ()
