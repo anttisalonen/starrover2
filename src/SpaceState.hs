@@ -34,7 +34,7 @@ data TestState = TestState {
   , gamefont     :: Font
   , monofont     :: Font
   , plcargo      :: Cargo
-  , plholdspace    :: Int
+  , plholdspace  :: Int
   , plcash       :: Int
   , lastmarket   :: (String, Market)
   , points       :: Int
