@@ -1,5 +1,15 @@
 ChangeLog:
 
+0.0.4 - ???
+Added main menu
+
+0.0.3 - 21.03.2010
+Added smarter AI
+Added multiple lives
+Changed laser color
+Added choosing which cargo to capture
+Added cargo hold limit
+
 0.0.2 - 18.03.2010
 Added high score list
 
