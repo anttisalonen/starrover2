@@ -11,6 +11,7 @@ import Control.Monad.State as State
 import System.IO.Error (mkIOError, doesNotExistErrorType)
 import Control.Exception (throwIO, catch, IOException)
 import Prelude hiding (catch)
+import qualified Data.ByteString.Char8 as Str
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
@@ -65,9 +66,16 @@ mainMenu f f2 = do
     _ -> return ()
 
 startGame f f2 = do
+  n <- initGame f
   pts <- runGame f f2
-  doHighscore f f2 pts
+  doHighscore f f2 pts n
   mainMenu f f2
+
+introText = intercalate "\n"
+  ["Welcome, adventurer!",
+   "What is your name?"]
+
+initGame = getNameInput introText
 
 type Highscore a = [(Int, String, a)]
 
@@ -78,7 +86,7 @@ loadHighscore dir fn = do
   exists <- doesFileExist fpath
   if exists
     then do
-      contents <- readFile fpath
+      contents <- liftM Str.unpack $ Str.readFile fpath
       case safeRead contents of
         Nothing -> do
           hPutStrLn stderr $ "Corrupt high score file (" ++ fpath ++ ") - deleting"
@@ -96,12 +104,12 @@ saveHighscore dir fn hs = do
 displayHighscore :: Highscore a -> String
 displayHighscore = concatMap (\(pts, n, _) -> printf "%-16s %8d\n" n pts)
 
-getName :: Font -> IO String
-getName f = do
+getNameInput :: String -> Font -> IO String
+getNameInput greet f = do
   Prelude.flip evalStateT "" $ do
     let drawfunc = do n <- State.get 
                       liftIO $ makeTextScreen (100, 500)
-                        [(f, Color4 1.0 1.0 1.0 1.0, "You've made it to the high score list!\nPlease enter your name:\n"),
+                        [(f, Color4 1.0 1.0 1.0 1.0, greet ++ "\n"),
                          (f, Color4 1.0 1.0 1.0 1.0, n)] (return ())
     let getInput = do
           evts <- liftIO $ pollAllSDLEvents
@@ -115,8 +123,8 @@ getName f = do
 
 hiscorefilename = "hiscore"
 
-doHighscore :: Font -> Font -> Int -> IO ()
-doHighscore f f2 pts = do
+doHighscore :: Font -> Font -> Int -> String -> IO ()
+doHighscore f f2 pts n = do
   let numentries = 7
   appdir <- getAppUserDataDirectory "starrover2"
   highscore <- loadHighscore appdir hiscorefilename
@@ -125,12 +133,11 @@ doHighscore f f2 pts = do
                  else let (p, _, _) = (highscore !! (numentries - 1)) in p < pts
   highscore' <- if madeit
                   then do
-                    n <- getName f
                     return $ take numentries $ insertRev (pts, n, ()) highscore
                   else return highscore
   let inittext = if not madeit
                    then "Unfortunately you didn't make it to the high score list."
-                   else "High scores"
+                   else "You made it to the high score list!\nPoints: " ++ show pts
   when (madeit) $ saveHighscore appdir hiscorefilename highscore'
   showHighscore f f2 inittext highscore'
 
