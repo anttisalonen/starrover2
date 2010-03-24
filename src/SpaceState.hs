@@ -367,8 +367,8 @@ startCombat = do
       plpos <- liftIO $ randPos ((0, 0), (50, 100))
       enpos <- liftIO $ randPos ((100, 0), (150, 100))
       let plrot = angleFromTo plpos enpos - 90
-      (newhealth, newcargo) <- liftIO $ evalStateT combatLoop 
-                                  (newCombat intermediate (plhealth state) plpos enpos plrot enemyrot en)
+      (newhealth, newpoints, newcargo) <- liftIO $ evalStateT combatLoop 
+                                          (newCombat intermediate (plhealth state) plpos enpos plrot enemyrot en)
       if newhealth == 0
         then do
           releaseKeys
@@ -381,7 +381,7 @@ startCombat = do
                                        (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
               liftIO $ getSpecificSDLChar SDLK_RETURN
             else do
-              modify $ modPoints (+100)
+              modify $ modPoints (+newpoints)
               (_, cargo', _, hold') <- liftIO $ execStateT 
                              (takeScreen ("Captured cargo") 
                                  (gamefont state) (monofont state)) 

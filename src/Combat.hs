@@ -27,11 +27,12 @@ data AIMode = Human
   deriving (Show)
 
 data ShipProp = ShipProp {
-    maxaccel  :: GLdouble
-  , maxturn   :: GLdouble
-  , maxhealth :: Int
-  , holdspace :: Int
-  , shipdescr :: String
+    maxaccel   :: GLdouble
+  , maxturn    :: GLdouble
+  , maxhealth  :: Int
+  , holdspace  :: Int
+  , shipdescr  :: String
+  , shippoints :: Int
   }
 
 randomAI :: IO AIMode
@@ -45,6 +46,7 @@ fightership = ShipProp
   2
   6
   "Fighter ship"
+  200
 
 intermediate = ShipProp
   0.002
@@ -52,6 +54,7 @@ intermediate = ShipProp
   3
   10
   "Trader ship"
+  100
 
 cargovessel = ShipProp
   0.001
@@ -59,6 +62,7 @@ cargovessel = ShipProp
   5
   15
   "Cargo vessel"
+  50
 
 randomShipProp :: IO ShipProp
 randomShipProp = do
@@ -202,7 +206,7 @@ handleTooFar = do
   let epos = Entity.position (shipentity $ ship1 state)
   return $ OpenGLUtils.length (mpos *-* epos) > 200.0
 
-combatLoop :: StateT Combat IO (Int, Cargo)
+combatLoop :: StateT Combat IO (Int, Int, Cargo)
 combatLoop = do
   liftIO $ delay 10
   state <- State.get
@@ -214,14 +218,14 @@ combatLoop = do
   toofar <- handleTooFar
   quits <- handleCombatEvents
   if quits || oneDead == 1
-    then return (0, M.empty)
+    then return (0, 0, M.empty)
     else if oneDead == 2
       then do
         c <- liftIO $ createRandomCargo (holdspace $ shipprop $ ship2 state)
         s' <- State.get
-        return (health $ ship1 s', c)
+        return (health $ ship1 s', shippoints . shipprop $ ship2 s', c)
       else if toofar
-             then return (health $ ship1 state, M.empty)
+             then return (health $ ship1 state, 0, M.empty)
              else combatLoop
 
 createRandomCargo :: Int -> IO Cargo
