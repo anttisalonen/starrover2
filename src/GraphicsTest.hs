@@ -66,16 +66,22 @@ mainMenu f f2 = do
     _ -> return ()
 
 startGame f f2 = do
-  n <- initGame f
-  pts <- runGame f f2
+  (n, d) <- initGame f
+  pts <- runGame d f f2
   doHighscore f f2 pts n
   mainMenu f f2
 
 introText = intercalate "\n"
-  ["Welcome, adventurer!",
+  ["Welcome, Adventurer!",
    "What is your name?"]
 
-initGame = getNameInput introText
+initGame :: Font -> IO (String, Difficulty)
+initGame f = do
+  n <- getNameInput introText f
+  d <- menu  (f, Color4 1.0 1.0 1.0 1.0, "Choose your difficulty, " ++ n)
+            (map (\s -> (f, Color4 1.0 1.0 1.0 1.0, show s)) (allEnums :: [Difficulty]))
+            (f, Color4 0.1 0.1 1.0 1.0, "=>")
+  return (n, toEnum (d - 1))
 
 type Highscore a = [(Int, String, a)]
 

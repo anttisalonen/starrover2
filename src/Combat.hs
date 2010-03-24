@@ -116,18 +116,19 @@ newStdShip mh prop pos c rot mode =
 
 type Enemy = (AIMode, ShipProp)
 
-randomEnemy :: IO Enemy
-randomEnemy = do
+randomEnemy :: GLdouble -> IO Enemy
+randomEnemy shift = do
   m <- randomAI
   case m of
     Shooter v -> do
+      let m' = Shooter (clamp 0 1 (v + shift))
       if v < 0.15
-        then return (m, cargovessel)
+        then return (m', cargovessel)
         else if v > 0.85
-               then return (m, fightership)
+               then return (m', fightership)
                else do
                  n <- randomShipProp
-                 return (m, n)
+                 return (m', n)
     t         -> do
       n <- randomShipProp
       return (t, n)

@@ -1,4 +1,4 @@
-module SpaceState(runGame)
+module SpaceState(runGame, Difficulty(..))
 where
 
 import System.Random
@@ -40,7 +40,23 @@ data TestState = TestState {
   , points       :: Int
   , lives        :: Int
   , plhealth     :: Int
+  , difficulty   :: Difficulty
   }
+
+data Difficulty = Easy
+                | Medium
+                | Hard
+  deriving (Enum, Bounded, Show)
+
+diffcoeff :: Difficulty -> Int
+diffcoeff Easy   = 1
+diffcoeff Medium = 2
+diffcoeff Hard   = 3
+
+difficultyAIshift :: Difficulty -> GLdouble
+difficultyAIshift Easy = (-0.5)
+difficultyAIshift Medium = 0
+difficultyAIshift Hard = 0.5
 
 -- TODO: generate mod-functions using TH
 modTri :: (Entity -> Entity) -> TestState -> TestState
@@ -95,8 +111,8 @@ stdCamera = CameraState
       100
       0
 
-startState :: Font -> Font -> TestState
-startState f f2 = TestState 
+startState :: Difficulty -> Font -> Font -> TestState
+startState d f f2 = TestState 
     (newStdShipEntity (50.0, 30.0, 0.0) playerShipColor 0)
     aobjs
     stdCamera
@@ -110,6 +126,7 @@ startState f f2 = TestState
     0
     3
     startPlHealth
+    d
 
 zoomChangeFactor :: (Floating a) => a
 zoomChangeFactor = 1.0
@@ -158,9 +175,9 @@ initState = do
   catapult (AObject.getPosition lc)
   releaseKeys
 
-runGame :: Font -> Font -> IO Int
-runGame f f2 = do
-  let is = startState f f2
+runGame :: Difficulty -> Font -> Font -> IO Int
+runGame d f f2 = do
+  let is = startState d f f2
   setCamera (camera $ camstate is)
   evalStateT (do
     initState
@@ -352,7 +369,7 @@ gameOver s s2 = do
 startCombat :: StateT TestState IO Bool
 startCombat = do
   state <- State.get
-  en <- liftIO $ randomEnemy
+  en <- liftIO $ randomEnemy $ difficultyAIshift $ difficulty state
   c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) 
                          [(gamefont state, Color4 1.0 1.0 1.0 1.0, 
                            concat ["You spot another ship traveling nearby.\n",
@@ -381,7 +398,7 @@ startCombat = do
                                        (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
               liftIO $ getSpecificSDLChar SDLK_RETURN
             else do
-              modify $ modPoints (+newpoints)
+              modify $ modPoints (+(newpoints * (diffcoeff $ difficulty state)))
               (_, cargo', _, hold') <- liftIO $ execStateT 
                              (takeScreen ("Captured cargo") 
                                  (gamefont state) (monofont state)) 

@@ -133,6 +133,9 @@ safeIndex (x:xs) n | n < 0     = Nothing
                    | n == 0    = Just x
                    | otherwise = safeIndex xs (n - 1)
 
+allEnums :: (Enum a, Bounded a) => [a]
+allEnums = [minBound..maxBound]
+
 {-
 randomThing :: (Random t, RandomGen s, MonadState s m) => m t
 randomThing = do
