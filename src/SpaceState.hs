@@ -83,9 +83,10 @@ startCash = 10
 aobjs =
   [ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
   , AObject "Murphy's"   10  (Color4 0.5 0.5 1.0 1.0) 2.0 28
-  , AObject "Loki"       250 (Color4 0.0 0.4 0.5 1.0) 4.0 80
-  , AObject "Harju"      30  (Color4 0.6 0.6 0.6 1.0) 3.0 100
-  , AObject "Riesenland" 80  (Color4 0.6 0.6 0.6 1.0) 2.0 130
+  , AObject "Loki"       250 (Color4 0.0 0.4 0.5 1.0) 4.0 55
+  , AObject "Harju"      30  (Color4 0.6 0.6 0.6 1.0) 9.0 115
+  , AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 230
+  , AObject "Natail"     180 (Color4 0.2 0.2 0.9 1.0) 1.5 480
   ]
 
 stdCamera :: CameraState
