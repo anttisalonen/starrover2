@@ -23,24 +23,26 @@ import Space
 import Cargo
 import Utils
 import TextScreen
+import Politics
 import SDLUtils
 
 -- test scenario
 data TestState = TestState {
-    tri          :: Entity
-  , aobjects     :: [AObject]
-  , camstate     :: CameraState
-  , stopped      :: Bool
-  , gamefont     :: Font
-  , monofont     :: Font
-  , plcargo      :: Cargo
-  , plholdspace  :: Int
-  , plcash       :: Int
-  , lastmarket   :: (String, Market)
-  , points       :: Int
-  , lives        :: Int
-  , plhealth     :: Int
-  , difficulty   :: Difficulty
+    tri            :: Entity
+  , aobjects       :: [AObject]
+  , camstate       :: CameraState
+  , stopped        :: Bool
+  , gamefont       :: Font
+  , monofont       :: Font
+  , plcargo        :: Cargo
+  , plholdspace    :: Int
+  , plcash         :: Int
+  , lastmarket     :: (String, Market)
+  , points         :: Int
+  , lives          :: Int
+  , plhealth       :: Int
+  , difficulty     :: Difficulty
+  , allegattitudes :: AttitudeMap
   }
 
 data Difficulty = Easy
@@ -92,18 +94,40 @@ modLives f t = t{lives = f (lives t)}
 modPlHealth :: (Int -> Int) -> TestState -> TestState
 modPlHealth f t = t{plhealth = f (plhealth t)}
 
+modAllegAttitudes :: (AttitudeMap -> AttitudeMap) -> TestState -> TestState
+modAllegAttitudes f t = t{allegattitudes = f (allegattitudes t)}
+
 maxHold = holdspace intermediate
 startPlHealth = maxhealth intermediate
 startCash = 10
 
 aobjs =
-  [ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0
-  , AObject "Murphy's"   10  (Color4 0.5 0.5 1.0 1.0) 2.0 28
-  , AObject "Loki"       250 (Color4 0.0 0.4 0.5 1.0) 4.0 55
-  , AObject "Harju"      30  (Color4 0.6 0.6 0.6 1.0) 9.0 115
-  , AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 230
-  , AObject "Natail"     180 (Color4 0.2 0.2 0.9 1.0) 1.5 480
+  [ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0   Nothing
+  , AObject "Murphy's"   10  (Color4 0.5 0.5 1.0 1.0) 2.0 28  (Just "Murphy")
+  , AObject "Loki"       250 (Color4 0.0 0.4 0.5 1.0) 4.0 55  (Just "Harju")
+  , AObject "Harju"      30  (Color4 0.6 0.6 0.6 1.0) 9.0 115 (Just "Harju")
+  , AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 230 (Just "Riesenland")
+  , AObject "Natail"     180 (Color4 0.2 0.2 0.9 1.0) 1.5 480 (Just "Natail")
   ]
+
+relations = mkRelationshipMap
+  [(("Murphy",     "Harju"),      (Peace, -5)),
+   (("Murphy",     "Riesenland"), (Peace, 1)),
+   (("Murphy",     "Natail"),     (Peace, -3)),
+   (("Harju",      "Riesenland"), (Peace, -1)),
+   (("Harju",      "Natail"),     (Peace, 2)),
+   (("Riesenland", "Natail"),     (Peace, 0))]
+
+randomAllegiance :: IO String
+randomAllegiance = chooseIO allegiances
+
+allegiances = ["Murphy", "Harju", "Riesenland", "Natail"]
+
+plalleg :: String
+plalleg = ""
+
+initialAttitudes :: AttitudeMap
+initialAttitudes = nullAttitudes allegiances
 
 stdCamera :: CameraState
 stdCamera = CameraState 
@@ -127,6 +151,7 @@ startState d f f2 = TestState
     3
     startPlHealth
     d
+    initialAttitudes
 
 zoomChangeFactor :: (Floating a) => a
 zoomChangeFactor = 1.0
@@ -370,10 +395,12 @@ startCombat :: StateT TestState IO Bool
 startCombat = do
   state <- State.get
   en <- liftIO $ randomEnemy $ difficultyAIshift $ difficulty state
+  enalleg <- liftIO $ randomAllegiance
   c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) 
                          [(gamefont state, Color4 1.0 1.0 1.0 1.0, 
                            concat ["You spot another ship traveling nearby.\n",
                                    "It seems to be a " ++ (describeEnemy en) ++ ".\n",
+                                   "The ship is part of the country of " ++ enalleg ++ ".\n",
                                    "Press ENTER to start a battle against the foreign ship\n",
                                    "or ESCAPE to escape"])]
                           (return ()))
@@ -385,7 +412,7 @@ startCombat = do
       enpos <- liftIO $ randPos ((100, 0), (150, 100))
       let plrot = angleFromTo plpos enpos - 90
       (newhealth, newpoints, newcargo) <- liftIO $ evalStateT combatLoop 
-                                          (newCombat intermediate (plhealth state) plpos enpos plrot enemyrot en)
+                                          (newCombat plalleg enalleg intermediate (plhealth state) plpos enpos plrot enemyrot en)
       if newhealth == 0
         then do
           releaseKeys

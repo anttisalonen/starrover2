@@ -77,6 +77,7 @@ data Ship = Ship {
   , health     :: Int
   , aimode     :: AIMode
   , shipprop   :: ShipProp
+  , allegiance :: String
   }
 
 modShipEntity :: (Entity -> Entity) -> Ship -> Ship
@@ -109,10 +110,10 @@ modShipN 1 f = modShip1 f
 modShipN 2 f = modShip2 f
 modShipN _ _ = id
 
-newStdShip :: Maybe Int -> ShipProp -> GLvector3 -> Color4 GLfloat -> GLdouble -> AIMode -> Ship
-newStdShip mh prop pos c rot mode = 
+newStdShip :: String -> Maybe Int -> ShipProp -> GLvector3 -> Color4 GLfloat -> GLdouble -> AIMode -> Ship
+newStdShip alleg mh prop pos c rot mode = 
   Ship (newStdShipEntity pos c rot)
-       (fromMaybe (maxhealth prop) mh) mode prop
+       (fromMaybe (maxhealth prop) mh) mode prop alleg
 
 type Enemy = (AIMode, ShipProp)
 
@@ -136,10 +137,10 @@ randomEnemy shift = do
 describeEnemy :: Enemy -> String
 describeEnemy (_, p) = shipdescr p
 
-newCombat :: ShipProp -> Int -> GLvector3 -> GLvector3 -> GLdouble -> GLdouble -> Enemy -> Combat
-newCombat plprop plhealth plpos enpos rot rot2 (mode, enprop) = 
-  Combat (newStdShip (Just plhealth) plprop plpos playerShipColor rot Human)
-   (newStdShip Nothing enprop enpos enemyShipColor rot2 mode)
+newCombat :: String -> String -> ShipProp -> Int -> GLvector3 -> GLvector3 -> GLdouble -> GLdouble -> Enemy -> Combat
+newCombat alleg1 alleg2 plprop plhealth plpos enpos rot rot2 (mode, enprop) = 
+  Combat (newStdShip alleg1 (Just plhealth) plprop plpos playerShipColor rot Human)
+   (newStdShip alleg2 Nothing enprop enpos enemyShipColor rot2 mode)
    S.empty
    False
 

@@ -1,62 +1,45 @@
-module Politics
+module Politics(Relation(..), mkRelationshipMap, Friendliness,
+  AttitudeMap,
+  nullAttitudes
+  )
 where
 
-import Control.Monad.State
+import Data.List
 
-import Data.Graph.Inductive
-import Data.Graph.Inductive.Graph
-import qualified Data.Edison.Assoc.StandardMap as Map
-
-import Life
+import qualified Data.Edison.Assoc.StandardMap as M
 
 data Relation = Unknown
-              | ColonyOf
               | Peace
               | War
+              | ColonyOf
+              | Allied
   deriving (Show)
 
-type RelationGraph = Gr String Relation
+type Friendliness = Int
+type RelationshipMap = M.FM (String, String) Relationship
+type Relationship = (Relation, Friendliness)
 
-emptyRelationGraph :: RelationGraph
-emptyRelationGraph = empty
+emptyRelationshipMap :: RelationshipMap
+emptyRelationshipMap = M.empty
 
-emptyGraphState :: GraphState
-emptyGraphState = (empty, [])
+setRelationship :: Relationship -> String -> String -> RelationshipMap -> RelationshipMap
+setRelationship r s1 s2 = M.insert (s1, s2) r
 
-type GraphState = (RelationGraph, [(String, Node)])
+setRelationship2 :: Relationship -> String -> String -> RelationshipMap -> RelationshipMap
+setRelationship2 r s1 s2 = setRelationship r s1 s2 . setRelationship r s2 s1
 
-addNodeToMap :: String -> State GraphState Int
-addNodeToMap str = do
-  (gr, nodemap) <- get
-  let maxnode = if null nodemap
-                  then 1
-                  else 1 + (snd $ head nodemap)
-  put (gr, (str, maxnode):nodemap)
-  return maxnode
+modRelationship :: (Relationship -> Relationship) -> String -> String -> RelationshipMap -> RelationshipMap
+modRelationship f s1 s2 = M.adjustOrInsert f (f (Unknown, 0)) (s1, s2)
 
-getNodeInMap :: String -> State GraphState Node
-getNodeInMap str = do
-  (gr, nodemap) <- get
-  let mnode = lookup str nodemap 
-  case mnode of
-    Nothing -> addNodeToMap str
-    Just n  -> return n
+modRelationship2 :: (Relationship -> Relationship) -> String -> String -> RelationshipMap -> RelationshipMap
+modRelationship2 f s1 s2 = modRelationship f s1 s2 . modRelationship f s2 s1
 
--- modifyFst :: (MonadState (f, s) m) => (f -> f) -> m ()
-modifyFst fun = do
-  (f, s) <- get
-  let f' = fun f
-  put (f', s)
+mkRelationshipMap :: [((String, String), Relationship)] -> RelationshipMap
+mkRelationshipMap = foldl' go emptyRelationshipMap
+  where go acc ((s1, s2), r) = setRelationship2 r s1 s2 acc
 
--- modifySnd :: (MonadState (f, s) m) => (s -> s) -> m ()
-modifySnd fun = do
-  (f, s) <- get
-  let s' = fun s
-  put (f, s')
+type AttitudeMap = M.FM String Friendliness
 
-addRelation :: String -> Relation -> String -> State GraphState ()
-addRelation c1 r c2 = do
-  n1 <- getNodeInMap c1
-  n2 <- getNodeInMap c2
-  modifyFst (insEdge (n1, n2, r))
+nullAttitudes :: [String] -> AttitudeMap
+nullAttitudes as = M.fromSeq $ zip as (repeat 0)
 

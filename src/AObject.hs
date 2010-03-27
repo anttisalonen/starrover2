@@ -16,6 +16,7 @@ data AObject = AObject {
   , color        :: Color4 GLfloat
   , size         :: GLdouble
   , orbitRadius  :: GLdouble
+  , colonyOwner  :: Maybe String
   }
 
 modifyAngle :: (GLdouble -> GLdouble) -> AObject -> AObject
