@@ -255,11 +255,17 @@ gotoCity planetname = do
   modify $ modMarket $ const nmarket
   cityLoop planetname
 
+getAObj :: String -> [AObject] -> Maybe AObject
+getAObj _ []     = Nothing
+getAObj n (a:as) = if aobjName a == n then Just a else getAObj n as 
+
 cityLoop :: String -> StateT TestState IO ()
 cityLoop planetname = do
   state <- State.get
   let f = gamefont state
-  n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, "Starport on " ++ planetname)
+  let alleg = fromMaybe "Unknown" (getAObj planetname (aobjects state) >>= colonyOwner)
+  n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, concat ["Starport on " ++ planetname ++ "\n",
+                                                         "This planet belongs to the country of " ++ alleg ++ "."])
             [(f, Color4 1.0 1.0 0.0 1.0, "Market"),
              (f, Color4 1.0 1.0 0.0 1.0, "Shipyard"),
              (f, Color4 1.0 1.0 0.0 1.0, "Leave " ++ planetname)]
