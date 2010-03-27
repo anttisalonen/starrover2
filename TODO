@@ -27,6 +27,8 @@ The game world needs expanding.
  - We need a concept on how to travel between star systems.
  - The market prices should be generated less randomly, depending on the
    characteristics of the planet and nearby planets.
+ - There should be more kinds of goods, with different characteristics
+   (illegal, demanded or supplied by industrialized planets, etc.).
 The player needs more activity.
  - There should be missions, and different countries, fractions and politics
    as a mission generator. We need a concept on how this exactly looks like.
@@ -46,3 +48,4 @@ There's a need for some small enhancements.
  - Combats should have time limits.
  - The hits on the player should be saved for the following combats and be
    repairable on a shipyard.
+ - The used difficulty level should be shown on the high score list.
