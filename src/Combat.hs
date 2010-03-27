@@ -1,5 +1,7 @@
 module Combat(combatLoop, newCombat, randomEnemy, describeEnemy,
   ShipProp(..),
+  randomPolice,
+  Enemy,
   fightership, intermediate, cargovessel)
 where
 
@@ -34,6 +36,9 @@ data ShipProp = ShipProp {
   , shipdescr  :: String
   , shippoints :: Int
   }
+
+modHoldspace :: (Int -> Int) -> ShipProp -> ShipProp
+modHoldspace f t = t{holdspace = f (holdspace t)}
 
 randomAI :: IO AIMode
 randomAI = do
@@ -134,6 +139,11 @@ randomEnemy shift = do
       n <- randomShipProp
       return (t, n)
 
+randomPolice :: GLdouble -> IO Enemy
+randomPolice shift = do
+  n <- randomRIO (40, 80 :: Int)
+  return (Shooter (clamp 0 1 (shift + (fromIntegral n / 100))), modHoldspace (const 0) fightership)
+
 describeEnemy :: Enemy -> String
 describeEnemy (_, p) = shipdescr p
 
@@ -208,7 +218,7 @@ handleTooFar = do
   let epos = Entity.position (shipentity $ ship1 state)
   return $ OpenGLUtils.length (mpos *-* epos) > 200.0
 
-combatLoop :: StateT Combat IO (Int, Int, Cargo)
+combatLoop :: StateT Combat IO (Int, Int, Maybe Cargo)
 combatLoop = do
   liftIO $ delay 10
   state <- State.get
@@ -220,17 +230,18 @@ combatLoop = do
   toofar <- handleTooFar
   quits <- handleCombatEvents
   if quits || oneDead == 1
-    then return (0, 0, M.empty)
+    then return (0, 0, Nothing)
     else if oneDead == 2
       then do
         c <- liftIO $ createRandomCargo (holdspace $ shipprop $ ship2 state)
         s' <- State.get
-        return (health $ ship1 s', shippoints . shipprop $ ship2 s', c)
+        return (health $ ship1 s', shippoints . shipprop $ ship2 s', Just c)
       else if toofar
-             then return (health $ ship1 state, 0, M.empty)
+             then return (health $ ship1 state, 0, Nothing)
              else combatLoop
 
 createRandomCargo :: Int -> IO Cargo
+createRandomCargo 0       = return M.empty
 createRandomCargo maxhold = do
   let maxnumtypes = 3
   difftypes <- randomRIO (1, maxnumtypes :: Int)

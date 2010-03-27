@@ -201,7 +201,7 @@ initState = do
   modify $ modPlHoldspace $ const maxHold
   modify $ modPlCargo $ const M.empty
   modify $ modPlHealth $ const startPlHealth
-  gotoCity (aobjName lc)
+  _ <- gotoCity (aobjName lc)
   catapult (AObject.getPosition lc)
   releaseKeys
 
@@ -244,7 +244,21 @@ handleEvents = do
   processEvents inputMapping events
   return $ isQuit events
 
-gotoCity :: String -> StateT TestState IO ()
+survivedPolice :: String -> StateT TestState IO (Maybe Bool)
+survivedPolice planetname = do
+  state <- State.get
+  let alleg = planetNameToAllegiance (aobjects state) planetname
+  let attid = attitude alleg $ allegattitudes state
+  if attid >= (-1)
+    then return Nothing
+    else do
+      let s = concat ["There's police! What to do?\n",
+                 "Press ENTER to fight your way to the starport\n",
+                 "or ESCAPE to escape"]
+      pship <- liftIO $ randomPolice $ difficultyAIshift $ difficulty state
+      startCombat (Just (s, pship, alleg)) >>= return . Just
+
+gotoCity :: String -> StateT TestState IO Bool
 gotoCity planetname = do
   state <- State.get
   nmarket <- if planetname == fst (lastmarket state)
@@ -253,13 +267,20 @@ gotoCity planetname = do
                  m <- liftIO $ randomMarket
                  return (planetname, m)
   modify $ modMarket $ const nmarket
-  cityLoop planetname
+  n <- survivedPolice planetname
+  case n of
+    Nothing -> cityLoop planetname >> return False
+    Just m  -> when (not m) (cityLoop planetname) >> return m
+
+planetNameToAllegiance :: [AObject] -> String -> String
+planetNameToAllegiance aobs planetname =
+  fromMaybe "Unknown" (getAObj planetname aobs >>= colonyOwner)
 
 cityLoop :: String -> StateT TestState IO ()
 cityLoop planetname = do
   state <- State.get
   let f = gamefont state
-  let alleg = fromMaybe "Unknown" (getAObj planetname (aobjects state) >>= colonyOwner)
+  let alleg = planetNameToAllegiance (aobjects state) planetname
   n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, 
                   concat ["Starport on " ++ planetname,
                           if alleg == planetname then "" else "\nThis planet belongs to the country of " ++ alleg ++ "."])
@@ -328,16 +349,16 @@ updateSpaceState = do
     Nothing -> do
       val <- liftIO $ randomRIO (0, 500 :: Int)
       if (val == 0) 
-        then startCombat
+        then startCombat Nothing
         else return False
     Just lc -> do
       if aobjName lc == "Star"
         then lostLife "You flew too close to the star!" recoveryText
         else do
-          gotoCity (aobjName lc)
-          catapult (AObject.getPosition lc)
+          diedInCity <- gotoCity (aobjName lc)
+          when (not diedInCity) $ catapult (AObject.getPosition lc)
           releaseKeys
-          return False
+          return diedInCity
 
 recoveryText :: String
 recoveryText = 
@@ -405,18 +426,23 @@ internationalAction s f = modify $ modAllegAttitudes $ consequences f s allegian
 killed :: String -> StateT TestState IO ()
 killed enalleg = internationalAction enalleg (-1)
 
-startCombat :: StateT TestState IO Bool
-startCombat = do
+startCombat :: Maybe (String, Enemy, String) -> StateT TestState IO Bool
+startCombat n = do
   state <- State.get
-  en <- liftIO $ randomEnemy $ difficultyAIshift $ difficulty state
-  enalleg <- liftIO $ randomAllegiance
-  c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) 
-                         [(gamefont state, Color4 1.0 1.0 1.0 1.0, 
+  (s, en, enalleg) <- case n of
+                        Nothing -> do
+                          en' <- liftIO $ randomEnemy $ difficultyAIshift $ difficulty state
+                          enalleg' <- liftIO $ randomAllegiance
+                          s' <- return $
                            concat ["You spot another ship traveling nearby.\n",
-                                   "It seems to be a " ++ (describeEnemy en) ++ ".\n",
-                                   "The ship is part of the country of " ++ enalleg ++ ".\n",
+                                   "It seems to be a " ++ (describeEnemy en') ++ ".\n",
+                                   "The ship is part of the country of " ++ enalleg' ++ ".\n",
                                    "Press ENTER to start a battle against the foreign ship\n",
-                                   "or ESCAPE to escape"])]
+                                   "or ESCAPE to escape"]
+                          return (s', en', enalleg')
+                        Just m -> return m
+  c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) 
+                         [(gamefont state, Color4 1.0 1.0 1.0 1.0, s)]
                           (return ()))
                       (liftIO $ pollAllSDLEvents >>= return . specificKeyPressed [SDLK_RETURN, SDLK_ESCAPE])
   if c == SDLK_RETURN
@@ -425,27 +451,28 @@ startCombat = do
       plpos <- liftIO $ randPos ((0, 0), (50, 100))
       enpos <- liftIO $ randPos ((100, 0), (150, 100))
       let plrot = angleFromTo plpos enpos - 90
-      (newhealth, newpoints, newcargo) <- liftIO $ evalStateT combatLoop 
-                                          (newCombat plalleg enalleg intermediate (plhealth state) plpos enpos plrot enemyrot en)
+      (newhealth, newpoints, mnewcargo) <- liftIO $ evalStateT combatLoop 
+                                           (newCombat plalleg enalleg intermediate (plhealth state) plpos enpos plrot enemyrot en)
       if newhealth == 0
         then do
           releaseKeys
           lostLife "You fought bravely, but your ship was blown to pieces." recoveryText
         else do
           modify $ modPlHealth $ const newhealth
-          if M.null newcargo
-            then do
+          case mnewcargo of
+            Nothing -> do
               liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "The enemy is out of your sight.\n\n"),
                                        (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
               liftIO $ getSpecificSDLChar SDLK_RETURN
-            else do
-              modify $ modPoints (+(newpoints * (diffcoeff $ difficulty state)))
-              (_, cargo', _, hold') <- liftIO $ execStateT 
-                             (takeScreen ("Captured cargo") 
-                                 (gamefont state) (monofont state)) 
-                             (newcargo, plcargo state, plcash state, plholdspace state)
-              modify $ modPlCargo (const cargo')
-              modify $ modPlHoldspace (const hold')
+            Just newcargo -> do
+              when (not (M.null newcargo)) $ do
+                modify $ modPoints (+(newpoints * (diffcoeff $ difficulty state)))
+                (_, cargo', _, hold') <- liftIO $ execStateT 
+                               (takeScreen ("Captured cargo") 
+                                   (gamefont state) (monofont state)) 
+                               (newcargo, plcargo state, plcash state, plholdspace state)
+                modify $ modPlCargo (const cargo')
+                modify $ modPlHoldspace (const hold')
               killed enalleg
           releaseKeys
           return False

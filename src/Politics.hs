@@ -3,6 +3,7 @@ module Politics(Relation(..),
   mkRelationshipMap, Friendliness,
   AttitudeMap,
   nullAttitudes,
+  attitude,
   consequences
   )
 where
