@@ -63,4 +63,8 @@ findCollisions plbox aobs =
             where (objcoordx, objcoordy, _) = AObject.getPosition aobj
                   abox = boxArea (objcoordx, objcoordy) (size aobj)
 
+getAObj :: String -> [AObject] -> Maybe AObject
+getAObj _ []     = Nothing
+getAObj n (a:as) = if aobjName a == n then Just a else getAObj n as 
+
 

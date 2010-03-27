@@ -255,10 +255,6 @@ gotoCity planetname = do
   modify $ modMarket $ const nmarket
   cityLoop planetname
 
-getAObj :: String -> [AObject] -> Maybe AObject
-getAObj _ []     = Nothing
-getAObj n (a:as) = if aobjName a == n then Just a else getAObj n as 
-
 cityLoop :: String -> StateT TestState IO ()
 cityLoop planetname = do
   state <- State.get
