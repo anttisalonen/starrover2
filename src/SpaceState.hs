@@ -399,38 +399,15 @@ gameOver s s2 = do
 killed :: String -> StateT TestState IO ()
 killed enalleg = 
   modify $ modAllegAttitudes $ upd3 (-1) enalleg allegiances relations
-
-upd :: Friendliness -- ^ Act done by player.
-    -> Friendliness -- ^ Friendliness of the state towards target of act.
-    -> Friendliness -- ^ Previous attitude of the state towards the player.
-    -> Friendliness -- ^ New attitude of the state towards the player.
-upd act friendltoobj = (+(act * friendltoobj))
-
-upd' :: Friendliness    -- ^ Act done by player.
-     -> String          -- ^ Name of the state which was the target of the act.
-     -> String          -- ^ Name of the state whose attitude to update.
-     -> RelationshipMap -- ^ Map of relationships.
-     -> Friendliness    -- ^ Previous attitude of the state towards the player.
-     -> Friendliness    -- ^ New attitude of the state towards the player.
-upd' act tgt obs rm = upd act (friendliness obs tgt rm)
-
-upd'' :: Friendliness    -- ^ Act done by player.
-      -> String          -- ^ Name of the state which was the target of the act.
-      -> String          -- ^ Name of the state whose attitude to update.
-      -> RelationshipMap -- ^ Map of relationships.
-      -> AttitudeMap     -- ^ Map of attitudes.
-      -> Friendliness    -- ^ New attitude of the state towards the player.
-upd'' act tgt obs rm atts = upd' act tgt obs rm (attitude obs atts)
-
-upd3 :: Friendliness    -- ^ Act done by player.
-     -> String          -- ^ Name of the state which was the target of the act.
-     -> [String]        -- ^ Observing states.
-     -> RelationshipMap -- ^ Map of relationships.
-     -> AttitudeMap     -- ^ Map of attitudes.
-     -> AttitudeMap     -- ^ New attitude map.
-upd3 act tgt obss rm atts = 
-  let nas = map (\obs -> upd'' act tgt obs rm atts) obss
-  in setAttitudes (zip obss nas) atts
+   where upd3 :: Friendliness    -- ^ Act done by player.
+              -> String          -- ^ Name of the state which was the target of the act.
+              -> [String]        -- ^ Observing states.
+              -> RelationshipMap -- ^ Map of relationships.
+              -> AttitudeMap     -- ^ Map of attitudes.
+              -> AttitudeMap     -- ^ New attitude map.
+         upd3 act tgt obss rm atts = 
+           let nas = map (\obs -> (attitude obs atts) + (act * (friendliness obs tgt rm))) obss
+           in setAttitudes (zip obss nas) atts
 
 startCombat :: StateT TestState IO Bool
 startCombat = do
