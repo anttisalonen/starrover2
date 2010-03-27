@@ -218,6 +218,7 @@ handleTooFar = do
   let epos = Entity.position (shipentity $ ship1 state)
   return $ OpenGLUtils.length (mpos *-* epos) > 200.0
 
+-- Returns (player health, won points, won cargo (if any))
 combatLoop :: StateT Combat IO (Int, Int, Maybe Cargo)
 combatLoop = do
   liftIO $ delay 10

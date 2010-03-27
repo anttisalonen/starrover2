@@ -426,7 +426,10 @@ internationalAction s f = modify $ modAllegAttitudes $ consequences f s allegian
 killed :: String -> StateT TestState IO ()
 killed enalleg = internationalAction enalleg (-1)
 
-startCombat :: Maybe (String, Enemy, String) -> StateT TestState IO Bool
+startCombat :: Maybe (String, Enemy, String) -- ^ If Nothing, use random enemy
+                                             -- and standard message. Otherwise
+                                             -- use given (msg, enemy, enemy allegiance).
+            -> StateT TestState IO Bool
 startCombat n = do
   state <- State.get
   (s, en, enalleg) <- case n of
