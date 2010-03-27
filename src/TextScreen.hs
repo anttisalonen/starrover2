@@ -65,7 +65,7 @@ drawButton ms ((tlx, tly), (diffx, diffy)) = do
 menu :: (Font, Color4 GLfloat, String) -> [(Font, Color4 GLfloat, String)] -> (Font, Color4 GLfloat, String) -> IO Int
 menu (titlef, titlec, titlestr) options cursor = do
   let numitems = length options
-  let title = (titlef, titlec, titlestr ++ "\n\n\n")
+  let title = (titlef, titlec, titlestr ++ replicate (4 - length (lines titlestr)) '\n')
   let drawCursor n = liftIO $ writeLine (130, 400 - 50 * fromIntegral n) cursor
   let buttoncoords :: (Num a) => [((a, a), (a, a))]
       buttoncoords = [((180, 385 - 50 * fromIntegral i), (300, 40)) | i <- [1..numitems]]
