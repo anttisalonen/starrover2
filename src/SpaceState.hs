@@ -396,18 +396,11 @@ gameOver s s2 = do
       (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   return True
 
+internationalAction :: String -> Int -> StateT TestState IO ()
+internationalAction s f = modify $ modAllegAttitudes $ consequences f s allegiances relations
+
 killed :: String -> StateT TestState IO ()
-killed enalleg = 
-  modify $ modAllegAttitudes $ upd3 (-1) enalleg allegiances relations
-   where upd3 :: Friendliness    -- ^ Act done by player.
-              -> String          -- ^ Name of the state which was the target of the act.
-              -> [String]        -- ^ Observing states.
-              -> RelationshipMap -- ^ Map of relationships.
-              -> AttitudeMap     -- ^ Map of attitudes.
-              -> AttitudeMap     -- ^ New attitude map.
-         upd3 act tgt obss rm atts = 
-           let nas = map (\obs -> (attitude obs atts) + (act * (friendliness obs tgt rm))) obss
-           in setAttitudes (zip obss nas) atts
+killed enalleg = internationalAction enalleg (-1)
 
 startCombat :: StateT TestState IO Bool
 startCombat = do

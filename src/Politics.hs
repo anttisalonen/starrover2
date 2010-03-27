@@ -3,10 +3,7 @@ module Politics(Relation(..),
   mkRelationshipMap, Friendliness,
   AttitudeMap,
   nullAttitudes,
-  friendliness,
-  attitude,
-  setAttitude,
-  setAttitudes
+  consequences
   )
 where
 
@@ -66,4 +63,14 @@ setAttitude = flip M.insert
 setAttitudes :: [(String, Friendliness)] -> AttitudeMap -> AttitudeMap
 setAttitudes = flip (foldl' go)
   where go acc (s, a) = setAttitude a s acc
+
+consequences :: Friendliness    -- ^ Act done by an actor.
+             -> String          -- ^ Name of the state which was the target of the act.
+             -> [String]        -- ^ Observing states.
+             -> RelationshipMap -- ^ Map of relationships.
+             -> AttitudeMap     -- ^ Map of attitudes.
+             -> AttitudeMap     -- ^ New attitudes towards the actor.
+consequences act tgt obss rm atts = 
+  let nas = map (\obs -> (attitude obs atts) + (act * (friendliness obs tgt rm))) obss
+  in setAttitudes (zip obss nas) atts
 
