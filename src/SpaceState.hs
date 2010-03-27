@@ -244,7 +244,9 @@ handleEvents = do
   processEvents inputMapping events
   return $ isQuit events
 
-survivedPolice :: String -> StateT TestState IO (Maybe Bool)
+-- returns: nothing -> no police contact
+-- or Just (gameover?, combatwon?)
+survivedPolice :: String -> StateT TestState IO (Maybe (Bool, Bool))
 survivedPolice planetname = do
   state <- State.get
   let alleg = planetNameToAllegiance (aobjects state) planetname
@@ -269,8 +271,8 @@ gotoCity planetname = do
   modify $ modMarket $ const nmarket
   n <- survivedPolice planetname
   case n of
-    Nothing -> cityLoop planetname >> return False
-    Just m  -> when (not m) (cityLoop planetname) >> return m
+    Nothing                     -> cityLoop planetname >> return False
+    Just (gameover, combatwon)  -> when combatwon (cityLoop planetname) >> return gameover
 
 planetNameToAllegiance :: [AObject] -> String -> String
 planetNameToAllegiance aobs planetname =
@@ -349,7 +351,7 @@ updateSpaceState = do
     Nothing -> do
       val <- liftIO $ randomRIO (0, 500 :: Int)
       if (val == 0) 
-        then startCombat Nothing
+        then startCombat Nothing >>= return . fst
         else return False
     Just lc -> do
       if aobjName lc == "Star"
@@ -429,7 +431,7 @@ killed enalleg = internationalAction enalleg (-1)
 startCombat :: Maybe (String, Enemy, String) -- ^ If Nothing, use random enemy
                                              -- and standard message. Otherwise
                                              -- use given (msg, enemy, enemy allegiance).
-            -> StateT TestState IO Bool
+            -> StateT TestState IO (Bool, Bool) -- ^ (gameOver?, combatWon?)
 startCombat n = do
   state <- State.get
   (s, en, enalleg) <- case n of
@@ -459,7 +461,8 @@ startCombat n = do
       if newhealth == 0
         then do
           releaseKeys
-          lostLife "You fought bravely, but your ship was blown to pieces." recoveryText
+          gameover <- lostLife "You fought bravely, but your ship was blown to pieces." recoveryText
+          return (gameover, False)
         else do
           modify $ modPlHealth $ const newhealth
           case mnewcargo of
@@ -467,6 +470,8 @@ startCombat n = do
               liftIO $ makeTextScreen (100, 400) [(gamefont state, Color4 1.0 1.0 1.0 1.0, "The enemy is out of your sight.\n\n"),
                                        (gamefont state, Color4 1.0 1.0 1.0 1.0, "Press ENTER to continue")] (return ())
               liftIO $ getSpecificSDLChar SDLK_RETURN
+              releaseKeys
+              return (False, False)
             Just newcargo -> do
               when (not (M.null newcargo)) $ do
                 modify $ modPoints (+(newpoints * (diffcoeff $ difficulty state)))
@@ -477,11 +482,11 @@ startCombat n = do
                 modify $ modPlCargo (const cargo')
                 modify $ modPlHoldspace (const hold')
               killed enalleg
-          releaseKeys
-          return False
+              releaseKeys
+              return (False, True)
     else do
       releaseKeys
-      return False
+      return (False, False)
 
 drawSpace :: StateT TestState IO ()
 drawSpace = do
