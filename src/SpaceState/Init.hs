@@ -31,10 +31,9 @@ lostLife s1 s2 = do
     then do
       gameOver s1 gameoverText
     else do
-      loopTextScreen (liftIO $ makeTextScreen (30, 550) [(gamefont state,
+      pressKeyScreen (liftIO $ makeTextScreen (30, 550) [(gamefont state,
                          Color4 1.0 0.2 0.2 1.0, s1 ++ "\n\n" ++ s2 ++ "\n\nPress ENTER to continue")] 
-                         (return ()))
-                     (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
+                         (return ())) SDLK_RETURN
       initState
       return False
 

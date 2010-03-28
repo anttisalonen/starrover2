@@ -43,10 +43,11 @@ startCombat n = do
                                    "or ESCAPE to escape"]
                           return (s', en', enalleg')
                         Just m -> return m
-  c <- loopTextScreen (liftIO $ makeTextScreen (100, 400) 
+  c <- pressOneOfScreen 
+             (liftIO $ makeTextScreen (100, 400) 
                          [(gamefont state, Color4 1.0 1.0 1.0 1.0, s)]
                           (return ()))
-                      (liftIO $ pollAllSDLEvents >>= return . specificKeyPressed [SDLK_RETURN, SDLK_ESCAPE])
+             [SDLK_RETURN, SDLK_ESCAPE]
   if c == SDLK_RETURN
     then do
       enemyrot <- liftIO $ fromIntegral `fmap` randomRIO (-180, 180 :: Int)

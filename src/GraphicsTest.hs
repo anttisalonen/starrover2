@@ -67,7 +67,7 @@ mainMenu f f2 = do
 
 startGame f f2 = do
   (n, d) <- initGame f
-  pts <- runGame d f f2
+  pts <- runGame n d f f2
   doHighscore f f2 pts n
   mainMenu f f2
 

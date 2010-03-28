@@ -1,6 +1,8 @@
 module TextScreen(loopTextScreen,
   makeTextScreen,
   drawButton,
+  pressOneOfScreen,
+  pressKeyScreen,
   menu)
 where
 
@@ -92,4 +94,14 @@ menu (titlef, titlec, titlestr) options cursor = do
                   return $ mbutton >>= (fmap . fmap) (+1) (Prelude.flip elemIndex buttoncoords)
         loopTextScreen drawfunc getInput
       return n
+
+pressOneOfScreen :: (MonadIO m) => m () -> [SDLKey] -> m SDLKey
+pressOneOfScreen scr keys = 
+  loopTextScreen scr
+     (liftIO $ pollAllSDLEvents >>= return . specificKeyPressed keys)
+
+pressKeyScreen :: (MonadIO m) => m () -> SDLKey -> m ()
+pressKeyScreen scr k =
+  loopTextScreen scr
+     (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed k)
 

@@ -23,10 +23,11 @@ import TextScreen
 import Politics
 import SDLUtils
 import Universe
+import Mission
 import SpaceState.Difficulty
 
-startState :: Difficulty -> Font -> Font -> SpaceState
-startState d f f2 = SpaceState 
+startState :: String -> Difficulty -> Font -> Font -> SpaceState
+startState plname d f f2 = SpaceState 
     (newStdShipEntity (50.0, 30.0, 0.0) playerShipColor 0)
     aobjs
     stdCamera
@@ -42,6 +43,9 @@ startState d f f2 = SpaceState
     startPlHealth
     d
     initialAttitudes
+    emptyMissionMap
+    plname
+    Nothing
 
 data SpaceState = SpaceState {
     tri            :: Entity
@@ -59,6 +63,9 @@ data SpaceState = SpaceState {
   , plhealth       :: Int
   , difficulty     :: Difficulty
   , allegattitudes :: AttitudeMap
+  , plmissions     :: MissionMap
+  , playername     :: String
+  , availmission   :: Maybe Mission
   }
 
 -- TODO: generate mod-functions using TH
@@ -98,6 +105,12 @@ modPlHealth f t = t{plhealth = f (plhealth t)}
 modAllegAttitudes :: (AttitudeMap -> AttitudeMap) -> SpaceState -> SpaceState
 modAllegAttitudes f t = t{allegattitudes = f (allegattitudes t)}
 
+modPlMissions :: (MissionMap -> MissionMap) -> SpaceState -> SpaceState
+modPlMissions f t = t{plmissions = f (plmissions t)}
+
+modAvailMission :: (Maybe Mission -> Maybe Mission) -> SpaceState -> SpaceState
+modAvailMission f t = t{availmission = f (availmission t)}
+
 stdCamera :: CameraState
 stdCamera = CameraState 
       ((-0.01 * width, -0.01 * height), (0.02 * width, 0.02 * height))
@@ -126,13 +139,12 @@ gameoverText =
 gameOver :: String -> String -> StateT SpaceState IO Bool
 gameOver s s2 = do
   state <- State.get
-  loopTextScreen 
+  pressKeyScreen 
       (liftIO $ makeTextScreen (100, 500) 
           [(gamefont state, Color4 1.0 0.2 0.2 1.0, s ++ "\n\n" ++ s2 ++ "\n" ++ "\n"),
            (gamefont state, Color4 1.0 1.0 1.0 1.0, "Total points: " ++ show (finalPoints state)),
            (gamefont state, Color4 1.0 0.2 0.2 1.0, "Press ENTER to continue")]
-          (return ()))
-      (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
+          (return ())) SDLK_RETURN
   return True
 
 maxHold = holdspace intermediate
@@ -142,4 +154,8 @@ startCash = 10
 finalPoints :: SpaceState -> Int
 finalPoints s = points s + plcash s + (lives s * 50)
 
+allegAttitude :: String -> SpaceState -> Int
+allegAttitude planetname state = 
+  attitude (planetNameToAllegiance (aobjects state) planetname) $ 
+     allegattitudes state
 

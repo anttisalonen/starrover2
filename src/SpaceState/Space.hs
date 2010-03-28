@@ -27,9 +27,9 @@ import SpaceState.Init
 import SpaceState.Difficulty
 import SpaceState.Combat
 
-runGame :: Difficulty -> Font -> Font -> IO Int
-runGame d f f2 = do
-  let is = startState d f f2
+runGame :: String -> Difficulty -> Font -> Font -> IO Int
+runGame plname d f f2 = do
+  let is = startState plname d f f2
   setCamera (camera $ camstate is)
   evalStateT (do
     initState
@@ -74,11 +74,11 @@ updateSpaceState = do
 
 -- returns: nothing -> no police contact
 -- or Just (gameover?, combatwon?)
-survivedPolice :: String -> StateT SpaceState IO (Maybe (Bool, Bool))
-survivedPolice planetname = do
+survivedPolice :: AObject -> StateT SpaceState IO (Maybe (Bool, Bool))
+survivedPolice lc = do
+  let planetname = aobjName lc
   state <- State.get
-  let alleg = planetNameToAllegiance (aobjects state) planetname
-  let attid = attitude alleg $ allegattitudes state
+  let attid = allegAttitude planetname state
   if attid >= (-1)
     then return Nothing
     else do
@@ -86,11 +86,11 @@ survivedPolice planetname = do
                  "Press ENTER to fight your way to the starport\n",
                  "or ESCAPE to escape"]
       pship <- liftIO $ randomPolice $ difficultyAIshift $ difficulty state
-      startCombat (Just (s, pship, alleg)) >>= return . Just
+      startCombat (Just (s, pship, getAllegiance lc)) >>= return . Just
 
 enteringCity :: AObject -> StateT SpaceState IO Bool
 enteringCity lc = do
-  n <- survivedPolice $ aobjName lc
+  n <- survivedPolice lc
   case n of
     Nothing                     -> gotoCity lc >> return False
     Just (gameover, combatwon)  -> do

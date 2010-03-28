@@ -71,4 +71,11 @@ planetNameToAllegiance :: [AObject] -> String -> String
 planetNameToAllegiance aobs planetname =
   fromMaybe "Unknown" (getAObj planetname aobs >>= colonyOwner)
 
+getAllegiance :: AObject -> String
+getAllegiance a = fromMaybe "Unknown" (colonyOwner a)
+
+hasOwner :: String -> AObject -> Bool
+hasOwner alleg a = case colonyOwner a of
+                     Nothing -> False
+                     Just n  -> n == alleg
 
