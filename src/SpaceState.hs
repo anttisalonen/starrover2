@@ -201,8 +201,7 @@ initState = do
   modify $ modPlHoldspace $ const maxHold
   modify $ modPlCargo $ const M.empty
   modify $ modPlHealth $ const startPlHealth
-  _ <- gotoCity (aobjName lc)
-  catapult (AObject.getPosition lc)
+  gotoCity lc
   releaseKeys
 
 runGame :: Difficulty -> Font -> Font -> IO Int
@@ -260,8 +259,20 @@ survivedPolice planetname = do
       pship <- liftIO $ randomPolice $ difficultyAIshift $ difficulty state
       startCombat (Just (s, pship, alleg)) >>= return . Just
 
-gotoCity :: String -> StateT TestState IO Bool
-gotoCity planetname = do
+enteringCity :: AObject -> StateT TestState IO Bool
+enteringCity lc = do
+  n <- survivedPolice $ aobjName lc
+  case n of
+    Nothing                     -> gotoCity lc >> return False
+    Just (gameover, combatwon)  -> do
+      if combatwon
+        then gotoCity lc
+        else catapult (AObject.getPosition lc)
+      return gameover
+
+gotoCity :: AObject -> StateT TestState IO ()
+gotoCity lc = do
+  let planetname = aobjName lc
   state <- State.get
   nmarket <- if planetname == fst (lastmarket state)
                then return $ lastmarket state
@@ -269,10 +280,8 @@ gotoCity planetname = do
                  m <- liftIO $ randomMarket
                  return (planetname, m)
   modify $ modMarket $ const nmarket
-  n <- survivedPolice planetname
-  case n of
-    Nothing                     -> cityLoop planetname >> return False
-    Just (gameover, combatwon)  -> when combatwon (cityLoop planetname) >> return gameover
+  cityLoop planetname
+  catapult (AObject.getPosition lc)
 
 planetNameToAllegiance :: [AObject] -> String -> String
 planetNameToAllegiance aobs planetname =
@@ -357,8 +366,7 @@ updateSpaceState = do
       if aobjName lc == "Star"
         then lostLife "You flew too close to the star!" recoveryText
         else do
-          diedInCity <- gotoCity (aobjName lc)
-          when (not diedInCity) $ catapult (AObject.getPosition lc)
+          diedInCity <- enteringCity lc
           releaseKeys
           return diedInCity
 
