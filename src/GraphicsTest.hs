@@ -18,7 +18,7 @@ import Graphics.UI.SDL as SDL
 import Graphics.Rendering.FTGL as FTGL
 
 import Space
-import SpaceState
+import SpaceState.Space
 import Utils
 import TextScreen
 import SDLUtils
