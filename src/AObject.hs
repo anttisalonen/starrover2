@@ -67,4 +67,8 @@ getAObj :: String -> [AObject] -> Maybe AObject
 getAObj _ []     = Nothing
 getAObj n (a:as) = if aobjName a == n then Just a else getAObj n as 
 
+planetNameToAllegiance :: [AObject] -> String -> String
+planetNameToAllegiance aobs planetname =
+  fromMaybe "Unknown" (getAObj planetname aobs >>= colonyOwner)
+
 
