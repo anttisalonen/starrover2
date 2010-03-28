@@ -1,6 +1,12 @@
 ChangeLog:
 
-0.0.5 - ???
+0.0.5 - 28.03.2010
+Added possibility to repair ship
+Player name is now asked when starting the game
+Restructured star system
+Added difficulty levels
+Added allegiances of ships and planets
+Added varying attitudes of planets towards player
 
 0.0.4 - 21.03.2010
 Added main menu
