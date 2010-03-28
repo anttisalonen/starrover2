@@ -14,9 +14,7 @@ import OpenGLUtils
 import Statistics
 import Entity
 import AObject
-import Utils
 import TextScreen
-import SDLUtils
 
 import SpaceState.Game
 import SpaceState.City

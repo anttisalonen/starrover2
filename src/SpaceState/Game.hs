@@ -21,7 +21,6 @@ import Cargo
 import Utils
 import TextScreen
 import Politics
-import SDLUtils
 import Universe
 import Mission
 import SpaceState.Difficulty

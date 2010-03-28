@@ -17,7 +17,6 @@ import AObject
 import Combat
 import Space
 import Utils
-import Politics
 
 import SpaceState.Common
 import SpaceState.Input
