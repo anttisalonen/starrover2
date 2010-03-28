@@ -8,7 +8,7 @@ import Control.Monad.State as State
 import Prelude hiding (catch)
 
 import Graphics.Rendering.OpenGL as OpenGL
-import Graphics.UI.SDL as SDL
+import Graphics.UI.SDL as SDL hiding (flip)
 
 import Statistics
 import OpenGLUtils
@@ -20,7 +20,6 @@ import TextScreen
 import Mission
 import SpaceState.Game
 
--- TODO: MaybeT?
 updateAvailableMission :: AObject -> StateT SpaceState IO ()
 updateAvailableMission lc = do
   let planetname = aobjName lc
@@ -31,15 +30,26 @@ updateAvailableMission lc = do
     Just alleg -> do
       case possibleMissionType (allegAttitude planetname state) of
         Nothing        -> return ()
-        Just Messenger -> do
-          let otherplanets = map aobjName $ filter (hasOwner alleg) (aobjects state)
-          if null otherplanets
-            then return ()
-            else do
-              n <- liftIO $ chooseIO otherplanets
-              if n == planetname
-                then return ()
-                else modify $ modAvailMission $ const $ Just $ MessengerMission n
+        Just m         -> createMission m alleg lc
+
+createMission :: MissionCategory -> String -> AObject -> StateT SpaceState IO ()
+createMission Messenger alleg lc = do
+  let planetname = aobjName lc
+  state <- State.get
+  let otherplanets = map aobjName $ filter (hasOwner alleg) (aobjects state)
+  when (not (null otherplanets)) $ do
+    n <- liftIO $ chooseIO otherplanets
+    when (n /= planetname) $ 
+      modify $ modAvailMission $ const $ Just $ MessengerMission n
+
+createMission SecretMessage alleg lc = do
+  let planetname = aobjName lc
+  state <- State.get
+  let otherplanets = map aobjName $ filter (not . hasOwner alleg) (aobjects state)
+  when (not (null otherplanets)) $ do
+    n <- liftIO $ chooseIO otherplanets
+    when (n /= planetname) $ 
+      modify $ modAvailMission $ const $ Just $ SecretMessageMission n
 
 gotoCity :: AObject -> StateT SpaceState IO ()
 gotoCity lc = do
@@ -51,6 +61,7 @@ gotoCity lc = do
                  m <- liftIO $ randomMarket
                  return (planetname, m)
   modify $ modMarket $ const nmarket
+  handleArrival lc
   updateAvailableMission lc
   cityLoop lc
   catapult (AObject.getPosition lc)
@@ -123,61 +134,121 @@ catapult vec = do
 
 gotoGovernor :: AObject -> StateT SpaceState IO ()
 gotoGovernor lc = do
-  let planetname = aobjName lc
+  state <- State.get
+  let alleg = getAllegiance lc
+  if isNothing (missionFor alleg (plmissions state))
+    then
+      case availmission state of
+        Nothing  -> noMissionsScreen
+        Just mis -> offerMission mis lc
+    else noMissionsScreen
+
+handleArrival :: AObject -> StateT SpaceState IO ()
+handleArrival lc = do
+  state <- State.get
+  mapM_ (flip handleArrival' lc) (missions (plmissions state))
+
+noMissionsScreen :: StateT SpaceState IO ()
+noMissionsScreen = do
+  state <- State.get
+  let plname = playername state
+  pressKeyScreen 
+    (liftIO $ makeTextScreen (100, 500) 
+        [(gamefont state, Color4 1.0 0.2 0.2 1.0, 
+           intercalate "\n" ["\"Dear " ++ plname ++ ", we currently have",
+                             "no tasks for you.\"",
+                             "",
+                             "",
+                             "Press Enter to continue"])]
+        (return ())) SDLK_RETURN
+
+offerMission :: Mission -> AObject -> StateT SpaceState IO ()
+offerMission mis@(MessengerMission tgt) lc = do
+  state <- State.get
+  let plname = playername state
+  let txt = ["\"Dear " ++ plname ++ ", I welcome you to my",
+            "residence. I have an important mission that",
+            "needs to be taken care of by a trustworthy",
+            "adventurer like yourself.", 
+            "",
+            "The mission requires you to deliver an",
+            "important message from here to the planet",
+            "of " ++ tgt ++ ".",
+            "Will you accept?\" (y/n)"]
+  offerMissionGeneric mis lc txt
+
+offerMission mis@(SecretMessageMission tgt) lc = do
+  state <- State.get
+  let plname = playername state
+  let txt = ["\"Dear " ++ plname ++ ", I welcome you to my",
+            "residence. I have a very important mission that",
+            "needs to be taken care of by a competent",
+            "adventurer like yourself.", 
+            "",
+            "The mission requires you to deliver a message",
+            "to a spy of ours hidden on the foreign planet",
+            "of " ++ tgt ++ ".",
+            "Will you accept?\" (y/n)"]
+  offerMissionGeneric mis lc txt
+
+offerMissionGeneric :: Mission -> AObject -> [String] -> StateT SpaceState IO ()
+offerMissionGeneric mis lc msg = do
+  state <- State.get
+  let alleg = getAllegiance lc
+  let txt = intercalate "\n" msg
+  c <- pressOneOfScreen 
+             (liftIO $ makeTextScreen (100, 500) 
+                         [(gamefont state, Color4 1.0 1.0 1.0 1.0, txt)]
+                          (return ()))
+             [SDLK_y, SDLK_n, SDLK_ESCAPE]
+  modify $ modAvailMission (const Nothing)
+  case c of
+    SDLK_y -> modify $ modPlMissions $ setMission alleg mis
+    _      -> return ()
+
+handleArrival' :: Mission -> AObject -> StateT SpaceState IO ()
+handleArrival' (MessengerMission tgt) lc = do
   state <- State.get
   let alleg = getAllegiance lc
       plname = playername state
-  let noMissionsScreen = 
-          pressKeyScreen 
-            (liftIO $ makeTextScreen (100, 500) 
-                [(gamefont state, Color4 1.0 0.2 0.2 1.0, 
-                   intercalate "\n" ["\"Dear " ++ plname ++ ", we currently have",
-                                     "no tasks for you.\"",
-                                     "",
-                                     "",
-                                     "Press Enter to continue"])]
-                (return ())) SDLK_RETURN
-  case missionFor alleg (plmissions state) of
-    Nothing -> do
-      case availmission state of
-        Nothing -> noMissionsScreen
-        Just mis@(MessengerMission tgt) -> do
-          let txt = intercalate "\n" ["\"Dear " ++ plname ++ ", I welcome you to my",
-                                      "residence. I have an important mission that",
-                                      "needs to be taken care of by a trustworthy",
-                                      "adventurer like yourself.", 
-                                      "",
-                                      "The mission requires you to deliver an",
-                                      "important message from here to the planet",
-                                      "of " ++ tgt ++ ".",
-                                      "Will you accept?\" (y/n)"]
-          c <- pressOneOfScreen 
-                     (liftIO $ makeTextScreen (100, 500) 
-                                 [(gamefont state, Color4 1.0 1.0 1.0 1.0, txt)]
-                                  (return ()))
-                     [SDLK_y, SDLK_n, SDLK_ESCAPE]
-          modify $ modAvailMission (const Nothing)
-          case c of
-            SDLK_y -> modify $ modPlMissions $ setMission alleg mis
-            _      -> return ()
-    Just m  -> do
-      case m of
-        MessengerMission tgt -> 
-          if (tgt == planetname)
-            then do
-              let txt = intercalate "\n" ["\"Thank you, " ++ plname ++ ", for serving our great",
-                                          "country of " ++ alleg ++ " by delivering this important",
-                                          "delivering this important message to us.\"",
-                                          "",
-                                          "Mission accomplished!",
-                                          "",
-                                          "",
-                                          "Press Enter to continue"]
-              modify $ modAvailMission (const Nothing)
-              modify $ modPlMissions $ removeMission alleg
-              pressKeyScreen 
-                (liftIO $ makeTextScreen (100, 500) 
-                    [(gamefont state, Color4 1.0 0.2 0.2 1.0, txt)]
-                    (return ())) SDLK_RETURN
-            else noMissionsScreen
+      planetname = aobjName lc
+  checkArrived tgt planetname alleg 
+    ["\"Thank you, " ++ plname ++ ", for serving our great",
+     "country of " ++ alleg ++ " by delivering this important",
+     "delivering this important message to us.\"",
+     "",
+     "Mission accomplished!",
+     "",
+     "",
+     "Press Enter to continue"]
+
+handleArrival' (SecretMessageMission tgt) lc = do
+  state <- State.get
+  let alleg = getAllegiance lc
+      plname = playername state
+      planetname = aobjName lc
+  checkArrived tgt planetname alleg 
+    ["\"Thank you, " ++ plname ++ ", for serving our great",
+     "country of " ++ alleg ++ " by delivering this important",
+     "delivering this important message to us.\"",
+     "",
+     "Mission accomplished!",
+     "",
+     "",
+     "Press Enter to continue"]
+
+onActualArrival :: String -> [String] -> StateT SpaceState IO ()
+onActualArrival alleg str = do
+  state <- State.get
+  let txt = intercalate "\n" str
+  modify $ modAvailMission (const Nothing)
+  modify $ modPlMissions $ removeMission alleg
+  pressKeyScreen 
+    (liftIO $ makeTextScreen (100, 500) 
+        [(gamefont state, Color4 1.0 0.2 0.2 1.0, txt)]
+        (return ())) SDLK_RETURN
+
+checkArrived :: String -> String -> String -> [String] -> StateT SpaceState IO ()
+checkArrived tgt planetname alleg str = 
+  when (tgt == planetname) (onActualArrival alleg str)
 

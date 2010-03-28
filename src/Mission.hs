@@ -10,8 +10,10 @@ import qualified Data.Edison.Assoc.AssocList as M
 type MissionMap = M.FM String Mission
 
 data MissionCategory = Messenger
+                     | SecretMessage
 
 data Mission = MessengerMission String
+             | SecretMessageMission String
 
 emptyMissionMap :: MissionMap
 emptyMissionMap = M.empty
@@ -31,9 +33,12 @@ removeMission = M.delete
 minRepForMission = 2
 
 missionRepNeeded :: [(Int, MissionCategory)]
-missionRepNeeded = [(minRepForMission, Messenger)]
+missionRepNeeded = [(6, SecretMessage), (minRepForMission, Messenger)]
 
 possibleMissionType :: Int -> Maybe MissionCategory
 possibleMissionType thr = 
   liftM snd (find (\n -> fst n <= thr) missionRepNeeded)
+
+missions :: MissionMap -> [Mission]
+missions = M.elements
 
