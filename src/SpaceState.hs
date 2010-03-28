@@ -28,7 +28,7 @@ import SDLUtils
 import Universe
 
 -- test scenario
-data TestState = TestState {
+data SpaceState = SpaceState {
     tri            :: Entity
   , aobjects       :: [AObject]
   , camstate       :: CameraState
@@ -62,40 +62,40 @@ difficultyAIshift Medium = 0
 difficultyAIshift Hard = 0.5
 
 -- TODO: generate mod-functions using TH
-modTri :: (Entity -> Entity) -> TestState -> TestState
+modTri :: (Entity -> Entity) -> SpaceState -> SpaceState
 modTri f t = t{tri = f (tri t)}
 
-modAObjects :: ([AObject] -> [AObject]) -> TestState -> TestState
+modAObjects :: ([AObject] -> [AObject]) -> SpaceState -> SpaceState
 modAObjects f t = t{aobjects = f (aobjects t)}
 
-modCameraState :: (CameraState -> CameraState) -> TestState -> TestState
+modCameraState :: (CameraState -> CameraState) -> SpaceState -> SpaceState
 modCameraState f t = t{camstate = f (camstate t)}
 
-modStopped :: (Bool -> Bool) -> TestState -> TestState
+modStopped :: (Bool -> Bool) -> SpaceState -> SpaceState
 modStopped f t = t{stopped = f (stopped t)}
 
-modPlCargo :: (Cargo -> Cargo) -> TestState -> TestState
+modPlCargo :: (Cargo -> Cargo) -> SpaceState -> SpaceState
 modPlCargo f t = t{plcargo = f (plcargo t)}
 
-modPlCash :: (Int -> Int) -> TestState -> TestState
+modPlCash :: (Int -> Int) -> SpaceState -> SpaceState
 modPlCash f t = t{plcash = f (plcash t)}
 
-modPlHoldspace :: (Int -> Int) -> TestState -> TestState
+modPlHoldspace :: (Int -> Int) -> SpaceState -> SpaceState
 modPlHoldspace f t = t{plholdspace = f (plholdspace t)}
 
-modMarket :: ((String, Market) -> (String, Market)) -> TestState -> TestState
+modMarket :: ((String, Market) -> (String, Market)) -> SpaceState -> SpaceState
 modMarket f t = t{lastmarket = f (lastmarket t)}
 
-modPoints :: (Int -> Int) -> TestState -> TestState
+modPoints :: (Int -> Int) -> SpaceState -> SpaceState
 modPoints f t = t{points = f (points t)}
 
-modLives :: (Int -> Int) -> TestState -> TestState
+modLives :: (Int -> Int) -> SpaceState -> SpaceState
 modLives f t = t{lives = f (lives t)}
 
-modPlHealth :: (Int -> Int) -> TestState -> TestState
+modPlHealth :: (Int -> Int) -> SpaceState -> SpaceState
 modPlHealth f t = t{plhealth = f (plhealth t)}
 
-modAllegAttitudes :: (AttitudeMap -> AttitudeMap) -> TestState -> TestState
+modAllegAttitudes :: (AttitudeMap -> AttitudeMap) -> SpaceState -> SpaceState
 modAllegAttitudes f t = t{allegattitudes = f (allegattitudes t)}
 
 maxHold = holdspace intermediate
@@ -108,8 +108,8 @@ stdCamera = CameraState
       100
       0
 
-startState :: Difficulty -> Font -> Font -> TestState
-startState d f f2 = TestState 
+startState :: Difficulty -> Font -> Font -> SpaceState
+startState d f f2 = SpaceState 
     (newStdShipEntity (50.0, 30.0, 0.0) playerShipColor 0)
     aobjs
     stdCamera
@@ -129,10 +129,10 @@ startState d f f2 = TestState
 zoomChangeFactor :: (Floating a) => a
 zoomChangeFactor = 1.0
 
--- accelerate :: (MonadState TestState m) => GLdouble -> m ()
+-- accelerate :: (MonadState SpaceState m) => GLdouble -> m ()
 accelerate a = modify $ modTri $ modifyAcceleration (const (0.0,  a, 0.0))
 
--- turn :: (MonadState TestState m) => GLdouble -> m ()
+-- turn :: (MonadState SpaceState m) => GLdouble -> m ()
 turn a = modify $ modTri $ modifyAngVelocity (+a)
 setTurn a = modify $ modTri $ modifyAngVelocity (const a)
 
@@ -162,7 +162,7 @@ showInfo = do
     liftIO . putStrLn $ "Astronomical body position: " ++ show (AObject.getPosition aobj)
   liftIO . putStrLn $ show $ allegattitudes s
 
-initState :: StateT TestState IO ()
+initState :: StateT SpaceState IO ()
 initState = do
   lc <- getRandomPlanet
   modify $ modTri $ modifyPosition (const $ (getPosition lc *+* (glVector3UnitX *** (AObject.size lc))))
@@ -182,7 +182,7 @@ runGame d f f2 = do
     loop)
     is
 
-loop :: StateT TestState IO Int
+loop :: StateT SpaceState IO Int
 loop = untilDoneR $ do 
   liftIO $ delay 10
   state <- State.get
@@ -198,15 +198,15 @@ loop = untilDoneR $ do
         else return Nothing
     else die
 
-finalPoints :: TestState -> Int
+finalPoints :: SpaceState -> Int
 finalPoints s = points s + plcash s + (lives s * 50)
 
-die :: StateT TestState IO (Maybe Int)
+die :: StateT SpaceState IO (Maybe Int)
 die = do
   state <- State.get
   return $ Just $ finalPoints state
 
-handleEvents :: StateT TestState IO Bool
+handleEvents :: StateT SpaceState IO Bool
 handleEvents = do
   events <- liftIO $ pollAllSDLEvents
   processEvents inputMapping events
@@ -214,7 +214,7 @@ handleEvents = do
 
 -- returns: nothing -> no police contact
 -- or Just (gameover?, combatwon?)
-survivedPolice :: String -> StateT TestState IO (Maybe (Bool, Bool))
+survivedPolice :: String -> StateT SpaceState IO (Maybe (Bool, Bool))
 survivedPolice planetname = do
   state <- State.get
   let alleg = planetNameToAllegiance (aobjects state) planetname
@@ -228,7 +228,7 @@ survivedPolice planetname = do
       pship <- liftIO $ randomPolice $ difficultyAIshift $ difficulty state
       startCombat (Just (s, pship, alleg)) >>= return . Just
 
-enteringCity :: AObject -> StateT TestState IO Bool
+enteringCity :: AObject -> StateT SpaceState IO Bool
 enteringCity lc = do
   n <- survivedPolice $ aobjName lc
   case n of
@@ -239,7 +239,7 @@ enteringCity lc = do
         else catapult (AObject.getPosition lc)
       return gameover
 
-gotoCity :: AObject -> StateT TestState IO ()
+gotoCity :: AObject -> StateT SpaceState IO ()
 gotoCity lc = do
   let planetname = aobjName lc
   state <- State.get
@@ -252,7 +252,7 @@ gotoCity lc = do
   cityLoop planetname
   catapult (AObject.getPosition lc)
 
-cityLoop :: String -> StateT TestState IO ()
+cityLoop :: String -> StateT SpaceState IO ()
 cityLoop planetname = do
   state <- State.get
   let f = gamefont state
@@ -269,7 +269,7 @@ cityLoop planetname = do
     2 -> gotoShipyard >> cityLoop planetname
     _ -> return ()
 
-gotoShipyard :: StateT TestState IO ()
+gotoShipyard :: StateT SpaceState IO ()
 gotoShipyard = do
   state <- State.get
   let f = gamefont state
@@ -291,7 +291,7 @@ gotoShipyard = do
            gotoShipyard
     _ -> return ()
 
-gotoMarket :: String -> StateT TestState IO ()
+gotoMarket :: String -> StateT SpaceState IO ()
 gotoMarket planetname = do
   state <- State.get
   let market = snd . lastmarket $ state
@@ -304,7 +304,7 @@ gotoMarket planetname = do
   modify $ modPlCash $ const cash'
   modify $ modPlHoldspace $ const hold'
 
-catapult :: GLvector3 -> StateT TestState IO ()
+catapult :: GLvector3 -> StateT SpaceState IO ()
 catapult vec = do
   state <- State.get
   let plloc = Entity.position (tri state)
@@ -315,7 +315,7 @@ catapult vec = do
   modify $ modTri $ resetAcceleration
   modify $ modTri $ modifyRotation $ (+180)
 
-updateSpaceState :: StateT TestState IO Bool
+updateSpaceState :: StateT SpaceState IO Bool
 updateSpaceState = do
   state <- State.get
   modify $ modTri (updateEntity 1)
@@ -353,13 +353,13 @@ gameoverText =
      "returning to civilization, you realize your",
      "adventurous days are over."]
 
-releaseKeys :: StateT TestState IO ()
+releaseKeys :: StateT SpaceState IO ()
 releaseKeys = do
   setTurn 0
   accelerate 0 -- prevent involuntary actions
   setZoomDelta 0
 
-getRandomPlanet :: StateT TestState IO AObject
+getRandomPlanet :: StateT SpaceState IO AObject
 getRandomPlanet = do
   state <- State.get
   n <- liftIO $ chooseIO (aobjects state)
@@ -367,7 +367,7 @@ getRandomPlanet = do
     then getRandomPlanet
     else return n
 
-lostLife :: String -> String -> StateT TestState IO Bool
+lostLife :: String -> String -> StateT SpaceState IO Bool
 lostLife s1 s2 = do
   modify $ modLives pred
   modify $ modPlCash $ const 0 -- so that no points are given for cash
@@ -383,7 +383,7 @@ lostLife s1 s2 = do
       initState
       return False
 
-gameOver :: String -> String -> StateT TestState IO Bool
+gameOver :: String -> String -> StateT SpaceState IO Bool
 gameOver s s2 = do
   state <- State.get
   loopTextScreen 
@@ -395,16 +395,16 @@ gameOver s s2 = do
       (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed SDLK_RETURN)
   return True
 
-internationalAction :: String -> Int -> StateT TestState IO ()
+internationalAction :: String -> Int -> StateT SpaceState IO ()
 internationalAction s f = modify $ modAllegAttitudes $ consequences f s allegiances relations
 
-killed :: String -> StateT TestState IO ()
+killed :: String -> StateT SpaceState IO ()
 killed enalleg = internationalAction enalleg (-1)
 
 startCombat :: Maybe (String, Enemy, String) -- ^ If Nothing, use random enemy
                                              -- and standard message. Otherwise
                                              -- use given (msg, enemy, enemy allegiance).
-            -> StateT TestState IO (Bool, Bool) -- ^ (gameOver?, combatWon?)
+            -> StateT SpaceState IO (Bool, Bool) -- ^ (gameOver?, combatWon?)
 startCombat n = do
   state <- State.get
   (s, en, enalleg) <- case n of
@@ -461,7 +461,7 @@ startCombat n = do
       releaseKeys
       return (False, False)
 
-drawSpace :: StateT TestState IO ()
+drawSpace :: StateT SpaceState IO ()
 drawSpace = do
   state <- State.get
   modify $ modCameraState $ modCamZoom $ (+ (camzoomdelta $ camstate state))
