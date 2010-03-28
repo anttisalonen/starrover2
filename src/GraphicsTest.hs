@@ -81,7 +81,7 @@ initGame f = do
   d <- menu  (f, Color4 1.0 1.0 1.0 1.0, "Choose your difficulty, " ++ n)
             (map (\s -> (f, Color4 1.0 1.0 1.0 1.0, show s)) (allEnums :: [Difficulty]))
             (f, Color4 0.1 0.1 1.0 1.0, "=>")
-  return (n, toEnum (d - 1))
+  return (capitalize n, toEnum (d - 1))
 
 type Highscore a = [(Int, String, a)]
 
