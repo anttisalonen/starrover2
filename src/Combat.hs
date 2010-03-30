@@ -312,13 +312,29 @@ drawCombat = do
   state <- State.get
   let (x1, y1, _) = Entity.position (shipentity $ ship1 state)
       (x2, y2, _) = Entity.position (shipentity $ ship2 state)
-      ((minx1, maxx1), (miny1, maxy1)) = boxArea (x1, y1) 10
-      ((minx2, maxx2), (miny2, maxy2)) = boxArea (x2, y2) 10
+      ((minx', maxx'), (miny', maxy')) = boxThatIncludes (x1, x2) (y1, y2) 10 10 width height
+  liftIO $ matrixMode $= Projection
+  liftIO $ loadIdentity
+  liftIO $ ortho minx' maxx' miny' maxy' (-10) 10
+  liftIO $ matrixMode $= Modelview 0
+  liftIO $ drawGLScreen ([shipentity (ship1 state), shipentity (ship2 state)] ++ (S.toList (lasers state))) []
+
+boxThatIncludes :: (Ord a, Floating a) => 
+     (a, a) -- ^ coords of first pos
+  -> (a, a) -- ^ coords of second pos
+  -> a      -- ^ size of first box
+  -> a      -- ^ size of second box
+  -> a      -- ^ width
+  -> a      -- ^ height
+  -> ((a, a), (a, a)) -- ^ box that includes both first and second box
+boxThatIncludes (x1, x2) (y1, y2) inc1 inc2 w h =
+  let ((minx1, maxx1), (miny1, maxy1)) = boxArea (x1, y1) inc1
+      ((minx2, maxx2), (miny2, maxy2)) = boxArea (x2, y2) inc2
       minx = min minx1 minx2
       maxx = max maxx1 maxx2
       miny = min miny1 miny2
       maxy = max maxy1 maxy2
-      ratio = width / height
+      ratio = w / h
       (midx, midy) = ((maxx + minx) / 2, (maxy + miny) / 2)
       dx = midx - minx
       dy = midy - miny
@@ -328,11 +344,7 @@ drawCombat = do
       miny' = midy - dy'
       maxx' = midx + dx'
       maxy' = midy + dy'
-  liftIO $ matrixMode $= Projection
-  liftIO $ loadIdentity
-  liftIO $ ortho minx' maxx' miny' maxy' (-10) 10
-  liftIO $ matrixMode $= Modelview 0
-  liftIO $ drawGLScreen ([shipentity (ship1 state), shipentity (ship2 state)] ++ (S.toList (lasers state))) []
+  in ((minx', maxx'), (miny', maxy'))
 
 updateCombatState :: StateT Combat IO Int
 updateCombatState = do
