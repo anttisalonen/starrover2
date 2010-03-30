@@ -45,7 +45,7 @@ createMission Messenger alleg lc = do
 createMission SecretMessage alleg lc = do
   let planetname = aobjName lc
   state <- State.get
-  let otherplanets = map aobjName $ filter (not . hasOwner alleg) (aobjects state)
+  let otherplanets = map aobjName $ filter (\a ->  hasSomeOwner a && (not . hasOwner alleg) a) (aobjects state)
   when (not (null otherplanets)) $ do
     n <- liftIO $ chooseIO otherplanets
     when (n /= planetname) $ 

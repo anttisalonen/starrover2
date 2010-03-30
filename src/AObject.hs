@@ -79,3 +79,5 @@ hasOwner alleg a = case colonyOwner a of
                      Nothing -> False
                      Just n  -> n == alleg
 
+hasSomeOwner :: AObject -> Bool
+hasSomeOwner = isJust . colonyOwner
