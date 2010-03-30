@@ -206,31 +206,29 @@ offerMissionGeneric mis lc msg = do
     SDLK_y -> modify $ modPlMissions $ setMission alleg mis
     _      -> return ()
 
-handleArrival' :: Mission -> AObject -> StateT SpaceState IO ()
-handleArrival' (MessengerMission tgt) lc = do
+handleArrival' :: (String, Mission) -> AObject -> StateT SpaceState IO ()
+handleArrival' (alleg, MessengerMission tgt) lc = do
   state <- State.get
-  let alleg = getAllegiance lc
-      plname = playername state
+  let plname = playername state
       planetname = aobjName lc
   checkArrived tgt planetname alleg 
     ["\"Thank you, " ++ plname ++ ", for serving our great",
      "country of " ++ alleg ++ " by delivering this important",
-     "delivering this important message to us.\"",
+     "message to us.\"",
      "",
      "Mission accomplished!",
      "",
      "",
      "Press Enter to continue"]
 
-handleArrival' (SecretMessageMission tgt) lc = do
+handleArrival' (alleg, SecretMessageMission tgt) lc = do
   state <- State.get
-  let alleg = getAllegiance lc
-      plname = playername state
+  let plname = playername state
       planetname = aobjName lc
   checkArrived tgt planetname alleg 
     ["\"Thank you, " ++ plname ++ ", for serving our great",
      "country of " ++ alleg ++ " by delivering this important",
-     "delivering this important message to us.\"",
+     "message to us here on " ++ planetname ++ ".\"",
      "",
      "Mission accomplished!",
      "",

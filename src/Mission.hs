@@ -39,6 +39,6 @@ possibleMissionType :: Int -> Maybe MissionCategory
 possibleMissionType thr = 
   liftM snd (find (\n -> fst n <= thr) missionRepNeeded)
 
-missions :: MissionMap -> [Mission]
-missions = M.elements
+missions :: MissionMap -> [(String, Mission)]
+missions = M.toSeq
 
