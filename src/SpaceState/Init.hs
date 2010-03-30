@@ -15,6 +15,7 @@ import Statistics
 import Entity
 import AObject
 import TextScreen
+import Mission
 
 import SpaceState.Game
 import SpaceState.City
@@ -43,6 +44,8 @@ initState = do
   modify $ modPlHoldspace $ const maxHold
   modify $ modPlCargo $ const M.empty
   modify $ modPlHealth $ const startPlHealth
+  modify $ modPlMissions $ const emptyMissionMap
+  modify $ modAvailMission $ const Nothing
   gotoCity lc
   releaseKeys
 
