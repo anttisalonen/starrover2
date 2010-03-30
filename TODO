@@ -49,3 +49,6 @@ There's a need for some small enhancements.
  - The hits on the player should be saved for the following combats and be
    repairable on a shipyard.
  - The used difficulty level should be shown on the high score list.
+ - There should be a map for the whole star system available.
+ - The player should be able to see current status, e.g. missions, cargo,
+   attitudes, score, etc.
