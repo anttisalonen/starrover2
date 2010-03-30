@@ -38,29 +38,33 @@ width = 800
 height :: (Num a) => a
 height = 600
 
-drawEntity :: Entity -> IO ()
-drawEntity ent = do
+drawEntity :: Maybe GLdouble -> Entity -> IO ()
+drawEntity mconstsize ent = do
     loadIdentity
     translate $ (\(x,y,z) -> Vector3 x y z) (Entity.position ent)
     rotate (Entity.rotation ent) $ Vector3 0 0 (1 :: GLdouble)
-    (\(x,y,z) -> OpenGL.scale x y z) (Entity.scale ent)
+    case mconstsize of
+      Nothing -> (\(x,y,z) -> OpenGL.scale x y z) (Entity.scale ent)
+      Just n  -> uniformScale n
     currentColor $= (Entity.color ent)
     renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
       vertex $ Vertex3 x y z
 
-drawGLScreen :: [Entity] -> [AObject] -> IO ()
-drawGLScreen ents objs = do
+drawGLScreen :: Maybe GLdouble -> [Entity] -> [AObject] -> IO ()
+drawGLScreen mconstsize ents objs = do
   clear [ColorBuffer,DepthBuffer]
   lineWidth $= 5
 
-  forM_ ents drawEntity
+  forM_ ents (drawEntity mconstsize)
   
   lineWidth $= 1
   forM_ objs $ \aobj -> do
     loadIdentity
     rotate (angle aobj) $ Vector3 0 0 (1 :: GLdouble)
     translate $ Vector3 (orbitRadius aobj) 0 0
-    uniformScale (size aobj)
+    uniformScale $ case mconstsize of
+                     Nothing -> size aobj
+                     Just s  -> s
     currentColor $= (AObject.color aobj)
     renderPrimitive Polygon $ forM_ aobjPoints $ \(x,y,z) -> do
       vertex $ Vertex3 x y z

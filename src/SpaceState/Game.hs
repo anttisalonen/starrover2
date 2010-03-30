@@ -126,7 +126,7 @@ drawSpace = do
   modify $ modCameraState $ modCamera $ setZoom $ clamp 30 250 $ (camzoom $ camstate state) + (400 * (length2 $ velocity (tri state)))
   modify $ modCameraState $ modCamera $ setCentre $ Entity.position (tri state)
   liftIO $ setCamera (camera $ camstate state)
-  liftIO $ drawGLScreen [tri state] (aobjects state)
+  liftIO $ drawGLScreen Nothing [tri state] (aobjects state)
 
 gameoverText :: String
 gameoverText = 

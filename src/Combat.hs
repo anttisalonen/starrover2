@@ -314,7 +314,7 @@ drawCombat = do
       (x2, y2, _) = Entity.position (shipentity $ ship2 state)
       ((minx', maxx'), (miny', maxy')) = boxThatIncludes (x1, x2) (y1, y2) 10 10 width height
   inOrthoBoxDraw minx' maxx' miny' maxy' (-10) 10
-    (liftIO $ drawGLScreen ([shipentity (ship1 state), shipentity (ship2 state)] ++ (S.toList (lasers state))) [])
+    (liftIO $ drawGLScreen Nothing ([shipentity (ship1 state), shipentity (ship2 state)] ++ (S.toList (lasers state)))  [])
 
 updateCombatState :: StateT Combat IO Int
 updateCombatState = do

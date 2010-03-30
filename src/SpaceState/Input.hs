@@ -43,10 +43,11 @@ showMap = do
   state <- State.get
   let maxrad = maximum $ map orbitRadius $ aobjects state
   let ((minx', maxx'), (miny', maxy')) = boxThatIncludes (-maxrad, maxrad) (-maxrad, maxrad) 10 10 width height
+  let objrad = 0.01 * (min (maxx' - minx') (maxy' - miny'))
   liftIO $ until anyKeyOrMouseWasPressedIO $ 
     inOrthoBoxDraw minx' maxx' miny' maxy' (-10) 10 $ do
       delay 10
-      drawGLScreen [tri state] (aobjects state)
+      drawGLScreen (Just objrad) [tri state] (aobjects state)
 
 showInfo = do
   s <- State.get
