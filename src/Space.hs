@@ -1,7 +1,6 @@
 module Space(newStdShipEntity,
   playerShipColor,
   enemyShipColor,
-  boxArea,
   width,
   height,
   drawGLScreen,
