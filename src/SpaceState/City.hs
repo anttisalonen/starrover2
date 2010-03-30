@@ -95,7 +95,7 @@ gotoShipyard = do
   let repairtext =
         if damages == 0
           then "Repair (no damages)"
-          else "Repair ship (Cost: " ++ show cost ++ " credits)"
+          else "Repair ship (Cost: " ++ show cost ++ ")"
   n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, "Shipyard")
             [(f, Color4 1.0 1.0 0.0 1.0, repairtext),
              (f, Color4 1.0 1.0 0.0 1.0, "Exit")]
