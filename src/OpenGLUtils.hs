@@ -1,6 +1,8 @@
 module OpenGLUtils
 where
 
+import Control.Monad.State
+
 import Graphics.Rendering.OpenGL as OpenGL
 
 type GLvector2 = (GLdouble, GLdouble)
@@ -52,4 +54,12 @@ circlePoints n =
 
 uniformScale :: (MatrixComponent c) => c -> IO ()
 uniformScale x = OpenGL.scale x x x
+
+inOrthoBoxDraw :: (MonadIO m) => GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> m () -> m ()
+inOrthoBoxDraw minx maxx miny maxy minz maxz f = do
+  liftIO $ matrixMode $= Projection
+  liftIO $ loadIdentity
+  liftIO $ ortho minx maxx miny maxy minz maxz
+  liftIO $ matrixMode $= Modelview 0
+  f
 
