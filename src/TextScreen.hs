@@ -3,6 +3,7 @@ module TextScreen(loopTextScreen,
   drawButton,
   pressOneOfScreen,
   pressKeyScreen,
+  pressAnyKeyScreen,
   menu)
 where
 
@@ -104,4 +105,9 @@ pressKeyScreen :: (MonadIO m) => m () -> SDLKey -> m ()
 pressKeyScreen scr k =
   loopTextScreen scr
      (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . keyWasPressed k)
+
+pressAnyKeyScreen :: (MonadIO m) => m () -> m ()
+pressAnyKeyScreen scr =
+  loopTextScreen scr
+     (liftIO $ pollAllSDLEvents >>= return . boolToMaybe . anyKeyOrMouseWasPressed)
 
