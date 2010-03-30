@@ -1,0 +1,4 @@
+Screen width and height are currently hard coded - ugly.
+There should be an API / data structure for different missions for easier
+expansibility.
+There should also be an API / data structure for different AI types.
