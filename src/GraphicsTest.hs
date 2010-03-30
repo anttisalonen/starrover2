@@ -153,6 +153,5 @@ showHighscore f f2 inittext hs = do
                   [(f,  Color4 1.0 1.0 1.0 1.0, inittext ++ "\n"),
                    (f2, Color4 1.0 1.0 1.0 1.0, displayHighscore hs),
                    (f,  Color4 1.0 1.0 1.0 1.0, "\n\nPress any key")] (return ())
-  loopTextScreen drawfunc 
-                 (pollAllSDLEvents >>= return . boolToMaybe . anyKeyOrMouseWasPressed)
+  pressAnyKeyScreen drawfunc
 
