@@ -93,6 +93,9 @@ anyKeyOrMouseWasPressed = hasEvent isk
         isk (MouseButtonDown _ _ _) = True
         isk _                       = False
 
+anyKeyOrMouseWasPressedIO :: IO Bool
+anyKeyOrMouseWasPressedIO = pollAllSDLEvents >>= return . anyKeyOrMouseWasPressed
+
 inputLine :: Bool -> [SDL.Event] -> String -> (String, Bool)
 inputLine shift es sd = (sd', entered)
   where sd'      = osd ++ newInput
