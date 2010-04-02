@@ -2,7 +2,8 @@ module Utils
 where
 
 import System.IO
-import Data.List
+import Data.List hiding (foldl')
+import Data.Foldable
 import Data.Char
 import Control.Monad
 import System.Random
@@ -110,6 +111,9 @@ radToDeg r = r * 180 / pi
 
 degToRad :: (Floating a) => a -> a
 degToRad d = d * pi / 180
+
+lengthF :: (Foldable f) => f a -> Int
+lengthF = foldl' (\acc _ -> acc + 1) 0
 
 wrap :: (Num a, Ord a) => a -> a -> a -> a
 wrap mn mx v =
