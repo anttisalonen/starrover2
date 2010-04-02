@@ -63,3 +63,5 @@ inOrthoBoxDraw minx maxx miny maxy minz maxz f = do
   liftIO $ matrixMode $= Modelview 0
   f
 
+vecToVec :: GLvector3 -> Vector3 GLdouble
+vecToVec (x, y, z) = Vector3 x y z
