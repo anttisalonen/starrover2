@@ -62,3 +62,6 @@ There's a need for some small enhancements.
  - The points calculation should be renewed, so that money, honors and 
    (positive) attitudes are worth more than wins in combat.
  - A mission should consist of commanding a ground attack on an enemy planet.
+ - The player should be able to turn displaying of orbits off.
+ - Enemy ships should be gradually approached, with more information
+   available.
