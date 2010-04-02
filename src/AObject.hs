@@ -2,6 +2,7 @@ module AObject
 where
 
 import Data.Maybe
+import Data.Foldable
 
 import Graphics.Rendering.OpenGL as OpenGL
 
@@ -9,6 +10,7 @@ import OpenGLUtils
 import Entity
 import Collision
 import Utils
+import Tree
 
 data AObject = AObject {
     aobjName     :: String
@@ -16,11 +18,37 @@ data AObject = AObject {
   , color        :: Color4 GLfloat
   , size         :: GLdouble
   , orbitRadius  :: GLdouble
+  , barycenter   :: GLvector3
   , colonyOwner  :: Maybe String
   }
 
 modifyAngle :: (GLdouble -> GLdouble) -> AObject -> AObject
 modifyAngle f t = t{angle = f (angle t)}
+
+modifyBarycenter :: (GLvector3 -> GLvector3) -> AObject -> AObject
+modifyBarycenter f t = t{barycenter = f (barycenter t)}
+
+nullBarycenters :: AObjTree -> AObjTree
+nullBarycenters (Leaf a)    = Leaf (modifyBarycenter (const glVector3Null) a)
+nullBarycenters (Node n ts) = Node n (map nullBarycenters ts)
+
+setupBarycenters :: AObjTree -> AObjTree
+setupBarycenters = updateBarycenters . nullBarycenters
+
+updateBarycenters :: AObjTree -> AObjTree
+updateBarycenters = go glVector3Null
+  where go disp (Leaf a)             = 
+          Leaf (modifyBarycenter (*+* disp) a)
+        go disp (Node (ang, rad) ts) = 
+          Node (ang, rad) 
+               (map (go ((getPosition' ang rad) *+* disp)) ts)
+
+type Orbit = (GLdouble, GLdouble) -- angle, orbitRadius
+
+type AObjTree = Tree Orbit AObject
+
+nullAObjTree :: AObjTree
+nullAObjTree = Node (0.0, 0.0) []
 
 aobjToEntities :: AObject -> (Entity, Entity)
 aobjToEntities a = (e, o)
@@ -47,15 +75,17 @@ aorbitColor = Color4 0.5 0.5 0.5 (1 :: GLfloat)
 
 getPosition :: AObject -> GLvector3
 getPosition aobj = 
-  let r = orbitRadius aobj
-      a = degToRad $ angle aobj
-      objcoordx = r * cos a
-      objcoordy = r * sin a
-  in (objcoordx, objcoordy, 0)
+  (getPosition' (angle aobj) (orbitRadius aobj)) *+* 
+    (barycenter aobj)
 
-findCollisions :: ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> [AObject] -> Maybe AObject
+getPosition' :: GLdouble -> GLdouble -> GLvector3
+getPosition' a' r = 
+  let a = degToRad a'
+  in (r * cos a, r * sin a, 0)
+
+findCollisions :: (Foldable f) => ((GLdouble, GLdouble), (GLdouble, GLdouble)) -> f AObject -> Maybe AObject
 findCollisions plbox aobs = 
-  listToMaybe . catMaybes $ map colliding aobs
+  listToMaybe . catMaybes $ map colliding (toList aobs)
     where colliding aobj =
             if collides2d plbox abox
               then Just aobj
@@ -63,13 +93,9 @@ findCollisions plbox aobs =
             where (objcoordx, objcoordy, _) = AObject.getPosition aobj
                   abox = boxArea (objcoordx, objcoordy) (size aobj)
 
-getAObj :: String -> [AObject] -> Maybe AObject
-getAObj _ []     = Nothing
-getAObj n (a:as) = if aobjName a == n then Just a else getAObj n as 
-
-planetNameToAllegiance :: [AObject] -> String -> String
+planetNameToAllegiance :: AObjTree -> String -> String
 planetNameToAllegiance aobs planetname =
-  fromMaybe "Unknown" (getAObj planetname aobs >>= colonyOwner)
+  fromMaybe "Unknown" (fmap aobjName (find (\a -> aobjName a == planetname) aobs))
 
 getAllegiance :: AObject -> String
 getAllegiance a = fromMaybe "Unknown" (colonyOwner a)

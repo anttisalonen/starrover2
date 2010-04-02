@@ -13,8 +13,9 @@ module Space(newStdShipEntity,
   )
 where
 
-import Control.Monad
 import System.Random
+import Data.Foldable
+import Prelude hiding (mapM_)
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
@@ -22,6 +23,7 @@ import Graphics.UI.SDL as SDL
 import OpenGLUtils
 import Entity
 import AObject
+import Tree
 import Utils
 import Collision
 
@@ -50,30 +52,42 @@ drawEntity mconstsize ent = do
     renderPrimitive (primitive ent) $ forM_ (vertices ent) $ \(x,y,z) -> do
       vertex $ Vertex3 x y z
 
-drawGLScreen :: Maybe GLdouble -> [Entity] -> [AObject] -> IO ()
+drawAObject :: Maybe GLdouble -> AObject -> IO ()
+drawAObject mconstsize aobj = preservingMatrix $ do
+  translate $ vecToVec $ AObject.getPosition aobj
+  uniformScale $ case mconstsize of
+                   Nothing -> size aobj
+                   Just s  -> s
+  currentColor $= (AObject.color aobj)
+  renderPrimitive Polygon $ forM_ aobjPoints $ \(x,y,z) -> do
+    vertex $ Vertex3 x y z
+
+drawAObjTree :: Maybe GLdouble -> AObjTree -> IO ()
+drawAObjTree mconstsize (Leaf aobj) = do
+  drawAObject mconstsize aobj 
+  drawOrbit (orbitRadius aobj) (barycenter aobj)
+
+drawAObjTree mconstsize (Node (_, rad) objs) = preservingMatrix $ do
+  mapM_ (drawAObjTree mconstsize) objs
+  drawOrbit rad glVector3Null
+
+drawOrbit :: GLdouble -> GLvector3 -> IO ()
+drawOrbit rad bary = preservingMatrix $ do
+  translate $ vecToVec $ bary
+  uniformScale rad
+  currentColor $= aorbitColor
+  renderPrimitive LineLoop $ forM_ aorbitPoints $ \(x,y,z) -> do
+    vertex $ Vertex3 x y z
+
+drawGLScreen :: Maybe GLdouble -> [Entity] -> AObjTree -> IO ()
 drawGLScreen mconstsize ents objs = do
   clear [ColorBuffer,DepthBuffer]
+
   lineWidth $= 5
-
   forM_ ents (drawEntity mconstsize)
-  
   lineWidth $= 1
-  forM_ objs $ \aobj -> do
-    loadIdentity
-    rotate (angle aobj) $ Vector3 0 0 (1 :: GLdouble)
-    translate $ Vector3 (orbitRadius aobj) 0 0
-    uniformScale $ case mconstsize of
-                     Nothing -> size aobj
-                     Just s  -> s
-    currentColor $= (AObject.color aobj)
-    renderPrimitive Polygon $ forM_ aobjPoints $ \(x,y,z) -> do
-      vertex $ Vertex3 x y z
-
-    loadIdentity
-    uniformScale (orbitRadius aobj)
-    currentColor $= aorbitColor
-    renderPrimitive LineLoop $ forM_ aorbitPoints $ \(x,y,z) -> do
-      vertex $ Vertex3 x y z
+  loadIdentity
+  drawAObjTree mconstsize objs
 
   glSwapBuffers
 

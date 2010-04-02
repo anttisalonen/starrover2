@@ -17,6 +17,7 @@ import AObject
 import Combat
 import Space
 import Utils
+import Tree
 
 import SpaceState.Common
 import SpaceState.Input
@@ -55,7 +56,15 @@ updateSpaceState :: StateT SpaceState IO Bool
 updateSpaceState = do
   state <- State.get
   modify $ modTri (updateEntity 1)
-  modify $ modAObjects $ map (\a -> if orbitRadius a == 0 then a else modifyAngle (+ (10 * recip (orbitRadius a))) a)
+  modify $ modAObjects $
+     mapInner (\(ang, rad) -> if ang == 0 
+                   then (ang, rad)
+                   else (ang + 10 * recip rad, rad))
+  modify $ modAObjects $ 
+     fmap (\a -> if orbitRadius a == 0 
+                   then a 
+                   else modifyAngle (+ (10 * recip (orbitRadius a))) a)
+  modify $ modAObjects $ setupBarycenters
   let mlanded = findCollisions (getShipBox $ tri state) (aobjects state)
   case mlanded of
     Nothing -> do

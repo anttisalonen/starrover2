@@ -6,14 +6,19 @@ import Graphics.Rendering.OpenGL as OpenGL
 import AObject
 import Politics
 import Statistics
+import Tree
+import OpenGLUtils
 
-aobjs =
-  [ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0   Nothing
-  , AObject "Murphy's"   10  (Color4 0.5 0.5 1.0 1.0) 2.0 28  (Just "Murphy")
-  , AObject "Loki"       250 (Color4 0.0 0.4 0.5 1.0) 4.0 55  (Just "Harju")
-  , AObject "Harju"      30  (Color4 0.6 0.6 0.6 1.0) 9.0 115 (Just "Harju")
-  , AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 230 (Just "Riesenland")
-  , AObject "Natail"     180 (Color4 0.2 0.2 0.9 1.0) 1.5 480 (Just "Natail")
+aobjs :: AObjTree
+aobjs = Node (0.0, 0.0)
+  [ Leaf $ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0   glVector3Null Nothing
+  , Leaf $ AObject "Murphy's"   10  (Color4 0.5 0.5 1.0 1.0) 2.0 28  glVector3Null (Just "Murphy")
+  , Leaf $ AObject "Loki"       250 (Color4 0.0 0.4 0.5 1.0) 4.0 55  glVector3Null (Just "Harju")
+  , Node (30, 115) $ 
+       [Leaf $ AObject "Harju"         30  (Color4 0.6 0.6 0.6 1.0) 9.0 0  glVector3Null (Just "Harju")
+      , Leaf $ AObject "Harju's Moon"  30  (Color4 0.2 0.9 0.6 1.0) 0.8 25 glVector3Null (Just "Harju")]
+  , Leaf $ AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 230 glVector3Null (Just "Riesenland")
+  , Leaf $ AObject "Natail"     180 (Color4 0.2 0.2 0.9 1.0) 1.5 480 glVector3Null (Just "Natail")
   ]
 
 relations = mkRelationshipMap

@@ -48,7 +48,7 @@ startState plname d f f2 = SpaceState
 
 data SpaceState = SpaceState {
     tri            :: Entity
-  , aobjects       :: [AObject]
+  , aobjects       :: AObjTree
   , camstate       :: CameraState
   , stopped        :: Bool
   , gamefont       :: Font
@@ -71,7 +71,7 @@ data SpaceState = SpaceState {
 modTri :: (Entity -> Entity) -> SpaceState -> SpaceState
 modTri f t = t{tri = f (tri t)}
 
-modAObjects :: ([AObject] -> [AObject]) -> SpaceState -> SpaceState
+modAObjects :: (AObjTree -> AObjTree) -> SpaceState -> SpaceState
 modAObjects f t = t{aobjects = f (aobjects t)}
 
 modCameraState :: (CameraState -> CameraState) -> SpaceState -> SpaceState

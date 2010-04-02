@@ -1,11 +1,12 @@
 module SpaceState.City(gotoCity, catapult)
 where
 
-import Data.List
+import Data.List hiding (concat)
 import Data.Maybe
-import Control.Monad
-import Control.Monad.State as State
-import Prelude hiding (catch)
+import Data.Foldable
+import Control.Monad hiding (mapM_)
+import Control.Monad.State as State hiding (mapM_)
+import Prelude hiding (catch, concat, mapM_)
 
 import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL hiding (flip)
@@ -36,7 +37,7 @@ createMission :: MissionCategory -> String -> AObject -> StateT SpaceState IO ()
 createMission Messenger alleg lc = do
   let planetname = aobjName lc
   state <- State.get
-  let otherplanets = map aobjName $ filter (hasOwner alleg) (aobjects state)
+  let otherplanets = fmap aobjName $ filter (hasOwner alleg) (toList $ aobjects state)
   when (not (null otherplanets)) $ do
     n <- liftIO $ chooseIO otherplanets
     when (n /= planetname) $ 
@@ -45,7 +46,7 @@ createMission Messenger alleg lc = do
 createMission SecretMessage alleg lc = do
   let planetname = aobjName lc
   state <- State.get
-  let otherplanets = map aobjName $ filter (\a ->  hasSomeOwner a && (not . hasOwner alleg) a) (aobjects state)
+  let otherplanets = map aobjName $ filter (\a ->  hasSomeOwner a && (not . hasOwner alleg) a) (toList $ aobjects state)
   when (not (null otherplanets)) $ do
     n <- liftIO $ chooseIO otherplanets
     when (n /= planetname) $ 
