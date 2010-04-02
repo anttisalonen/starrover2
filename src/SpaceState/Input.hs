@@ -7,6 +7,7 @@ import Control.Monad hiding (forM_)
 import Control.Monad.State as State hiding (forM_)
 import Prelude hiding (catch, until, maximum)
 
+import Graphics.Rendering.OpenGL as OpenGL
 import Graphics.UI.SDL as SDL
 
 import Utils
@@ -14,6 +15,7 @@ import Space
 import OpenGLUtils
 import Entity
 import Camera
+import Tree
 import AObject
 import SDLUtils
 import SpaceState.Common
@@ -42,13 +44,18 @@ inputMapping =
 showMap :: StateT SpaceState IO ()
 showMap = do
   state <- State.get
-  let maxrad = maximum $ fmap orbitRadius $ aobjects state
+  let maxrad = maxDistance $ aobjects state
   let ((minx', maxx'), (miny', maxy')) = boxThatIncludes (-maxrad, maxrad) (-maxrad, maxrad) 10 10 width height
   let objrad = 0.01 * (min (maxx' - minx') (maxy' - miny'))
   liftIO $ until anyKeyOrMouseWasPressedIO $ 
     inOrthoBoxDraw minx' maxx' miny' maxy' (-10) 10 $ do
       delay 10
       drawGLScreen (Just objrad) [tri state] (aobjects state)
+
+maxDistance :: AObjTree -> GLdouble
+maxDistance s = go 0 s
+  where go disp (Leaf aobj)      = disp + orbitRadius aobj
+        go disp (Node (_, r) ts) = maximum $ map (go (disp + r)) ts
 
 showInfo = do
   s <- State.get
