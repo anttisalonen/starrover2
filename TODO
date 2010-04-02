@@ -53,3 +53,12 @@ There's a need for some small enhancements.
  - The player should be able to see current status, e.g. missions, cargo,
    attitudes, score, etc.
  - A 'help' screen, for example in the main menu, would be helpful.
+ - There should be some source of information on international relationships,
+   like newspapers, etc.
+ - The missions should reward the player, by attitude, honors, and money.
+ - The "secret message" mission should include returning to the planet which
+   issued the mission for reward.
+ - The attitudes towards the player should fade with time and due to death.
+ - The points calculation should be renewed, so that money, honors and 
+   (positive) attitudes are worth more than wins in combat.
+ - A mission should consist of commanding a ground attack on an enemy planet.
