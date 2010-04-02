@@ -1,10 +1,11 @@
 module SpaceState.Input(handleEvents)
 where
 
-import Data.List
-import Control.Monad
-import Control.Monad.State as State
-import Prelude hiding (catch, until)
+import Data.List hiding (maximum)
+import Data.Foldable
+import Control.Monad hiding (forM_)
+import Control.Monad.State as State hiding (forM_)
+import Prelude hiding (catch, until, maximum)
 
 import Graphics.UI.SDL as SDL
 
@@ -41,7 +42,7 @@ inputMapping =
 showMap :: StateT SpaceState IO ()
 showMap = do
   state <- State.get
-  let maxrad = maximum $ map orbitRadius $ aobjects state
+  let maxrad = maximum $ fmap orbitRadius $ aobjects state
   let ((minx', maxx'), (miny', maxy')) = boxThatIncludes (-maxrad, maxrad) (-maxrad, maxrad) 10 10 width height
   let objrad = 0.01 * (min (maxx' - minx') (maxy' - miny'))
   liftIO $ until anyKeyOrMouseWasPressedIO $ 
