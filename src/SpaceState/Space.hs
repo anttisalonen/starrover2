@@ -63,7 +63,7 @@ updateSpaceState = do
   modify $ modAObjects $ 
      fmap (\a -> if orbitRadius a == 0 
                    then a 
-                   else modifyAngle (+ (10 * recip (orbitRadius a))) a)
+                   else modifyAngle (+ (10 * orbitalSpeedcoeff a * recip (orbitRadius a))) a)
   modify $ modAObjects $ setupBarycenters
   let mlanded = findCollisions (getShipBox $ tri state) (aobjects state)
   case mlanded of

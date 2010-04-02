@@ -13,13 +13,14 @@ import Utils
 import Tree
 
 data AObject = AObject {
-    aobjName     :: String
-  , angle        :: GLdouble
-  , color        :: Color4 GLfloat
-  , size         :: GLdouble
-  , orbitRadius  :: GLdouble
-  , barycenter   :: GLvector3
-  , colonyOwner  :: Maybe String
+    aobjName          :: String
+  , angle             :: GLdouble
+  , color             :: Color4 GLfloat
+  , size              :: GLdouble
+  , orbitalSpeedcoeff :: GLdouble
+  , orbitRadius       :: GLdouble
+  , barycenter        :: GLvector3
+  , colonyOwner       :: Maybe String
   }
 
 modifyAngle :: (GLdouble -> GLdouble) -> AObject -> AObject

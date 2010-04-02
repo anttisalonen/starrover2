@@ -11,17 +11,17 @@ import OpenGLUtils
 
 aobjs :: AObjTree
 aobjs = Node (0.0, 0.0)
-  [ Leaf $ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 0   glVector3Null Nothing
-  , Leaf $ AObject "Murphy's"   10  (Color4 0.5 0.5 1.0 1.0) 2.0 28  glVector3Null (Just "Murphy")
-  , Leaf $ AObject "Loki"       250 (Color4 0.0 0.4 0.5 1.0) 4.0 55  glVector3Null (Just "Harju")
+  [ Leaf $ AObject "Star"       0   (Color4 0.9 0.0 0.0 1.0) 6.0 1.0 0   glVector3Null Nothing
+  , Leaf $ AObject "Murphy's"   10  (Color4 0.5 0.5 1.0 1.0) 2.0 1.0 28  glVector3Null (Just "Murphy")
+  , Leaf $ AObject "Loki"       250 (Color4 0.0 0.4 0.5 1.0) 4.0 1.0 55  glVector3Null (Just "Harju")
   , Node (30, 115) $ 
-       [Leaf $ AObject "Harju"         30  (Color4 0.6 0.6 0.6 1.0) 9.0 0  glVector3Null (Just "Harju")
-      , Leaf $ AObject "Harju's Moon"  30  (Color4 0.2 0.9 0.6 1.0) 0.8 25 glVector3Null (Just "Harju")]
-  , Leaf $ AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 230 glVector3Null (Just "Riesenland")
-  , Leaf $ AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 230 glVector3Null (Just "Riesenland")
+       [Leaf $ AObject "Harju"         30  (Color4 0.6 0.6 0.6 1.0) 9.0 1.0 0  glVector3Null (Just "Harju")
+      , Leaf $ AObject "Harju's Moon"  30  (Color4 0.2 0.9 0.6 1.0) 0.8 1.0 25 glVector3Null (Just "Harju")]
+  , Leaf $ AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 1.0 230 glVector3Null (Just "Riesenland")
+  , Leaf $ AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 1.0 230 glVector3Null (Just "Riesenland")
   , Node (180, 480) $ 
-       [Leaf $ AObject "Natail"     180 (Color4 0.2 0.2 0.9 1.0) 1.0 60 glVector3Null (Just "Natail")
-      , Leaf $ AObject "Mammoth"    0   (Color4 0.3 0.0 0.6 1.0) 1.5 40 glVector3Null (Just "Mammoth")]
+       [Leaf $ AObject "Natail"     180 (Color4 0.2 0.2 0.9 1.0) 1.0 1.5 60 glVector3Null (Just "Natail")
+      , Leaf $ AObject "Mammoth"    0   (Color4 0.3 0.0 0.6 1.0) 1.5 1.0 40 glVector3Null (Just "Mammoth")]
   ]
 
 relations = mkRelationshipMap
