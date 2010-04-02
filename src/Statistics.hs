@@ -2,6 +2,7 @@
 module Statistics
 where
 
+import Data.Foldable
 import Control.Monad.State
 import System.Random
 import Data.List
@@ -21,11 +22,12 @@ choose l = do
   i <- randomRM (0, n - 1)
   return (l !! i)
 
-chooseIO :: [a] -> IO a
+chooseIO :: (Foldable f) => f a -> IO a
 chooseIO l = do
-  let n = length l
+  let l' = toList l
+      n = length l'
   i <- randomRIO (0, n - 1)
-  return (l !! i)
+  return (l' !! i)
 
 stdNormal :: (Random a, Ord a, Floating a) => Rnd a
 stdNormal = do
