@@ -18,7 +18,10 @@ aobjs = Node (0.0, 0.0)
        [Leaf $ AObject "Harju"         30  (Color4 0.6 0.6 0.6 1.0) 9.0 0  glVector3Null (Just "Harju")
       , Leaf $ AObject "Harju's Moon"  30  (Color4 0.2 0.9 0.6 1.0) 0.8 25 glVector3Null (Just "Harju")]
   , Leaf $ AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 230 glVector3Null (Just "Riesenland")
-  , Leaf $ AObject "Natail"     180 (Color4 0.2 0.2 0.9 1.0) 1.5 480 glVector3Null (Just "Natail")
+  , Leaf $ AObject "Riesenland" 80  (Color4 0.1 0.8 0.8 1.0) 2.0 230 glVector3Null (Just "Riesenland")
+  , Node (180, 480) $ 
+       [Leaf $ AObject "Natail"     180 (Color4 0.2 0.2 0.9 1.0) 1.0 60 glVector3Null (Just "Natail")
+      , Leaf $ AObject "Mammoth"    0   (Color4 0.3 0.0 0.6 1.0) 1.5 40 glVector3Null (Just "Mammoth")]
   ]
 
 relations = mkRelationshipMap
