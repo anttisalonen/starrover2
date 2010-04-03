@@ -65,3 +65,5 @@ There's a need for some small enhancements.
  - The player should be able to turn displaying of orbits off.
  - Enemy ships should be gradually approached, with more information
    available.
+ - The positive attitudes should be capped until the player does missions for
+   the allegiance.
