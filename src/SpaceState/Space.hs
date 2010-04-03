@@ -104,7 +104,7 @@ enteringCity lc = do
     Just (gameover, combatwon)  -> do
       if combatwon
         then gotoCity lc
-        else catapult (AObject.getPosition lc)
+        else catapult lc
       return gameover
 
 

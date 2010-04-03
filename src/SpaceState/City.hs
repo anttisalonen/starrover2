@@ -65,7 +65,7 @@ gotoCity lc = do
   handleArrival lc
   updateAvailableMission lc
   cityLoop lc
-  catapult (AObject.getPosition lc)
+  catapult lc
 
 cityLoop :: AObject -> StateT SpaceState IO ()
 cityLoop lc = do
@@ -122,14 +122,15 @@ gotoMarket planetname = do
   modify $ modPlCash $ const cash'
   modify $ modPlHoldspace $ const hold'
 
-catapult :: GLvector3 -> StateT SpaceState IO ()
-catapult vec = do
+catapult :: AObject -> StateT SpaceState IO ()
+catapult lc = do
   state <- State.get
-  let plloc = Entity.position (tri state)
-  let (dx, dy, _) = (plloc *-* vec)
-  let newvel = OpenGLUtils.normalize (dx, dy, 0) *** 0.2
-  modify $ modTri $ modifyPosition $ (*+* (newvel *** 5))
-  modify $ modTri $ modifyVelocity $ const newvel
+  let objpos = AObject.getPosition lc
+      dist = AObject.size lc
+      plloc = Entity.position (tri state)
+      pldir = OpenGLUtils.normalize (plloc *-* objpos)
+  modify $ modTri $ modifyPosition $ const $ objpos *+* (pldir *** (dist + 4))
+  modify $ modTri $ modifyVelocity $ const $ pldir *** 0.2
   modify $ modTri $ resetAcceleration
   modify $ modTri $ modifyRotation $ (+180)
 
