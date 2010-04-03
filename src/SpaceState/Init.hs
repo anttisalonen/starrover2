@@ -38,9 +38,9 @@ lostLife s1 s2 = do
 
 initState :: StateT SpaceState IO ()
 initState = do
-  lc <- getRandomPlanet
   modify $ modAObjects $ setupBarycenters
-  modify $ modTri $ modifyPosition (const $ (getPosition lc *+* (glVector3UnitX *** (AObject.size lc))))
+  lc <- getRandomPlanet
+  modify $ modTri $ modifyPosition (const $ (getPosition lc *+* (glVector3UnitX *** (2 * AObject.size lc))))
   modify $ modPlCash $ const startCash
   modify $ modPlHoldspace $ const maxHold
   modify $ modPlCargo $ const M.empty
