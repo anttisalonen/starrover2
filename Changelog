@@ -1,5 +1,10 @@
 ChangeLog:
 
+0.0.6 - 03.04.2010
+Added governors and missions
+Added star system map display
+Added support for moons and binary systems
+
 0.0.5 - 28.03.2010
 Added possibility to repair ship
 Player name is now asked when starting the game
