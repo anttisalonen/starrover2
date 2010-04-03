@@ -74,7 +74,7 @@ cityLoop lc = do
   let f = gamefont state
       alleg = getAllegiance lc
       leave = "Leave " ++ planetname
-      cangovernor = isJust $ possibleMissionType (allegAttitude planetname state)
+      cangovernor = isJust $ possibleMissionType (allegAttitude alleg state)
       options = "Market" : "Shipyard" : (if cangovernor then "Governor" : [leave] else [leave])
   n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, 
                   concat ["Starport on " ++ planetname,
