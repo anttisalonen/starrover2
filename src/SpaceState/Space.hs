@@ -84,9 +84,9 @@ updateSpaceState = do
 -- or Just (gameover?, combatwon?)
 survivedPolice :: AObject -> StateT SpaceState IO (Maybe (Bool, Bool))
 survivedPolice lc = do
-  let planetname = aobjName lc
+  let alleg = getAllegiance lc
   state <- State.get
-  let attid = allegAttitude planetname state
+  let attid = allegAttitude alleg state
   if attid >= (-1)
     then return Nothing
     else do
