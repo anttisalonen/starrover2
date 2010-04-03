@@ -1,69 +1,61 @@
-GraphicsTest:
-The game's too easy.
- - The AI should be smarter.
-  - The AI should predict the position of the player depending on velocity
-    and acceleration.
-  - There should be different modes for fighting - the easy opponents
-    wouldn't predict (like now), some should try to escape at some point.
- - There should be more enemies, and different ships to combat against.
-  - Bounty hunter, a pirate or pirate group, a trader, trader convoy.
- - There should be limited time for the player, which is spent whenever 
-   losing the ship and flying in the space.
- - The cargo hold should be limited. When capturing cargo, the player
-   must be able to choose which cargo to take and which to leave behind.
- - There's a need for some dispensable good, like fuel. (Maybe also
-   "hyperspace fuel" for traveling to other star systems.)
- - The cities on planets should have limited cash as well, so that you
-   can't jump dump a huge cargo there and get rich.
-The game may seem a bit dull to some.
- - Adding some background stars should be easy.
- - Adding planet textures may be doable.
- - There should be a visual effect when accelerating.
- - Sound effects.
- - Music.
-The game world needs expanding.
- - We need moons, more planets and more stars.
- - Space stations should be added as well.
- - We need a concept on how to travel between star systems.
- - The market prices should be generated less randomly, depending on the
-   characteristics of the planet and nearby planets.
- - There should be more kinds of goods, with different characteristics
-   (illegal, demanded or supplied by industrialized planets, etc.).
-The player needs more activity.
- - There should be missions, and different countries, fractions and politics
-   as a mission generator. We need a concept on how this exactly looks like.
- - Maybe there should be more things for the player to do, like mining on
-   planets and on asteroids.
- - One should also be able to fight on planets and attack cities (maybe as a 
-   part of a mission).
- - The player should be able to buy a different space ship.
-There's a need for some small enhancements.
- - A popup when the player pressed 'q', asking y/n.
- - A 'paused' popup.
- - A main menu with the possibility to view the high score list.
- - An info screen accessible when in space or in cities, showing the cargo
-   and cash.
- - Player's name should be entered before the game.
- - The gravity of the astronomical objects should pull the player's ship.
- - Combats should have time limits.
- - The hits on the player should be saved for the following combats and be
-   repairable on a shipyard.
- - The used difficulty level should be shown on the high score list.
- - There should be a map for the whole star system available.
- - The player should be able to see current status, e.g. missions, cargo,
-   attitudes, score, etc.
- - A 'help' screen, for example in the main menu, would be helpful.
- - There should be some source of information on international relationships,
-   like newspapers, etc.
- - The missions should reward the player, by attitude, honors, and money.
- - The "secret message" mission should include returning to the planet which
-   issued the mission for reward.
- - The attitudes towards the player should fade with time and due to death.
- - The points calculation should be renewed, so that money, honors and 
-   (positive) attitudes are worth more than wins in combat.
- - A mission should consist of commanding a ground attack on an enemy planet.
- - The player should be able to turn displaying of orbits off.
- - Enemy ships should be gradually approached, with more information
-   available.
- - The positive attitudes should be capped until the player does missions for
-   the allegiance.
+Box Date       Effort Category Description
+[x] 03.04.2010  3     tooeasy  The AI should predict the position of the player depending on velocity.
+[ ] 03.04.2010  3     tooeasy  There should be different modes for fighting - the easy opponents
+                               wouldn't predict (like now), some should try to escape at some point.
+[ ] 03.04.2010  5     tooeasy  There should be more enemies, and different ships to combat against.
+[ ] 03.04.2010  3     tooeasy  Bounty hunter, a pirate or pirate group, a trader, trader convoy.
+[ ] 03.04.2010  3     tooeasy  There should be limited time for the player, which is spent whenever 
+                               losing the ship and flying in the space.
+[x] 03.04.2010  3     tooeasy  The cargo hold should be limited. When capturing cargo, the player
+                               must be able to choose which cargo to take and which to leave behind.
+[ ] 03.04.2010  4     tooeasy  There's a need for some dispensable good, like fuel. (Maybe also
+                               "hyperspace fuel" for traveling to other star systems.)
+[ ] 03.04.2010  4     tooeasy  The cities on planets should have limited cash as well, so that you
+                               can't jump dump a huge cargo there and get rich.
+[ ] 03.04.2010  3     effects  Adding some background stars should be easy.
+[ ] 03.04.2010  4     effects  Adding planet textures may be doable.
+[ ] 03.04.2010  4     effects  There should be a visual effect when accelerating.
+[ ] 03.04.2010  4     effects  Sound effects.
+[ ] 03.04.2010  4     effects  Music.
+[ ] 03.04.2010  2     world    We need moons, more planets and more stars.
+[ ] 03.04.2010  4     world    Space stations should be added as well.
+[ ] 03.04.2010  5     world    We need a concept on how to travel between star systems.
+[ ] 03.04.2010  4     world    The market prices should be generated less randomly, depending on the
+                               characteristics of the planet and nearby planets.
+[ ] 03.04.2010  4     world    There should be more kinds of goods, with different characteristics
+                               (illegal, demanded or supplied by industrialized planets, etc.).
+[ ] 03.04.2010  4     activity There should be missions, and different countries, fractions and politics
+                               as a mission generator. We need a concept on how this exactly looks like.
+[ ] 03.04.2010  4     activity Maybe there should be more things for the player to do, like mining on
+                               planets and on asteroids.
+[ ] 03.04.2010  5     activity One should also be able to fight on planets and attack cities (maybe as a 
+                               part of a mission).
+[ ] 03.04.2010  4     activity The player should be able to buy a different space ship.
+[ ] 03.04.2010  3     enhance  A popup when the player pressed 'q', asking y/n.
+[ ] 03.04.2010  3     enhance  A 'paused' popup.
+[x] 03.04.2010  4     enhance  A main menu with the possibility to view the high score list.
+[x] 03.04.2010  2     enhance  Player's name should be entered before the game.
+[ ] 03.04.2010  3     enhance  The gravity of the astronomical objects should pull the player's ship.
+[ ] 03.04.2010  3     enhance  Combats should have time limits.
+[x] 03.04.2010  3     enhance  The hits on the player should be saved for the following combats and be
+                               repairable on a shipyard.
+[ ] 03.04.2010  2     enhance  The used difficulty level should be shown on the high score list.
+[x] 03.04.2010  3     enhance  There should be a map for the whole star system available.
+[ ] 03.04.2010  4     enhance  The player should be able to see current status, e.g. missions, cargo,
+                               attitudes, score, etc.
+[ ] 03.04.2010  3     enhance  A 'help' screen, for example in the main menu, would be helpful.
+[ ] 03.04.2010  4     enhance  There should be some source of information on international relationships,
+                               like newspapers, etc.
+[ ] 03.04.2010  2     enhance  The missions should reward the player, by attitude, honors, and money.
+[ ] 03.04.2010  3     enhance  The "secret message" mission should include returning to the planet which
+                               issued the mission for reward.
+[ ] 03.04.2010  3     enhance  The attitudes towards the player should fade with time and due to death.
+[ ] 03.04.2010  2     enhance  The points calculation should be renewed, so that money, honors and 
+                               (positive) attitudes are worth more than wins in combat.
+[ ] 03.04.2010  5     enhance  A mission should consist of commanding a ground attack on an enemy planet.
+[ ] 03.04.2010  3     enhance  The player should be able to turn displaying of orbits off.
+[ ] 03.04.2010  3     enhance  Enemy ships should be gradually approached, with more information
+                               available.
+[ ] 03.04.2010  3     enhance  The positive attitudes should be capped until the player does missions for
+                               the allegiance.
+
