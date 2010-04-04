@@ -129,7 +129,7 @@ catapult lc = do
       dist = AObject.size lc
       plloc = Entity.position (tri state)
       pldir = OpenGLUtils.normalize (plloc *-* objpos)
-  modify $ modTri $ modifyPosition $ const $ objpos *+* (pldir *** (dist + 4))
+  modify $ modTri $ modifyPosition $ const $ objpos *+* (pldir *** (dist + 5))
   modify $ modTri $ modifyVelocity $ const $ pldir *** 0.2
   modify $ modTri $ resetAcceleration
   modify $ modTri $ modifyRotation $ (+180)
