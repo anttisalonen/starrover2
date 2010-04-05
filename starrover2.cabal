@@ -33,7 +33,7 @@ source-repository head
   type:      git
   location:  git://github.com/anttisalonen/starrover2.git
 
-Executable GraphicsTest
+Executable starrover2
   Build-Depends:   base > 3 && < 5, haskell98,
                    OpenGL>=2.1.0.0,
                    mtl>=1.1.0.0,
@@ -43,7 +43,7 @@ Executable GraphicsTest
                    FTGL>=1.333,
                    directory>=1.0.0.0,
                    bytestring>=0.9.0.0
-  Main-is:         GraphicsTest.hs
+  Main-is:         Main.hs
   Hs-Source-Dirs:  src
   Ghc-options:     -Wall -fno-warn-missing-signatures
 
