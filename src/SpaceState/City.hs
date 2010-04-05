@@ -78,7 +78,7 @@ cityLoop lc = do
       leave = "Leave " ++ planetname
       cangovernor = isJust $ possibleMissionType (allegAttitude alleg state)
       options = "Market" : "Shipyard" : "Foreign affairs" : (if cangovernor then "Governor" : [leave] else [leave])
-  n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, 
+  n <- liftIO $ menu 1 (f, Color4 1.0 1.0 1.0 1.0, 
                   concat ["Starport on " ++ planetname,
                           if alleg == planetname then "" else "\nThis planet belongs to the country of " ++ alleg ++ "."])
             (map (\s -> (f, Color4 1.0 1.0 0.0 1.0, s)) options)
@@ -118,7 +118,7 @@ gotoShipyard = do
         if damages == 0
           then "Repair (no damages)"
           else "Repair ship (Cost: " ++ show cost ++ ")"
-  n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, "Shipyard")
+  n <- liftIO $ menu 1 (f, Color4 1.0 1.0 1.0 1.0, "Shipyard")
             [(f, Color4 1.0 1.0 0.0 1.0, repairtext),
              (f, Color4 1.0 1.0 0.0 1.0, "Exit")]
             (f, Color4 1.0 1.0 0.0 1.0, "=>")

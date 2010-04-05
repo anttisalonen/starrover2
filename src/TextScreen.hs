@@ -65,8 +65,8 @@ drawButton ms ((tlx, tly), (diffx, diffy)) = do
       translate $ Vector3 10 8 (0 :: GLdouble)
       renderFont f str FTGL.Front
 
-menu :: (Font, Color4 GLfloat, String) -> [(Font, Color4 GLfloat, String)] -> (Font, Color4 GLfloat, String) -> IO Int
-menu (titlef, titlec, titlestr) options cursor = do
+menu :: Int -> (Font, Color4 GLfloat, String) -> [(Font, Color4 GLfloat, String)] -> (Font, Color4 GLfloat, String) -> IO Int
+menu defval (titlef, titlec, titlestr) options cursor = do
   let numitems = length options
   let title = (titlef, titlec, titlestr ++ replicate (4 - length (lines titlestr)) '\n')
   let drawCursor n = liftIO $ writeLine (130, 400 - 50 * fromIntegral n) cursor
@@ -77,7 +77,7 @@ menu (titlef, titlec, titlestr) options cursor = do
   if numitems == 0
     then return 0
     else do
-      n <- Prelude.flip evalStateT (1 :: Int) $ do
+      n <- Prelude.flip evalStateT (clamp 1 numitems defval) $ do
         let drawfunc = do n <- State.get 
                           liftIO $ makeTextScreen (200, 500)
                             (title:options)

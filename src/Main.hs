@@ -51,7 +51,7 @@ initAll = do
   mainMenu f f2
 
 mainMenu f f2 = do
-  n <- menu (f, Color4 1.0 1.0 1.0 1.0, "Star Rover 2")
+  n <- menu 1 (f, Color4 1.0 1.0 1.0 1.0, "Star Rover 2")
             [(f, Color4 1.0 1.0 1.0 1.0, "Start a new game"),
              (f, Color4 1.0 1.0 1.0 1.0, "High scores"),
              (f, Color4 1.0 1.0 1.0 1.0, "Help"),
@@ -95,7 +95,7 @@ introText = intercalate "\n"
 initGame :: Font -> IO (String, Difficulty)
 initGame f = do
   n <- getNameInput introText f
-  d <- menu  (f, Color4 1.0 1.0 1.0 1.0, "Choose your difficulty, " ++ n)
+  d <- menu 2 (f, Color4 1.0 1.0 1.0 1.0, "Choose your difficulty, " ++ capitalize n)
             (map (\s -> (f, Color4 1.0 1.0 1.0 1.0, show s)) (allEnums :: [Difficulty]))
             (f, Color4 0.1 0.1 1.0 1.0, "=>")
   return (capitalize n, toEnum (d - 1))
