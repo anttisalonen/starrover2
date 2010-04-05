@@ -1,5 +1,13 @@
 ChangeLog:
 
+0.0.7 - 05.04.2010
+Added help screen in main menu
+Added foreign affairs screen
+Added README
+Made slight adjustments to game balance
+Changed calculation of points
+Added displaying used difficulty level in high score list
+
 0.0.6 - 03.04.2010
 Added governors and missions
 Added star system map display
