@@ -152,7 +152,12 @@ startPlHealth = maxhealth intermediate
 startCash = 10
 
 finalPoints :: SpaceState -> Int
-finalPoints s = max 0 (points s + (diffcoeff (difficulty s)) * attitudesPoints (M.elements $ allegattitudes s) + plcash s + (lives s * 50) - 160)
+finalPoints s = 
+  max 0 (10 * 
+   (points s + 
+    (diffcoeff (difficulty s)) * attitudesPoints (M.elements $ allegattitudes s) + 
+    plcash s + 
+    (lives s * 50) - 160))
 
 attitudesPoints :: [Int] -> Int
 attitudesPoints = floor . sum . map val
