@@ -17,6 +17,7 @@ import AObject
 import Combat
 import Space
 import Utils
+import Mission
 import Tree
 
 import SpaceState.Common
@@ -87,7 +88,7 @@ survivedPolice lc = do
   let alleg = getAllegiance lc
   state <- State.get
   let attid = allegAttitude alleg state
-  if attid >= (-1)
+  if attid >= pointsUntilThePoliceArrives
     then return Nothing
     else do
       let s = concat ["There's police! What to do?\n",
