@@ -1,0 +1,41 @@
+Star Rover 2 - Installation
+===========================
+
+Where to get the source
+
+The source is available at http://github.com/anttisalonen/starrover2.
+It should also be available at Hackage (http://hackage.haskell.org/) by
+the time you read this.
+
+To install from Hackage, you need cabal (Common Architecture for Building 
+Applications and Libraries, http://www.haskell.org/cabal/).
+
+
+To install from Hackage, do:
+
+cabal update && cabal install starrover2
+
+
+To install from source, you need to have GHC (Glasgow Haskell Compiler)
+as well as cabal.
+
+To install from source user-wide, do:
+
+cabal configure --user
+cabal build
+cabal install
+
+Make sure you have $HOME/.cabal/bin in your $PATH.
+
+To install system-wide, do:
+
+cabal configure
+cabal build
+cabal install
+
+
+To run, type in:
+
+starrover2
+
+

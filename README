@@ -1,0 +1,27 @@
+Star Rover 2
+README
+
+Star Rover 2 is a space flying game where the player can combat against other
+space ships, trade and complete missions. Destroy enemy fighters, plan your
+trade route carefully, buy low and sell high, serve your country! Be careful
+with the police, pay attention to the international relations and get as rich
+as you can.
+
+You start on a foreign planet in a star system with multiple states competing
+for power. Pirating may seem the easiest way to riches, but getting into too
+much trouble with the authorities may prove fatal. Of course, privateering
+for your country may bring you fame as well as wealth.
+
+Controls:
+
+Controls in space:
+
+ Arrows / W+A+S+D - control your ship
+ Space            - shoot (in combat)
+ M                - star system map
+ Q                - retire
+
+Controls in menus:
+ Arrows         - move around in menus
+ Enter or space - choose action
+
