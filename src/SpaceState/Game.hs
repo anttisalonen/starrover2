@@ -2,6 +2,7 @@ module SpaceState.Game
 where
 
 import Data.List
+import Data.Maybe
 import Control.Monad
 import Control.Monad.State as State
 import Prelude hiding (catch)
@@ -157,4 +158,15 @@ allegAttitude :: String -> SpaceState -> Int
 allegAttitude planetname state = 
   attitude (planetNameToAllegiance (aobjects state) planetname) $ 
      allegattitudes state
+
+relationshipsOf :: String -> [(String, Int)]
+relationshipsOf n = catMaybes $ map f relationsList
+  where f ((n1, n2), (_, v)) = do
+          if n1 == n2
+            then Nothing
+            else if n1 == n
+                   then Just (n2, v)
+                   else if n2 == n
+                          then Just (n1, v)
+                          else Nothing
 

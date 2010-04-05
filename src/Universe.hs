@@ -24,7 +24,9 @@ aobjs = Node (0.0, 0.0)
       , Leaf $ AObject "Mammoth"    0   (Color4 0.3 0.0 0.6 1.0) 1.5 1.0 40 glVector3Null (Just "Natail")]
   ]
 
-relations = mkRelationshipMap
+relations = mkRelationshipMap relationsList
+
+relationsList =
   [(("Murphy",     "Harju"),      (Peace, -5)),
    (("Murphy",     "Riesenland"), (Peace, 1)),
    (("Murphy",     "Natail"),     (Peace, -3)),

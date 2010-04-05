@@ -7,8 +7,10 @@ import Data.Foldable
 import Control.Monad hiding (mapM_)
 import Control.Monad.State as State hiding (mapM_)
 import Prelude hiding (catch, concat, mapM_)
+import Text.Printf
 
 import Graphics.Rendering.OpenGL as OpenGL
+import Graphics.Rendering.FTGL as FTGL
 import Graphics.UI.SDL as SDL hiding (flip)
 
 import Statistics
@@ -75,7 +77,7 @@ cityLoop lc = do
       alleg = getAllegiance lc
       leave = "Leave " ++ planetname
       cangovernor = isJust $ possibleMissionType (allegAttitude alleg state)
-      options = "Market" : "Shipyard" : (if cangovernor then "Governor" : [leave] else [leave])
+      options = "Market" : "Shipyard" : "Foreign affairs" : (if cangovernor then "Governor" : [leave] else [leave])
   n <- liftIO $ menu (f, Color4 1.0 1.0 1.0 1.0, 
                   concat ["Starport on " ++ planetname,
                           if alleg == planetname then "" else "\nThis planet belongs to the country of " ++ alleg ++ "."])
@@ -84,8 +86,27 @@ cityLoop lc = do
   case n of
     1 -> gotoMarket planetname >> cityLoop lc
     2 -> gotoShipyard >> cityLoop lc
-    3 -> if cangovernor then gotoGovernor lc >> cityLoop lc else return ()
+    3 -> liftIO (showForeignAffairs (colonyOwner lc) (gamefont state)) >> cityLoop lc
+    4 -> if cangovernor then gotoGovernor lc >> cityLoop lc else return ()
     _ -> return ()
+
+showForeignAffairs :: Maybe String -> Font -> IO ()
+showForeignAffairs mst f =
+  let strs =
+        case mst of
+          Nothing -> ["This colony is in anarchy!"]
+          Just st -> map relToStr rs
+            where rs = relationshipsOf st
+                  relToStr (l, v) | v <= (-4) = printf "We despise the state of %s." l
+                  relToStr (l, v) | v <= (-1) = printf "We are not very fond of %s." l
+                  relToStr (l, v) | v <= 1 = printf "Our relationship with the state of %s is neutral." l
+                  relToStr (l, v) | v <= 4 = printf "%s is a friend of ours." l
+                  relToStr (l, _) | otherwise = printf "We are allied with the state of %s." l
+      drawfunc = makeTextScreen (100, 420) 
+                                (map (\s -> (f, Color4 1.0 1.0 1.0 1.0, s)) 
+                                     (strs ++ ["\n\nPress any key to continue"])) 
+                                (return ())
+  in pressAnyKeyScreen drawfunc
 
 gotoShipyard :: StateT SpaceState IO ()
 gotoShipyard = do
