@@ -72,14 +72,14 @@ helpScreen f = do
                   [(f, Color4 1.0 1.0 1.0 1.0, "Controls in space:"),
                    (f, Color4 1.0 1.0 1.0 1.0, "Arrows/W/A/S/D - control your ship"),
                    (f, Color4 1.0 1.0 1.0 1.0, "Space - shoot (in combat)"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "+ and - - zoom/unzoom"),
                    (f, Color4 1.0 1.0 1.0 1.0, "M - star system map"),
                    (f, Color4 1.0 1.0 1.0 1.0, "Q - retire"),
                    (f, Color4 1.0 1.0 1.0 1.0, "\n"),
                    (f, Color4 1.0 1.0 1.0 1.0, "Controls in menus:"),
                    (f, Color4 1.0 1.0 1.0 1.0, "Arrows - move around in menus"),
-                   (f, Color4 1.0 1.0 1.0 1.0, "Enter or space - choose action"),
-                   (f, Color4 1.0 1.0 1.0 1.0, "\n"),
-                   (f, Color4 1.0 1.0 1.0 1.0, "Press any key to continue")] (return ())
+                   (f, Color4 1.0 1.0 1.0 1.0, "Enter or space - choose action")]
+                  (return ())
   pressAnyKeyScreen drawfunc
 
 startGame f f2 = do
