@@ -327,9 +327,9 @@ updateCombatState = do
   modify $ modShip2 $ modShipEntity (updateEntity 1)
   handleCombatCollisions
   state <- State.get
-  if (health (ship1 state) == 0)
+  if (health (ship1 state) <= 0)
     then return 1
-    else if (health (ship2 state) == 0)
+    else if (health (ship2 state) <= 0)
            then return 2
            else return 0
 
