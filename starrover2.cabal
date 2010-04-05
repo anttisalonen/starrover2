@@ -8,7 +8,7 @@ Maintainer:     Antti Salonen<ajsalonen at gmail dot com>
 Copyright:      Antti Salonen 2009
 Stability:      Unstable
 Homepage:       http://github.com/anttisalonen/starrover2
-Category:       Games
+Category:       Game
 Synopsis:       Space simulation game
 Description:    Space simulation game.
 Build-type:     Simple
