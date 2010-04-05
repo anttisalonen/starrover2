@@ -51,8 +51,8 @@ startCombat n = do
   if c == SDLK_RETURN
     then do
       enemyrot <- liftIO $ fromIntegral `fmap` randomRIO (-180, 180 :: Int)
-      plpos <- liftIO $ randPos ((0, 0), (50, 100))
-      enpos <- liftIO $ randPos ((100, 0), (150, 100))
+      enpos <- liftIO $ randPos ((0, 0), (50, 100))
+      plpos <- liftIO $ randPos ((100, 0), (150, 100))
       let plrot = angleFromTo plpos enpos - 90
       (newhealth, newpoints, mnewcargo) <- liftIO $ evalStateT combatLoop 
                                            (newCombat plalleg enalleg intermediate (plhealth state) plpos enpos plrot enemyrot en)
