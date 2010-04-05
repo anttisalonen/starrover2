@@ -152,7 +152,12 @@ startPlHealth = maxhealth intermediate
 startCash = 10
 
 finalPoints :: SpaceState -> Int
-finalPoints s = points s + plcash s + (lives s * 50)
+finalPoints s = max 0 (points s + (diffcoeff (difficulty s)) * attitudesPoints (M.elements $ allegattitudes s) + plcash s + (lives s * 50) - 160)
+
+attitudesPoints :: [Int] -> Int
+attitudesPoints = floor . sum . map val
+  where val n | n < 0     = fromIntegral n * 0.2 :: Double
+              | otherwise = fromIntegral n * 50.0
 
 allegAttitude :: String -> SpaceState -> Int
 allegAttitude planetname state = 
