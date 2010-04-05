@@ -93,7 +93,7 @@ survivedPolice lc = do
     else do
       let s = concat ["Approacing the planet, you suddenly spot a police ship\"\n",
                       "approaching you! Your recent activities seem to have\n",
-                      "alarmed the local authorities! What to do?\n",
+                      "alarmed the local authorities! What to do?\n\n",
                       "Press ENTER to fight your way to the starport\n",
                       "or ESCAPE to escape"]
       pship <- liftIO $ randomPolice $ difficultyAIshift $ difficulty state
