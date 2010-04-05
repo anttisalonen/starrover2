@@ -35,7 +35,7 @@ minRepForMission = 4
 pointsForMessengerMission, pointsForSecretMessage, pointsUntilThePoliceArrives :: Int
 pointsForMessengerMission = 2
 pointsForSecretMessage = 5
-pointsUntilThePoliceArrives = (-20)
+pointsUntilThePoliceArrives = (-18)
 
 missionRepNeeded :: [(Int, MissionCategory)]
 missionRepNeeded = [(18, SecretMessage), (minRepForMission, Messenger)]
