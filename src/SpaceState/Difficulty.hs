@@ -6,7 +6,7 @@ import Graphics.Rendering.OpenGL as OpenGL
 data Difficulty = Easy
                 | Medium
                 | Hard
-  deriving (Enum, Bounded, Show)
+  deriving (Enum, Bounded, Show, Read, Ord, Eq)
 
 diffcoeff :: Difficulty -> Int
 diffcoeff Easy   = 1

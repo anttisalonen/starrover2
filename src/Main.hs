@@ -85,7 +85,7 @@ helpScreen f = do
 startGame f f2 = do
   (n, d) <- initGame f
   pts <- runGame n d f f2
-  doHighscore f f2 pts n
+  doHighscore f f2 pts n d
   mainMenu f f2
 
 introText = intercalate "\n"
@@ -124,8 +124,8 @@ saveHighscore dir fn hs = do
   let fpath = dir ++ "/" ++ fn
   writeFile fpath (show hs)
 
-displayHighscore :: Highscore a -> String
-displayHighscore = concatMap (\(pts, n, _) -> printf "%-16s %8d\n" n pts)
+displayHighscore :: (Show a) => Highscore a -> String
+displayHighscore = concatMap (\(pts, n, v) -> printf "%-16s %-8s %8d\n" n (show v) pts)
 
 getNameInput :: String -> Font -> IO String
 getNameInput greet f = do
@@ -146,17 +146,17 @@ getNameInput greet f = do
 
 hiscorefilename = "hiscore"
 
-doHighscore :: Font -> Font -> Int -> String -> IO ()
-doHighscore f f2 pts n = do
+doHighscore :: Font -> Font -> Int -> String -> Difficulty -> IO ()
+doHighscore f f2 pts n diff = do
   let numentries = 7
   appdir <- getAppUserDataDirectory "starrover2"
   highscore <- loadHighscore appdir hiscorefilename
   let madeit = if pts > 0 && length highscore < numentries
                  then True
-                 else let (p, _, _) = (highscore !! (numentries - 1)) in p < pts
+                 else let (p, _, _) = last highscore in p < pts
   highscore' <- if madeit
                   then do
-                    return $ take numentries $ insertRev (pts, n, ()) highscore
+                    return $ take numentries $ insertRev (pts, n, diff) highscore
                   else return highscore
   let inittext = if not madeit
                    then "Unfortunately you didn't make it to the high score list."
@@ -164,7 +164,7 @@ doHighscore f f2 pts n = do
   when (madeit) $ saveHighscore appdir hiscorefilename highscore'
   showHighscore f f2 inittext highscore'
 
-showHighscore :: Font -> Font -> String -> Highscore () -> IO ()
+showHighscore :: Font -> Font -> String -> Highscore Difficulty -> IO ()
 showHighscore f f2 inittext hs = do
   let drawfunc = makeTextScreen (100, 520)
                   [(f,  Color4 1.0 1.0 1.0 1.0, inittext ++ "\n"),
