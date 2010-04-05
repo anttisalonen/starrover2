@@ -30,10 +30,15 @@ setMission = M.insert
 removeMission :: String -> MissionMap -> MissionMap
 removeMission = M.delete
 
-minRepForMission = 2
+minRepForMission = 4
+
+pointsForMessengerMission, pointsForSecretMessage, pointsUntilThePoliceArrives :: Int
+pointsForMessengerMission = 2
+pointsForSecretMessage = 5
+pointsUntilThePoliceArrives = (-20)
 
 missionRepNeeded :: [(Int, MissionCategory)]
-missionRepNeeded = [(6, SecretMessage), (minRepForMission, Messenger)]
+missionRepNeeded = [(18, SecretMessage), (minRepForMission, Messenger)]
 
 possibleMissionType :: Int -> Maybe MissionCategory
 possibleMissionType thr = 

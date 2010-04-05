@@ -15,6 +15,7 @@ import Graphics.UI.SDL as SDL hiding (flip)
 
 import Statistics
 import OpenGLUtils
+import Politics
 import Entity
 import AObject
 import Cargo
@@ -234,7 +235,7 @@ handleArrival' (alleg, MessengerMission tgt) lc = do
   state <- State.get
   let plname = playername state
       planetname = aobjName lc
-  checkArrived tgt planetname alleg 
+  checkArrived tgt planetname alleg pointsForMessengerMission
     ["\"Thank you, " ++ plname ++ ", for serving our great",
      "country of " ++ alleg ++ " by delivering this important",
      "message to us.\"",
@@ -248,7 +249,7 @@ handleArrival' (alleg, SecretMessageMission tgt) lc = do
   state <- State.get
   let plname = playername state
       planetname = aobjName lc
-  checkArrived tgt planetname alleg 
+  checkArrived tgt planetname alleg pointsForSecretMessage
     ["\"Thank you, " ++ plname ++ ", for serving our great",
      "country of " ++ alleg ++ " by delivering this important",
      "message to us here on " ++ planetname ++ ".\"",
@@ -258,18 +259,19 @@ handleArrival' (alleg, SecretMessageMission tgt) lc = do
      "",
      "Press Enter to continue"]
 
-onActualArrival :: String -> [String] -> StateT SpaceState IO ()
-onActualArrival alleg str = do
+onActualArrival :: String -> Int -> [String] -> StateT SpaceState IO ()
+onActualArrival alleg pts str = do
   state <- State.get
   let txt = intercalate "\n" str
   modify $ modAvailMission (const Nothing)
+  modify $ modAllegAttitudes $ modAttitude (+pts) alleg
   modify $ modPlMissions $ removeMission alleg
   pressKeyScreen 
     (liftIO $ makeTextScreen (100, 500) 
         [(gamefont state, Color4 1.0 0.2 0.2 1.0, txt)]
         (return ())) SDLK_RETURN
 
-checkArrived :: String -> String -> String -> [String] -> StateT SpaceState IO ()
-checkArrived tgt planetname alleg str = 
-  when (tgt == planetname) (onActualArrival alleg str)
+checkArrived :: String -> String -> String -> Int -> [String] -> StateT SpaceState IO ()
+checkArrived tgt planetname alleg pts str = 
+  when (tgt == planetname) (onActualArrival alleg pts str)
 
