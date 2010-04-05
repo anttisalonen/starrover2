@@ -70,7 +70,7 @@ aobjToEntities a = (e, o)
                (circlePoints 128)
                (glVector3AllUnit *** (orbitRadius a))
 
-aobjPoints = circlePoints 16
+aobjPoints = circlePoints 32
 aorbitPoints = circlePoints 128
 aorbitColor = Color4 0.5 0.5 0.5 (1 :: GLfloat)
 
