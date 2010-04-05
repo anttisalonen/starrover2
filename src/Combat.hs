@@ -49,7 +49,7 @@ randomAI = do
 fightership = ShipProp
   0.003
   2.0
-  2
+  3
   6
   "Fighter ship"
   200
@@ -57,7 +57,7 @@ fightership = ShipProp
 intermediate = ShipProp
   0.002
   1.5
-  3
+  5
   10
   "Trader ship"
   100
@@ -65,7 +65,7 @@ intermediate = ShipProp
 cargovessel = ShipProp
   0.001
   1.0
-  5
+  8
   15
   "Cargo vessel"
   50
@@ -290,7 +290,7 @@ chargeTarget angleToTarget = do
            then setTurnCombat 2 (-turnRate)
            else setTurnCombat 2 0
   when (abs (myangle - angleToTarget) < 0.3) $ do
-    val <- liftIO $ randomRIO (0, 10 :: Int)
+    val <- liftIO $ randomRIO (0, 15 :: Int)
     when (val == 0) $ shipNShoot 2
   accelerateCombat 2 (maxaccel $ shipprop $ ship2 state)
 
@@ -371,8 +371,8 @@ handleCombatCollisions = do
   let (hits, newlasers) = partitionEithers colls
   let numhits1 = Prelude.length $ filter (==1) hits
   let numhits2 = Prelude.length $ filter (==2) hits
-  when (numhits1 > 0) $ liftIO $ putStrLn "Ship 1 hit!"
-  when (numhits2 > 0) $ liftIO $ putStrLn "Ship 2 hit!"
+  -- when (numhits1 > 0) $ liftIO $ putStrLn "Ship 1 hit!"
+  -- when (numhits2 > 0) $ liftIO $ putStrLn "Ship 2 hit!"
   modify $ modLasers $ const (S.fromList newlasers)
   modify $ modShipN 1 $ modHealth (subtract numhits1)
   modify $ modShipN 2 $ modHealth (subtract numhits2)
