@@ -1,5 +1,8 @@
 ChangeLog:
 
+0.0.8 - 05.04.2010
+Corrected cabal file
+
 0.0.7 - 05.04.2010
 Added help screen in main menu
 Added foreign affairs screen
