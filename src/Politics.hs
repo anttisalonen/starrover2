@@ -2,6 +2,7 @@ module Politics(Relation(..),
   RelationshipMap,
   mkRelationshipMap, Friendliness,
   AttitudeMap,
+  modAttitude,
   nullAttitudes,
   attitude,
   consequences
