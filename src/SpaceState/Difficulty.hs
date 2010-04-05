@@ -14,8 +14,8 @@ diffcoeff Medium = 2
 diffcoeff Hard   = 3
 
 difficultyAIshift :: Difficulty -> GLdouble
-difficultyAIshift Easy = (-0.5)
+difficultyAIshift Easy = (-0.3)
 difficultyAIshift Medium = 0
-difficultyAIshift Hard = 0.5
+difficultyAIshift Hard = 0.3
 
 
