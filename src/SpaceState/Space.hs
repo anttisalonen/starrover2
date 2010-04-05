@@ -91,9 +91,11 @@ survivedPolice lc = do
   if attid >= pointsUntilThePoliceArrives
     then return Nothing
     else do
-      let s = concat ["There's police! What to do?\n",
-                 "Press ENTER to fight your way to the starport\n",
-                 "or ESCAPE to escape"]
+      let s = concat ["Approacing the planet, you suddenly spot a police ship\"\n",
+                      "approaching you! Your recent activities seem to have\n",
+                      "alarmed the local authorities! What to do?\n",
+                      "Press ENTER to fight your way to the starport\n",
+                      "or ESCAPE to escape"]
       pship <- liftIO $ randomPolice $ difficultyAIshift $ difficulty state
       startCombat (Just (s, pship, getAllegiance lc)) >>= return . Just
 
