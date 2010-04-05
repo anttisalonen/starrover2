@@ -26,13 +26,12 @@ import SpaceState.Game
 
 updateAvailableMission :: AObject -> StateT SpaceState IO ()
 updateAvailableMission lc = do
-  let planetname = aobjName lc
   state <- State.get
   let malleg = colonyOwner lc
   case malleg of
     Nothing -> return ()
     Just alleg -> do
-      case possibleMissionType (allegAttitude planetname state) of
+      case possibleMissionType (allegAttitude alleg state) of
         Nothing        -> return ()
         Just m         -> createMission m alleg lc
 
@@ -160,12 +159,28 @@ gotoGovernor :: AObject -> StateT SpaceState IO ()
 gotoGovernor lc = do
   state <- State.get
   let alleg = getAllegiance lc
-  if isNothing (missionFor alleg (plmissions state))
-    then
+  case missionFor alleg (plmissions state) of
+    Nothing          -> 
       case availmission state of
         Nothing  -> noMissionsScreen
         Just mis -> offerMission mis lc
-    else noMissionsScreen
+    Just currmission -> missionDisplay (gamefont state) alleg currmission
+
+missionDisplay f alleg (MessengerMission tgt) = do
+  missionDisplayGeneric f alleg ["You have an important message that you need to",
+                                 "bring to the planet of " ++ tgt ++ "."]
+missionDisplay f alleg (SecretMessageMission tgt) = do
+  missionDisplayGeneric f alleg ["There's a spy of ours currently residing",
+                                 "on the foreign planet of " ++ tgt ++ ".",
+                                 "You must bring him a secret message."]
+
+missionDisplayGeneric f alleg msg = 
+  pressAnyKeyScreen 
+    (liftIO $ makeTextScreen (100, 500) 
+        [(f, Color4 1.0 0.2 0.2 1.0, 
+           intercalate "\n" (["Your current mission for " ++ alleg ++ ":", ""]
+                             ++ msg ++ ["", "Press any key to continue"]))]
+        (return ()))
 
 handleArrival :: AObject -> StateT SpaceState IO ()
 handleArrival lc = do
@@ -176,15 +191,15 @@ noMissionsScreen :: StateT SpaceState IO ()
 noMissionsScreen = do
   state <- State.get
   let plname = playername state
-  pressKeyScreen 
+  pressAnyKeyScreen 
     (liftIO $ makeTextScreen (100, 500) 
         [(gamefont state, Color4 1.0 0.2 0.2 1.0, 
            intercalate "\n" ["\"Dear " ++ plname ++ ", we currently have",
                              "no tasks for you.\"",
                              "",
                              "",
-                             "Press Enter to continue"])]
-        (return ())) SDLK_RETURN
+                             "Press any key to continue"])]
+        (return ()))
 
 offerMission :: Mission -> AObject -> StateT SpaceState IO ()
 offerMission mis@(MessengerMission tgt) lc = do
