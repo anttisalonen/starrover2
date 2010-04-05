@@ -54,6 +54,7 @@ mainMenu f f2 = do
   n <- menu (f, Color4 1.0 1.0 1.0 1.0, "Star Rover 2")
             [(f, Color4 1.0 1.0 1.0 1.0, "Start a new game"),
              (f, Color4 1.0 1.0 1.0 1.0, "High scores"),
+             (f, Color4 1.0 1.0 1.0 1.0, "Help"),
              (f, Color4 1.0 1.0 1.0 1.0, "Quit")]
             (f, Color4 0.1 0.1 1.0 1.0, "=>")
   case n of
@@ -63,7 +64,23 @@ mainMenu f f2 = do
            highscore <- loadHighscore appdir hiscorefilename
            showHighscore f f2 "High scores" highscore
            mainMenu f f2
+    3 -> helpScreen f >> mainMenu f f2
     _ -> return ()
+
+helpScreen f = do
+  let drawfunc = makeTextScreen (100, 520)
+                  [(f, Color4 1.0 1.0 1.0 1.0, "Controls in space:"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "Arrows/W/A/S/D - control your ship"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "Space - shoot (in combat)"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "M - star system map"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "Q - retire"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "\n"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "Controls in menus:"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "Arrows - move around in menus"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "Enter or space - choose action"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "\n"),
+                   (f, Color4 1.0 1.0 1.0 1.0, "Press any key to continue")] (return ())
+  pressAnyKeyScreen drawfunc
 
 startGame f f2 = do
   (n, d) <- initGame f
