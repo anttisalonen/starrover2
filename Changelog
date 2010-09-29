@@ -1,5 +1,11 @@
 ChangeLog:
 
+0.1.1 - 29.09.2010
+Fixed compilation error on GHC>=6.12.2
+
+0.1.0 - 05.04.2010
+Hackage release
+
 0.0.9 - 05.04.2010
 Corrected cabal file
 
